@@ -8,7 +8,7 @@ namespace fs = std::filesystem;
 
 constexpr int MINIMUM_SIMILARITY = 90;
 constexpr std::size_t BLOCK_SIZE = 100;  // 100 is fastest so far
-constexpr std::size_t NUM_THREADS = 8;
+constexpr std::size_t NUM_THREADS = 1;
 
 void addFilesInDirectory(
     std::vector<std::pair<fs::path, std::uintmax_t>> &filesAndSizes,
