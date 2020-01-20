@@ -18,13 +18,13 @@ int main(int argc, char **argv) {
       fs::path path = argv[i];
 
       if (fs::is_regular_file(path)) {
-        std::cout << fuzzyHash(path) << ",\"" << path.generic_string() << "\""
+        std::cout << fuzzyHash(path) << ',' << path.generic_string()
                   << std::endl;
       } else if (fs::is_directory(path)) {
         for (auto &entry : fs::recursive_directory_iterator(path)) {
           if (fs::is_regular_file(entry.path())) {
-            std::cout << fuzzyHash(entry.path()) << ",\""
-                      << entry.path().generic_string() << "\"" << std::endl;
+            std::cout << fuzzyHash(entry.path()) << ','
+                      << entry.path().generic_string() << std::endl;
           }
         }
       } else {
