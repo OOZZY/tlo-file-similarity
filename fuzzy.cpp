@@ -72,7 +72,7 @@ class FNV1Hasher {
 
 constexpr std::size_t MIN_BLOCK_SIZE = 3;
 constexpr std::size_t SPAMSUM_LENGTH = 64;
-constexpr std::size_t BUFFER_SIZE = 1000;
+constexpr std::size_t BUFFER_SIZE = 1000000;
 constexpr std::string_view BASE64_ALPHABET =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
