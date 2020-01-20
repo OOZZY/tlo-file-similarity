@@ -22,8 +22,8 @@ if (TLOFS_COLORED_DIAGNOSTICS)
   endif()
 endif()
 
-set(core_headers lcs.hpp similarity.hpp)
-set(core_sources lcs.cpp similarity.cpp)
+set(core_headers lcs.hpp filesystem.hpp similarity.hpp)
+set(core_sources lcs.cpp filesystem.cpp similarity.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)

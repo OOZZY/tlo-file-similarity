@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 
+#include "filesystem.hpp"
 #include "similarity.hpp"
 
 namespace fs = std::filesystem;
