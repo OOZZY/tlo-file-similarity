@@ -12,7 +12,7 @@ namespace fs = std::filesystem;
 
 std::ostream &operator<<(std::ostream &os, const FuzzyHashResult &result) {
   return os << result.blockSize << ':' << result.signature1 << ':'
-            << result.signature2;
+            << result.signature2 << ',' << result.path;
 }
 
 /*
@@ -83,7 +83,7 @@ FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
 
   auto fileSize = getFileSize(path);
   if (fileSize == 0) {
-    return {MIN_BLOCK_SIZE, "", ""};
+    return {MIN_BLOCK_SIZE, "", "", path.generic_string()};
   }
 
   double exponent = std::floor(std::log2(static_cast<double>(fileSize) /
@@ -156,5 +156,5 @@ FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
     }
   }
 
-  return {blockSize, signature1, signature2};
+  return {blockSize, signature1, signature2, path.generic_string()};
 }

@@ -14,6 +14,8 @@ struct FuzzyHashResult {
 
   // Hash when block size was 2 * blockSize.
   std::string signature2;
+
+  std::string path;
 };
 
 std::ostream &operator<<(std::ostream &os, const FuzzyHashResult &result);
