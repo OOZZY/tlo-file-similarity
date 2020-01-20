@@ -83,13 +83,18 @@ FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
 
   auto fileSize = getFileSize(path);
   if (fileSize == 0) {
-    return {0, "", ""};
+    return {MIN_BLOCK_SIZE, "", ""};
   }
 
   double exponent = std::floor(std::log2(static_cast<double>(fileSize) /
                                          (SPAMSUM_LENGTH * MIN_BLOCK_SIZE)));
   std::size_t blockSize = static_cast<std::size_t>(
       std::ceil(MIN_BLOCK_SIZE * std::pow(2, exponent)));
+
+  if (blockSize < MIN_BLOCK_SIZE) {
+    blockSize = MIN_BLOCK_SIZE;
+  }
+
   std::string signature1;
   std::string signature2;
 
@@ -143,7 +148,8 @@ FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
       fnv1Hasher2 = FNV1Hasher();
     }
 
-    if (signature1.size() < SPAMSUM_LENGTH / 2 && blockSize / 2 != 0) {
+    if (signature1.size() < SPAMSUM_LENGTH / 2 &&
+        blockSize / 2 >= MIN_BLOCK_SIZE) {
       blockSize /= 2;
     } else {
       break;
