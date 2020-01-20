@@ -20,12 +20,7 @@ void addFilesInDirectory(
 
   for (auto &entry : fs::recursive_directory_iterator(path)) {
     fs::path absolutePath = fs::absolute(entry.path());
-
-    auto [error, fileSize] = getFileSize(absolutePath);
-    if (error) {
-      continue;
-    }
-
+    auto fileSize = getFileSize(absolutePath);
     filesAndSizes.push_back(std::make_pair(absolutePath, fileSize));
   }
 }

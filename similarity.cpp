@@ -41,12 +41,8 @@ double checkFileSimilarity(const fs::path &path1, const fs::path &path2,
     return 0;
   }
 
-  auto [error1, file1Size] = getFileSize(path1);
-  auto [error2, file2Size] = getFileSize(path2);
-
-  if (error1 || error2) {
-    return 0;
-  }
+  auto file1Size = getFileSize(path1);
+  auto file2Size = getFileSize(path2);
 
   if (file1Size == 0 || file2Size == 0) {
     return 0;
@@ -102,12 +98,8 @@ double checkFileSimilarity(const fs::path &path1, const fs::path &path2,
     return 0;
   }
 
-  auto [error1, file1Size] = getFileSize(path1);
-  auto [error2, file2Size] = getFileSize(path2);
-
-  if (error1 || error2) {
-    return 0;
-  }
+  auto file1Size = getFileSize(path1);
+  auto file2Size = getFileSize(path2);
 
   if (file1Size == 0 || file2Size == 0) {
     return 0;
