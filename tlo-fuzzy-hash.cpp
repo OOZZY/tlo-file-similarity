@@ -3,19 +3,21 @@
 #include <iostream>
 
 #include "fuzzy.hpp"
+#include "options.hpp"
 
 namespace fs = std::filesystem;
 
 int main(int argc, char **argv) {
   try {
-    if (argc < 2) {
-      std::cerr << "Usage: " << argv[0] << " <file or directory>..."
+    const CommandLineArguments arguments(argc, argv);
+    if (arguments.arguments.empty()) {
+      std::cerr << "Usage: " << arguments.program << " <file or directory>..."
                 << std::endl;
       return 1;
     }
 
-    for (int i = 1; i < argc; ++i) {
-      fs::path path = argv[i];
+    for (std::size_t i = 0; i < arguments.arguments.size(); ++i) {
+      fs::path path = arguments.arguments[i];
 
       if (fs::is_regular_file(path)) {
         std::cout << fuzzyHash(path) << std::endl;

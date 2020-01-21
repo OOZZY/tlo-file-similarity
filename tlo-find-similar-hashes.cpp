@@ -1,10 +1,11 @@
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <vector>
 
 #include "fuzzy.hpp"
-#include "string.hpp"
+#include "options.hpp"
 
 namespace fs = std::filesystem;
 
@@ -25,9 +26,10 @@ void readHashes(std::vector<FuzzyHash> &hashes, const fs::path &path) {
 
 int main(int argc, char **argv) {
   try {
-    if (argc < 2) {
-      std::cerr << "Usage: " << argv[0] << " <text file with hashes>..."
-                << std::endl;
+    const CommandLineArguments arguments(argc, argv);
+    if (arguments.arguments.empty()) {
+      std::cerr << "Usage: " << arguments.program
+                << " <text file with hashes>..." << std::endl;
       return 1;
     }
 
@@ -35,8 +37,8 @@ int main(int argc, char **argv) {
 
     std::vector<FuzzyHash> hashes;
 
-    for (int i = 1; i < argc; ++i) {
-      fs::path path = argv[i];
+    for (std::size_t i = 0; i < arguments.arguments.size(); ++i) {
+      fs::path path = arguments.arguments[i];
 
       if (!fs::is_regular_file(path)) {
         std::cerr << "Error: \"" << path.generic_string() << "\" is not a file."

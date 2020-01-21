@@ -22,8 +22,8 @@ if (TLOFS_COLORED_DIAGNOSTICS)
   endif()
 endif()
 
-set(core_headers filesystem.hpp fuzzy.hpp lcs.hpp string.hpp)
-set(core_sources filesystem.cpp fuzzy.cpp lcs.cpp string.cpp)
+set(core_headers filesystem.hpp fuzzy.hpp lcs.hpp options.hpp string.hpp)
+set(core_sources filesystem.cpp fuzzy.cpp lcs.cpp options.cpp string.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)
