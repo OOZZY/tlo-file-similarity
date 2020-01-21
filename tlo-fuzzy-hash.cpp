@@ -26,8 +26,8 @@ int main(int argc, char **argv) {
           }
         }
       } else {
-        std::cerr << "Error: " << argv[i] << " is not a file or directory."
-                  << std::endl;
+        std::cerr << "Error: \"" << path.generic_string()
+                  << "\" is not a file or directory." << std::endl;
       }
     }
   } catch (const std::exception &exception) {

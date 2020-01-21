@@ -1,5 +1,6 @@
 #include "fuzzy.hpp"
 
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
 #include <fstream>
@@ -7,6 +8,8 @@
 #include <string_view>
 
 #include "filesystem.hpp"
+#include "lcs.hpp"
+#include "string.hpp"
 
 namespace fs = std::filesystem;
 
@@ -157,4 +160,65 @@ FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
   }
 
   return {blockSize, signature1, signature2, path.generic_string()};
+}
+
+FuzzyHashResult parseHash(const std::string &hash) {
+  std::vector<std::string> commaSplit = split(hash, ',');
+
+  if (commaSplit.size() != 2) {
+    throw std::runtime_error("Error: Wrong number of fields separated by ','.");
+  }
+
+  std::vector<std::string> colonSplit = split(commaSplit[0], ':');
+
+  if (colonSplit.size() != 3) {
+    throw std::runtime_error("Error: Wrong number of fields separated by ':'.");
+  }
+
+  return {std::stoull(colonSplit[0]), colonSplit[1], colonSplit[2],
+          commaSplit[1]};
+}
+
+bool hashesAreComparable(const FuzzyHashResult &result1,
+                         const FuzzyHashResult &result2) {
+  if (result1.blockSize == result2.blockSize) {
+    return true;
+  } else if (result1.blockSize == 2 * result2.blockSize) {
+    return true;
+  } else if (2 * result1.blockSize == result2.blockSize) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+namespace {
+double calculateSimilarity(const std::string &string1,
+                           const std::string &string2) {
+  auto lcsLength =
+      lcsLength3(string1, string2, lcsLength2_<std::string>).lcsLength;
+  auto largerSize = std::max(string1.size(), string2.size());
+  return static_cast<double>(lcsLength) / largerSize * 100;
+}
+}  // namespace
+
+double compareHashes(const FuzzyHashResult &result1,
+                     const FuzzyHashResult &result2) {
+  if (result1.blockSize == result2.blockSize) {
+    double signature1Similarity =
+        calculateSimilarity(result1.signature1, result2.signature1);
+    double signature2Similarity =
+        calculateSimilarity(result1.signature2, result2.signature2);
+    return std::max(signature1Similarity, signature2Similarity);
+  } else if (result1.blockSize == 2 * result2.blockSize) {
+    double signatureSimilarity =
+        calculateSimilarity(result1.signature1, result2.signature2);
+    return signatureSimilarity;
+  } else if (2 * result1.blockSize == result2.blockSize) {
+    double signatureSimilarity =
+        calculateSimilarity(result1.signature2, result2.signature1);
+    return signatureSimilarity;
+  } else {
+    throw std::runtime_error("Error: Given hashes are not comparable.");
+  }
 }
