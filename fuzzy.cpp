@@ -13,9 +13,9 @@
 
 namespace fs = std::filesystem;
 
-std::ostream &operator<<(std::ostream &os, const FuzzyHashResult &result) {
-  return os << result.blockSize << ':' << result.signature1 << ':'
-            << result.signature2 << ',' << result.path;
+std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash) {
+  return os << hash.blockSize << ':' << hash.signature1 << ':'
+            << hash.signature2 << ',' << hash.path;
 }
 
 /*
@@ -79,7 +79,7 @@ constexpr std::size_t BUFFER_SIZE = 1000000;
 constexpr std::string_view BASE64_ALPHABET =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
+FuzzyHash fuzzyHash(const std::filesystem::path &path) {
   if (!fs::is_regular_file(path)) {
     throw std::runtime_error("Error: \"" + path.generic_string() +
                              "\" is not a file.");
@@ -164,7 +164,7 @@ FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
   return {blockSize, signature1, signature2, path.generic_string()};
 }
 
-FuzzyHashResult parseHash(const std::string &hash) {
+FuzzyHash parseHash(const std::string &hash) {
   std::vector<std::string> commaSplit = split(hash, ',');
 
   if (commaSplit.size() < 2) {
@@ -183,13 +183,12 @@ FuzzyHashResult parseHash(const std::string &hash) {
           commaSplit[1]};
 }
 
-bool hashesAreComparable(const FuzzyHashResult &result1,
-                         const FuzzyHashResult &result2) {
-  if (result1.blockSize == result2.blockSize) {
+bool hashesAreComparable(const FuzzyHash &hash1, const FuzzyHash &hash2) {
+  if (hash1.blockSize == hash2.blockSize) {
     return true;
-  } else if (result1.blockSize == 2 * result2.blockSize) {
+  } else if (hash1.blockSize == 2 * hash2.blockSize) {
     return true;
-  } else if (2 * result1.blockSize == result2.blockSize) {
+  } else if (2 * hash1.blockSize == hash2.blockSize) {
     return true;
   } else {
     return false;
@@ -206,24 +205,23 @@ double calculateSimilarity(const std::string &string1,
 }
 }  // namespace
 
-double compareHashes(const FuzzyHashResult &result1,
-                     const FuzzyHashResult &result2) {
-  if (result1.blockSize == result2.blockSize) {
+double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2) {
+  if (hash1.blockSize == hash2.blockSize) {
     double signature1Similarity =
-        calculateSimilarity(result1.signature1, result2.signature1);
+        calculateSimilarity(hash1.signature1, hash2.signature1);
     double signature2Similarity =
-        calculateSimilarity(result1.signature2, result2.signature2);
+        calculateSimilarity(hash1.signature2, hash2.signature2);
     return std::max(signature1Similarity, signature2Similarity);
-  } else if (result1.blockSize == 2 * result2.blockSize) {
+  } else if (hash1.blockSize == 2 * hash2.blockSize) {
     double signatureSimilarity =
-        calculateSimilarity(result1.signature1, result2.signature2);
+        calculateSimilarity(hash1.signature1, hash2.signature2);
     return signatureSimilarity;
-  } else if (2 * result1.blockSize == result2.blockSize) {
+  } else if (2 * hash1.blockSize == hash2.blockSize) {
     double signatureSimilarity =
-        calculateSimilarity(result1.signature2, result2.signature1);
+        calculateSimilarity(hash1.signature2, hash2.signature1);
     return signatureSimilarity;
   } else {
-    throw std::runtime_error("Error: \"" + toString(result1) + "\" and \"" +
-                             toString(result2) + "\" are not comparable.");
+    throw std::runtime_error("Error: \"" + toString(hash1) + "\" and \"" +
+                             toString(hash2) + "\" are not comparable.");
   }
 }

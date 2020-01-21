@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 
 constexpr int MIN_SIMILARITY_SCORE = 50;
 
-void readHashes(std::vector<FuzzyHashResult> &hashes, const fs::path &path) {
+void readHashes(std::vector<FuzzyHash> &hashes, const fs::path &path) {
   std::ifstream ifstream(path, std::ifstream::in);
   std::string line;
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
     std::cout << "Reading hashes." << std::endl;
 
-    std::vector<FuzzyHashResult> hashes;
+    std::vector<FuzzyHash> hashes;
 
     for (int i = 1; i < argc; ++i) {
       fs::path path = argv[i];
