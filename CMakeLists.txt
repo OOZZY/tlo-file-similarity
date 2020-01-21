@@ -22,8 +22,8 @@ if (TLOFS_COLORED_DIAGNOSTICS)
   endif()
 endif()
 
-set(core_headers filesystem.hpp fuzzy.hpp lcs.hpp similarity.hpp string.hpp)
-set(core_sources filesystem.cpp fuzzy.cpp lcs.cpp similarity.cpp string.cpp)
+set(core_headers filesystem.hpp fuzzy.hpp lcs.hpp string.hpp)
+set(core_sources filesystem.cpp fuzzy.cpp lcs.cpp string.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)
@@ -36,16 +36,6 @@ target_compile_options(lcs-test PRIVATE ${global_compile_options})
 target_link_libraries(lcs-test PRIVATE tlofs-core)
 
 add_test(NAME lcs-test COMMAND lcs-test)
-
-add_executable(tlo-check-similarity tlo-check-similarity.cpp)
-set_target_properties(tlo-check-similarity PROPERTIES CXX_EXTENSIONS OFF)
-target_compile_options(tlo-check-similarity PRIVATE ${global_compile_options})
-target_link_libraries(tlo-check-similarity PRIVATE tlofs-core)
-
-add_executable(tlo-find-similar-files tlo-find-similar-files.cpp)
-set_target_properties(tlo-find-similar-files PROPERTIES CXX_EXTENSIONS OFF)
-target_compile_options(tlo-find-similar-files PRIVATE ${global_compile_options})
-target_link_libraries(tlo-find-similar-files PRIVATE tlofs-core)
 
 add_executable(tlo-fuzzy-hash tlo-fuzzy-hash.cpp)
 set_target_properties(tlo-fuzzy-hash PROPERTIES CXX_EXTENSIONS OFF)
