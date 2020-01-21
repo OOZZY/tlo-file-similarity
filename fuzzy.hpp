@@ -9,12 +9,14 @@
 struct FuzzyHash {
   std::size_t blockSize = 0;
 
-  // Hash when block size was blockSize.
-  std::string signature1;
+  // String of Base64 values where each value corresponds to a hash of a block
+  // of the file and the block size used is blockSize.
+  std::string part1;
 
-  // Hash when block size was 2 * blockSize.
-  std::string signature2;
+  // Similar to part1, except the block size used is 2 * blockSize.
+  std::string part2;
 
+  // Path to the file.
   std::string path;
 };
 
@@ -24,7 +26,7 @@ std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash);
 FuzzyHash fuzzyHash(const std::filesystem::path &path);
 
 // Given string should have the format
-// <blockSize>:<signature1>:<signature2>,<path>. Throws std::runtime_error on
+// <blockSize>:<part1>:<part2>,<path>. Throws std::runtime_error on
 // error.
 FuzzyHash parseHash(const std::string &hash);
 

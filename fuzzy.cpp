@@ -14,8 +14,8 @@
 namespace fs = std::filesystem;
 
 std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash) {
-  return os << hash.blockSize << ':' << hash.signature1 << ':'
-            << hash.signature2 << ',' << hash.path;
+  return os << hash.blockSize << ':' << hash.part1 << ':' << hash.part2 << ','
+            << hash.path;
 }
 
 /*
@@ -99,16 +99,16 @@ FuzzyHash fuzzyHash(const std::filesystem::path &path) {
     blockSize = MIN_BLOCK_SIZE;
   }
 
-  std::string signature1;
-  std::string signature2;
+  std::string part1;
+  std::string part2;
 
   for (;;) {
     RollingHasher rollingHasher;
     FNV1Hasher fnv1Hasher1;
     FNV1Hasher fnv1Hasher2;
 
-    signature1.clear();
-    signature2.clear();
+    part1.clear();
+    part2.clear();
 
     std::ifstream ifstream(path, std::ifstream::in | std::ifstream::binary);
     std::vector<char> buffer(BUFFER_SIZE, 0);
@@ -128,13 +128,13 @@ FuzzyHash fuzzyHash(const std::filesystem::path &path) {
         fnv1Hasher2.addByte(buffer[i]);
 
         if (rollingHasher.getHash() % blockSize == blockSize - 1) {
-          signature1 +=
+          part1 +=
               BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
           fnv1Hasher1 = FNV1Hasher();
         }
 
         if (rollingHasher.getHash() % (blockSize * 2) == blockSize * 2 - 1) {
-          signature2 +=
+          part2 +=
               BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
           fnv1Hasher2 = FNV1Hasher();
         }
@@ -142,26 +142,23 @@ FuzzyHash fuzzyHash(const std::filesystem::path &path) {
     }
 
     if (fnv1Hasher1.bytesWereAdded()) {
-      signature1 +=
-          BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
+      part1 += BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
       fnv1Hasher1 = FNV1Hasher();
     }
 
     if (fnv1Hasher2.bytesWereAdded()) {
-      signature2 +=
-          BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
+      part2 += BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
       fnv1Hasher2 = FNV1Hasher();
     }
 
-    if (signature1.size() < SPAMSUM_LENGTH / 2 &&
-        blockSize / 2 >= MIN_BLOCK_SIZE) {
+    if (part1.size() < SPAMSUM_LENGTH / 2 && blockSize / 2 >= MIN_BLOCK_SIZE) {
       blockSize /= 2;
     } else {
       break;
     }
   }
 
-  return {blockSize, signature1, signature2, path.generic_string()};
+  return {blockSize, part1, part2, path.generic_string()};
 }
 
 FuzzyHash parseHash(const std::string &hash) {
@@ -207,19 +204,15 @@ double calculateSimilarity(const std::string &string1,
 
 double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2) {
   if (hash1.blockSize == hash2.blockSize) {
-    double signature1Similarity =
-        calculateSimilarity(hash1.signature1, hash2.signature1);
-    double signature2Similarity =
-        calculateSimilarity(hash1.signature2, hash2.signature2);
-    return std::max(signature1Similarity, signature2Similarity);
+    double part1Similarity = calculateSimilarity(hash1.part1, hash2.part1);
+    double part2Similarity = calculateSimilarity(hash1.part2, hash2.part2);
+    return std::max(part1Similarity, part2Similarity);
   } else if (hash1.blockSize == 2 * hash2.blockSize) {
-    double signatureSimilarity =
-        calculateSimilarity(hash1.signature1, hash2.signature2);
-    return signatureSimilarity;
+    double partSimilarity = calculateSimilarity(hash1.part1, hash2.part2);
+    return partSimilarity;
   } else if (2 * hash1.blockSize == hash2.blockSize) {
-    double signatureSimilarity =
-        calculateSimilarity(hash1.signature2, hash2.signature1);
-    return signatureSimilarity;
+    double partSimilarity = calculateSimilarity(hash1.part2, hash2.part1);
+    return partSimilarity;
   } else {
     throw std::runtime_error("Error: \"" + toString(hash1) + "\" and \"" +
                              toString(hash2) + "\" are not comparable.");
