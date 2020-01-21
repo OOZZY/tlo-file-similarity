@@ -10,7 +10,9 @@ struct FuzzyHash {
   std::size_t blockSize = 0;
 
   // String of Base64 values where each value corresponds to a hash of a block
-  // of the file and the block size used is blockSize.
+  // of the file and the block size used is blockSize. Note, the actual size of
+  // each block is not necessarily blockSize because block boundaries are
+  // determined in a context-dependent manner.
   std::string part1;
 
   // Similar to part1, except the block size used is 2 * blockSize.
