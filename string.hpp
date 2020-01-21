@@ -2,6 +2,7 @@
 #define TLOFS_STRING_HPP
 
 #include <regex>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -9,5 +10,12 @@ std::vector<std::string> split(const std::string &string,
                                const std::regex &delimiter);
 
 std::vector<std::string> split(const std::string &string, char delimiter);
+
+template <class T>
+std::string toString(const T &object) {
+  std::ostringstream oss;
+  oss << object;
+  return oss.str();
+}
 
 #endif  // TLOFS_STRING_HPP

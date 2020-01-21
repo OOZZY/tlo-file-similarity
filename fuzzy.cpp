@@ -81,7 +81,8 @@ constexpr std::string_view BASE64_ALPHABET =
 
 FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
   if (!fs::is_regular_file(path)) {
-    throw std::runtime_error("Error: Given path is not a file.");
+    throw std::runtime_error("Error: \"" + path.generic_string() +
+                             "\" is not a file.");
   }
 
   auto fileSize = getFileSize(path);
@@ -113,7 +114,8 @@ FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
     std::vector<char> buffer(BUFFER_SIZE, 0);
 
     if (!ifstream.is_open()) {
-      throw std::runtime_error("Error: Failed to open file.");
+      throw std::runtime_error("Error: Failed to open \"" +
+                               path.generic_string() + "\".");
     }
 
     while (!ifstream.eof()) {
@@ -166,13 +168,15 @@ FuzzyHashResult parseHash(const std::string &hash) {
   std::vector<std::string> commaSplit = split(hash, ',');
 
   if (commaSplit.size() < 2) {
-    throw std::runtime_error("Error: Wrong number of fields separated by ','.");
+    throw std::runtime_error("Error: \"" + hash + "\" does not have a comma.");
   }
 
   std::vector<std::string> colonSplit = split(commaSplit[0], ':');
 
   if (colonSplit.size() != 3) {
-    throw std::runtime_error("Error: Wrong number of fields separated by ':'.");
+    throw std::runtime_error(
+        "Error: \"" + hash +
+        "\" has the wrong number of sections separated by a colon.");
   }
 
   return {std::stoull(colonSplit[0]), colonSplit[1], colonSplit[2],
@@ -219,6 +223,7 @@ double compareHashes(const FuzzyHashResult &result1,
         calculateSimilarity(result1.signature2, result2.signature1);
     return signatureSimilarity;
   } else {
-    throw std::runtime_error("Error: Given hashes are not comparable.");
+    throw std::runtime_error("Error: \"" + toString(result1) + "\" and \"" +
+                             toString(result2) + "\" are not comparable.");
   }
 }
