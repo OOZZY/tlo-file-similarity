@@ -165,7 +165,7 @@ FuzzyHashResult fuzzyHash(const std::filesystem::path &path) {
 FuzzyHashResult parseHash(const std::string &hash) {
   std::vector<std::string> commaSplit = split(hash, ',');
 
-  if (commaSplit.size() != 2) {
+  if (commaSplit.size() < 2) {
     throw std::runtime_error("Error: Wrong number of fields separated by ','.");
   }
 
