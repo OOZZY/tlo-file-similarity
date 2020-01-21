@@ -12,9 +12,9 @@ CommandLineArguments::CommandLineArguments(
     std::string argument = argv[i];
 
     if (argument.size() >= 3 && argument[0] == '-' && argument[1] == '-') {
-      auto position = argument.find("=");
+      auto equalPosition = argument.find("=");
 
-      if (position == std::string::npos) {
+      if (equalPosition == std::string::npos) {
         if (validOptions.find(argument) == validOptions.end()) {
           std::cerr << "Error: \"" << argument << "\" is not a valid option."
                     << std::endl;
@@ -23,7 +23,7 @@ CommandLineArguments::CommandLineArguments(
 
         options[std::move(argument)] = "";
       } else {
-        std::string option = argument.substr(0, position);
+        std::string option = argument.substr(0, equalPosition);
 
         if (validOptions.find(option) == validOptions.end()) {
           std::cerr << "Error: \"" << option << "\" is not a valid option."
@@ -31,7 +31,7 @@ CommandLineArguments::CommandLineArguments(
           continue;
         }
 
-        auto nextPosition = position + 1;
+        auto nextPosition = equalPosition + 1;
         auto value =
             argument.substr(nextPosition, argument.size() - nextPosition);
         options[std::move(option)] = std::move(value);
