@@ -9,7 +9,7 @@
 
 namespace fs = std::filesystem;
 
-void readHashes(std::vector<FuzzyHash> &hashes, const fs::path &path) {
+void readHashesFromFile(std::vector<FuzzyHash> &hashes, const fs::path &path) {
   std::ifstream ifstream(path, std::ifstream::in);
   std::string line;
 
@@ -18,6 +18,41 @@ void readHashes(std::vector<FuzzyHash> &hashes, const fs::path &path) {
       hashes.push_back(parseHash(line));
     } catch (const std::exception &exception) {
       std::cerr << exception.what() << std::endl;
+    }
+  }
+}
+
+void readHashes(std::vector<FuzzyHash> &hashes,
+                const std::vector<std::string> &arguments) {
+  std::cout << "Reading hashes." << std::endl;
+
+  for (std::size_t i = 0; i < arguments.size(); ++i) {
+    fs::path path = arguments[i];
+
+    if (!fs::is_regular_file(path)) {
+      std::cerr << "Error: \"" << path.generic_string() << "\" is not a file."
+                << std::endl;
+      continue;
+    }
+
+    readHashesFromFile(hashes, path);
+  }
+}
+
+void compareHashes(std::vector<FuzzyHash> &hashes, int similarityThreshold) {
+  std::cout << "Comparing hashes." << std::endl;
+
+  for (std::size_t i = 0; i < hashes.size(); ++i) {
+    for (std::size_t j = i + 1; j < hashes.size(); ++j) {
+      if (hashesAreComparable(hashes[i], hashes[j])) {
+        double similarityScore = compareHashes(hashes[i], hashes[j]);
+
+        if (similarityScore >= similarityThreshold) {
+          std::cout << '"' << hashes[i].path << "\" and \"" << hashes[j].path
+                    << "\" are about " << similarityScore << "% similar."
+                    << std::endl;
+        }
+      }
     }
   }
 }
@@ -52,37 +87,10 @@ int main(int argc, char **argv) {
           MAX_SIMILARITY_THRESHOLD);
     }
 
-    std::cout << "Reading hashes." << std::endl;
-
     std::vector<FuzzyHash> hashes;
 
-    for (std::size_t i = 0; i < arguments.arguments.size(); ++i) {
-      fs::path path = arguments.arguments[i];
-
-      if (!fs::is_regular_file(path)) {
-        std::cerr << "Error: \"" << path.generic_string() << "\" is not a file."
-                  << std::endl;
-        continue;
-      }
-
-      readHashes(hashes, path);
-    }
-
-    std::cout << "Comparing hashes." << std::endl;
-
-    for (std::size_t i = 0; i < hashes.size(); ++i) {
-      for (std::size_t j = i + 1; j < hashes.size(); ++j) {
-        if (hashesAreComparable(hashes[i], hashes[j])) {
-          double similarityScore = compareHashes(hashes[i], hashes[j]);
-
-          if (similarityScore >= similarityThreshold) {
-            std::cout << '"' << hashes[i].path << "\" and \"" << hashes[j].path
-                      << "\" are about " << similarityScore << "% similar."
-                      << std::endl;
-          }
-        }
-      }
-    }
+    readHashes(hashes, arguments.arguments);
+    compareHashes(hashes, similarityThreshold);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
     return 1;
