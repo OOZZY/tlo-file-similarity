@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
     if (arguments.arguments.empty()) {
       std::cerr << "Usage: " << arguments.program
                 << " [options] <text file with hashes>..." << std::endl;
-      arguments.printValidOptions(std::cout);
+      arguments.printValidOptions(std::cerr);
       return 1;
     }
 
