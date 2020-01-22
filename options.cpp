@@ -1,6 +1,9 @@
 #include "options.hpp"
 
+#include <exception>
 #include <iostream>
+#include <stdexcept>
+#include <utility>
 
 CommandLineArguments::CommandLineArguments(
     int argc, char **argv,
@@ -57,6 +60,33 @@ void CommandLineArguments::printValidOptions(std::ostream &ostream) const {
       ostream << "  " << option.second.description << std::endl;
     }
   }
+}
+
+unsigned long CommandLineArguments::getOptionValueAsULong(
+    const std::string &option, unsigned long minValue,
+    unsigned long maxValue) const {
+  unsigned long value;
+
+  try {
+    value = std::stoul(options.at(option));
+  } catch (const std::exception &exception) {
+    throw std::runtime_error("Error: Cannot convert " + option + " value \"" +
+                             options.at(option) + "\" to unsigned long.");
+  }
+
+  if (value < minValue) {
+    throw std::runtime_error(
+        "Error: " + option + " value " + std::to_string(value) +
+        " is less than minimum value " + std::to_string(minValue) + ".");
+  }
+
+  if (value > maxValue) {
+    throw std::runtime_error(
+        "Error: " + option + " value " + std::to_string(value) +
+        " is greater than maximum value " + std::to_string(maxValue) + ".");
+  }
+
+  return value;
 }
 
 std::ostream &operator<<(std::ostream &ostream,

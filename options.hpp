@@ -1,6 +1,7 @@
 #ifndef TLOFS_OPTIONS_HPP
 #define TLOFS_OPTIONS_HPP
 
+#include <climits>
 #include <ostream>
 #include <string>
 #include <unordered_map>
@@ -29,6 +30,11 @@ struct CommandLineArguments {
                            &validOptions_ = {});
 
   void printValidOptions(std::ostream &ostream) const;
+
+  // Throws std::runtime_error on error.
+  unsigned long getOptionValueAsULong(const std::string &option,
+                                      unsigned long minValue = 0,
+                                      unsigned long maxValue = ULONG_MAX) const;
 };
 
 std::ostream &operator<<(std::ostream &ostream,
