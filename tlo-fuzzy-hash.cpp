@@ -115,6 +115,7 @@ void hashFiles(const std::vector<std::string> &arguments,
 
 constexpr std::size_t DEFAULT_NUM_THREADS = 1;
 constexpr std::size_t MIN_NUM_THREADS = 1;
+constexpr std::size_t MAX_NUM_THREADS = 256;
 
 const std::unordered_map<std::string, OptionAttributes> validOptions{
     {"--num-threads",
@@ -134,8 +135,8 @@ int main(int argc, char **argv) {
     std::size_t numThreads = DEFAULT_NUM_THREADS;
 
     if (arguments.options.find("--num-threads") != arguments.options.end()) {
-      numThreads =
-          arguments.getOptionValueAsULong("--num-threads", MIN_NUM_THREADS);
+      numThreads = arguments.getOptionValueAsULong(
+          "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
 
     hashFiles(arguments.arguments, numThreads);
