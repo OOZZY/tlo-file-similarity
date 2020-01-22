@@ -31,6 +31,9 @@ struct CommandLineArguments {
 
   void printValidOptions(std::ostream &ostream) const;
 
+  // Returns whether the given option was specified in the command line.
+  bool specifiedOption(const std::string &option) const;
+
   // Throws std::runtime_error on error.
   unsigned long getOptionValueAsULong(const std::string &option,
                                       unsigned long minValue = 0,

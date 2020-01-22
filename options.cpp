@@ -62,6 +62,10 @@ void CommandLineArguments::printValidOptions(std::ostream &ostream) const {
   }
 }
 
+bool CommandLineArguments::specifiedOption(const std::string &option) const {
+  return options.find(option) != options.end();
+}
+
 constexpr int NUMBER_BASE = 10;
 
 template <class Integer>

@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
 
     std::size_t numThreads = DEFAULT_NUM_THREADS;
 
-    if (arguments.options.find("--num-threads") != arguments.options.end()) {
+    if (arguments.specifiedOption("--num-threads")) {
       numThreads = arguments.getOptionValueAsULong(
           "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
