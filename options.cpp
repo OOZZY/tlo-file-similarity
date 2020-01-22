@@ -62,16 +62,20 @@ void CommandLineArguments::printValidOptions(std::ostream &ostream) const {
   }
 }
 
-unsigned long CommandLineArguments::getOptionValueAsULong(
-    const std::string &option, unsigned long minValue,
-    unsigned long maxValue) const {
-  unsigned long value;
+constexpr int NUMBER_BASE = 10;
+
+template <class Integer>
+Integer getOptionsValueAsInteger(
+    const CommandLineArguments &arguments, const std::string &option,
+    Integer minValue, Integer maxValue,
+    Integer (*stringToInteger)(const std::string &, std::size_t *, int)) {
+  Integer value;
 
   try {
-    value = std::stoul(options.at(option));
+    value = stringToInteger(arguments.options.at(option), nullptr, NUMBER_BASE);
   } catch (const std::exception &exception) {
     throw std::runtime_error("Error: Cannot convert " + option + " value \"" +
-                             options.at(option) + "\" to unsigned long.");
+                             arguments.options.at(option) + "\" to integer.");
   }
 
   if (value < minValue) {
@@ -87,6 +91,19 @@ unsigned long CommandLineArguments::getOptionValueAsULong(
   }
 
   return value;
+}
+
+unsigned long CommandLineArguments::getOptionValueAsULong(
+    const std::string &option, unsigned long minValue,
+    unsigned long maxValue) const {
+  return getOptionsValueAsInteger(*this, option, minValue, maxValue,
+                                  std::stoul);
+}
+
+int CommandLineArguments::getOptionValueAsInt(const std::string &option,
+                                              int minValue,
+                                              int maxValue) const {
+  return getOptionsValueAsInteger(*this, option, minValue, maxValue, std::stoi);
 }
 
 std::ostream &operator<<(std::ostream &ostream,

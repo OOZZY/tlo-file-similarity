@@ -35,6 +35,10 @@ struct CommandLineArguments {
   unsigned long getOptionValueAsULong(const std::string &option,
                                       unsigned long minValue = 0,
                                       unsigned long maxValue = ULONG_MAX) const;
+
+  // Throws std::runtime_error on error.
+  int getOptionValueAsInt(const std::string &option, int minValue = INT_MIN,
+                          int maxValue = INT_MAX) const;
 };
 
 std::ostream &operator<<(std::ostream &ostream,

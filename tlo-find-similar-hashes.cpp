@@ -9,8 +9,6 @@
 
 namespace fs = std::filesystem;
 
-constexpr int MIN_SIMILARITY_SCORE = 50;
-
 void readHashes(std::vector<FuzzyHash> &hashes, const fs::path &path) {
   std::ifstream ifstream(path, std::ifstream::in);
   std::string line;
@@ -24,13 +22,34 @@ void readHashes(std::vector<FuzzyHash> &hashes, const fs::path &path) {
   }
 }
 
+constexpr int DEFAULT_SIMILARITY_THRESHOLD = 50;
+constexpr int MIN_SIMILARITY_THRESHOLD = 0;
+constexpr int MAX_SIMILARITY_THRESHOLD = 99;
+
+const std::unordered_map<std::string, OptionAttributes> validOptions{
+    {"--similarity-threshold",
+     {true,
+      "Display only the file pairs with a similarity score greater than or "
+      "equal to this threshold (default: " +
+          std::to_string(DEFAULT_SIMILARITY_THRESHOLD) + ")."}}};
+
 int main(int argc, char **argv) {
   try {
-    const CommandLineArguments arguments(argc, argv);
+    const CommandLineArguments arguments(argc, argv, validOptions);
     if (arguments.arguments.empty()) {
       std::cerr << "Usage: " << arguments.program
-                << " <text file with hashes>..." << std::endl;
+                << " [options] <text file with hashes>..." << std::endl;
+      arguments.printValidOptions(std::cout);
       return 1;
+    }
+
+    int similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD;
+
+    if (arguments.options.find("--similarity-threshold") !=
+        arguments.options.end()) {
+      similarityThreshold = arguments.getOptionValueAsInt(
+          "--similarity-threshold", MIN_SIMILARITY_THRESHOLD,
+          MAX_SIMILARITY_THRESHOLD);
     }
 
     std::cout << "Reading hashes." << std::endl;
@@ -56,7 +75,7 @@ int main(int argc, char **argv) {
         if (hashesAreComparable(hashes[i], hashes[j])) {
           double similarityScore = compareHashes(hashes[i], hashes[j]);
 
-          if (similarityScore >= MIN_SIMILARITY_SCORE) {
+          if (similarityScore >= similarityThreshold) {
             std::cout << '"' << hashes[i].path << "\" and \"" << hashes[j].path
                       << "\" are about " << similarityScore << "% similar."
                       << std::endl;
