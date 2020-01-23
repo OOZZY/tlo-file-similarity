@@ -7,9 +7,9 @@
 
 CommandLineArguments::CommandLineArguments(
     int argc, char **argv,
-    const std::unordered_map<std::string, OptionAttributes> &validOptions_)
-    : validOptions(validOptions_) {
-  program = argv[0];
+    const std::unordered_map<std::string, OptionAttributes> &validOptions)
+    : validOptions_(validOptions) {
+  program_ = argv[0];
 
   for (int i = 1; i < argc; ++i) {
     std::string argument = argv[i];
@@ -18,17 +18,17 @@ CommandLineArguments::CommandLineArguments(
       auto equalPosition = argument.find("=");
 
       if (equalPosition == std::string::npos) {
-        if (validOptions.find(argument) == validOptions.end()) {
+        if (validOptions_.find(argument) == validOptions_.end()) {
           std::cerr << "Error: \"" << argument << "\" is not a valid option."
                     << std::endl;
           continue;
         }
 
-        options[std::move(argument)] = "";
+        options_[std::move(argument)] = "";
       } else {
         std::string option = argument.substr(0, equalPosition);
 
-        if (validOptions.find(option) == validOptions.end()) {
+        if (validOptions_.find(option) == validOptions_.end()) {
           std::cerr << "Error: \"" << option << "\" is not a valid option."
                     << std::endl;
           continue;
@@ -37,19 +37,35 @@ CommandLineArguments::CommandLineArguments(
         auto nextPosition = equalPosition + 1;
         auto value =
             argument.substr(nextPosition, argument.size() - nextPosition);
-        options[std::move(option)] = std::move(value);
+        options_[std::move(option)] = std::move(value);
       }
     } else {
-      arguments.push_back(std::move(argument));
+      arguments_.push_back(std::move(argument));
     }
   }
 }
 
+const std::string &CommandLineArguments::program() const { return program_; }
+
+const std::unordered_map<std::string, std::string>
+    &CommandLineArguments::options() const {
+  return options_;
+}
+
+const std::vector<std::string> &CommandLineArguments::arguments() const {
+  return arguments_;
+}
+
+const std::unordered_map<std::string, OptionAttributes>
+    &CommandLineArguments::validOptions() const {
+  return validOptions_;
+}
+
 void CommandLineArguments::printValidOptions(std::ostream &ostream) const {
-  if (!validOptions.empty()) {
+  if (!validOptions_.empty()) {
     ostream << "Valid options:" << std::endl;
 
-    for (const auto &option : validOptions) {
+    for (const auto &option : validOptions_) {
       ostream << option.first;
 
       if (option.second.valueRequired) {
@@ -63,7 +79,7 @@ void CommandLineArguments::printValidOptions(std::ostream &ostream) const {
 }
 
 bool CommandLineArguments::specifiedOption(const std::string &option) const {
-  return options.find(option) != options.end();
+  return options_.find(option) != options_.end();
 }
 
 constexpr int NUMBER_BASE = 10;
@@ -76,10 +92,11 @@ Integer getOptionsValueAsInteger(
   Integer value;
 
   try {
-    value = stringToInteger(arguments.options.at(option), nullptr, NUMBER_BASE);
+    value =
+        stringToInteger(arguments.options().at(option), nullptr, NUMBER_BASE);
   } catch (const std::exception &exception) {
     throw std::runtime_error("Error: Cannot convert " + option + " value \"" +
-                             arguments.options.at(option) + "\" to integer.");
+                             arguments.options().at(option) + "\" to integer.");
   }
 
   if (value < minValue) {
@@ -112,11 +129,11 @@ int CommandLineArguments::getOptionValueAsInt(const std::string &option,
 
 std::ostream &operator<<(std::ostream &ostream,
                          const CommandLineArguments &arguments) {
-  ostream << "{" << arguments.program << ", {";
+  ostream << "{" << arguments.program() << ", {";
 
   bool first = true;
 
-  for (const auto &option : arguments.options) {
+  for (const auto &option : arguments.options()) {
     if (!first) {
       ostream << ", ";
     }
@@ -136,7 +153,7 @@ std::ostream &operator<<(std::ostream &ostream,
 
   first = true;
 
-  for (const auto &argument : arguments.arguments) {
+  for (const auto &argument : arguments.arguments()) {
     if (!first) {
       ostream << ", ";
     }

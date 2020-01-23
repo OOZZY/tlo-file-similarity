@@ -125,8 +125,8 @@ const std::unordered_map<std::string, OptionAttributes> validOptions{
 int main(int argc, char **argv) {
   try {
     const CommandLineArguments arguments(argc, argv, validOptions);
-    if (arguments.arguments.empty()) {
-      std::cerr << "Usage: " << arguments.program
+    if (arguments.arguments().empty()) {
+      std::cerr << "Usage: " << arguments.program()
                 << " [options] <file or directory>..." << std::endl;
       arguments.printValidOptions(std::cerr);
       return 1;
@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
           "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
 
-    hashFiles(arguments.arguments, numThreads);
+    hashFiles(arguments.arguments(), numThreads);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
     return 1;

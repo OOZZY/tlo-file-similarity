@@ -12,23 +12,29 @@ struct OptionAttributes {
   std::string description;
 };
 
-struct CommandLineArguments {
+class CommandLineArguments {
+ private:
   // Name or path of program (argv[0]).
-  std::string program;
+  std::string program_;
 
   // All command line arguments that are options. Maps options to values.
-  std::unordered_map<std::string, std::string> options;
+  std::unordered_map<std::string, std::string> options_;
 
   // All command line arguments that are not options.
-  std::vector<std::string> arguments;
+  std::vector<std::string> arguments_;
 
   // All valid options. Maps options to their attributes.
-  std::unordered_map<std::string, OptionAttributes> validOptions;
+  std::unordered_map<std::string, OptionAttributes> validOptions_;
 
+ public:
   CommandLineArguments(int argc, char **argv,
                        const std::unordered_map<std::string, OptionAttributes>
-                           &validOptions_ = {});
+                           &validOptions = {});
 
+  const std::string &program() const;
+  const std::unordered_map<std::string, std::string> &options() const;
+  const std::vector<std::string> &arguments() const;
+  const std::unordered_map<std::string, OptionAttributes> &validOptions() const;
   void printValidOptions(std::ostream &ostream) const;
 
   // Returns whether the given option was specified in the command line.

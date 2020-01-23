@@ -144,8 +144,8 @@ const std::unordered_map<std::string, OptionAttributes> validOptions{
 int main(int argc, char **argv) {
   try {
     const CommandLineArguments arguments(argc, argv, validOptions);
-    if (arguments.arguments.empty()) {
-      std::cerr << "Usage: " << arguments.program
+    if (arguments.arguments().empty()) {
+      std::cerr << "Usage: " << arguments.program()
                 << " [options] <text file with hashes>..." << std::endl;
       arguments.printValidOptions(std::cerr);
       return 1;
@@ -168,7 +168,7 @@ int main(int argc, char **argv) {
     std::vector<FuzzyHash> hashes;
 
     std::cout << "Reading hashes." << std::endl;
-    readHashes(hashes, arguments.arguments);
+    readHashes(hashes, arguments.arguments());
 
     std::cout << "Comparing hashes." << std::endl;
     compareHashes(hashes, similarityThreshold, numThreads);
