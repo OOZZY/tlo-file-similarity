@@ -21,5 +21,5 @@ std::uintmax_t getFileSize(const fs::path &path) {
                              path.generic_string() + "\".");
   }
 
-  return size;
+  return static_cast<std::uintmax_t>(size);
 }

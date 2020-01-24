@@ -123,9 +123,10 @@ FuzzyHash fuzzyHash(const std::filesystem::path &path) {
       std::size_t numCharsRead = static_cast<std::size_t>(ifstream.gcount());
 
       for (std::size_t i = 0; i < numCharsRead; ++i) {
-        rollingHasher.addByte(buffer[i]);
-        fnv1Hasher1.addByte(buffer[i]);
-        fnv1Hasher2.addByte(buffer[i]);
+        unsigned char byte = static_cast<unsigned char>(buffer[i]);
+        rollingHasher.addByte(byte);
+        fnv1Hasher1.addByte(byte);
+        fnv1Hasher2.addByte(byte);
 
         if (rollingHasher.getHash() % blockSize == blockSize - 1) {
           part1 +=

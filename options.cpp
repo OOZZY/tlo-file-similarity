@@ -94,7 +94,7 @@ Integer getOptionsValueAsInteger(
   try {
     value =
         stringToInteger(arguments.options().at(option), nullptr, NUMBER_BASE);
-  } catch (const std::exception &exception) {
+  } catch (const std::exception &) {
     throw std::runtime_error("Error: Cannot convert " + option + " value \"" +
                              arguments.options().at(option) + "\" to integer.");
   }

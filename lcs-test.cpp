@@ -8,7 +8,9 @@ bool equal(const T &obj1, const T &obj2) {
   return obj1 == obj2;
 }
 
+namespace {
 bool passed = true;
+}  // namespace
 
 #define EXPECT(condition)                                        \
   do {                                                           \

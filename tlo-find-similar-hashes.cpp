@@ -12,6 +12,7 @@
 
 namespace fs = std::filesystem;
 
+namespace {
 void readHashesFromFile(std::vector<FuzzyHash> &hashes, const fs::path &path) {
   std::ifstream ifstream(path, std::ifstream::in);
   std::string line;
@@ -122,6 +123,7 @@ void compareHashes(const std::vector<FuzzyHash> &hashes,
     thread.join();
   }
 }
+}  // namespace
 
 constexpr int DEFAULT_SIMILARITY_THRESHOLD = 50;
 constexpr int MIN_SIMILARITY_THRESHOLD = 0;

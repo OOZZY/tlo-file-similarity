@@ -13,6 +13,7 @@
 
 namespace fs = std::filesystem;
 
+namespace {
 void hashFiles(const std::vector<std::string> &arguments) {
   for (std::size_t i = 0; i < arguments.size(); ++i) {
     fs::path path = arguments[i];
@@ -112,6 +113,7 @@ void hashFiles(const std::vector<std::string> &arguments,
     thread.join();
   }
 }
+}  // namespace
 
 constexpr std::size_t DEFAULT_NUM_THREADS = 1;
 constexpr std::size_t MIN_NUM_THREADS = 1;
