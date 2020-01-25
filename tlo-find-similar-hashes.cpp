@@ -113,10 +113,8 @@ void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
     return;
   }
 
-  numThreads--;
-
   SharedState state(hashes, similarityThreshold);
-  std::vector<std::thread> threads(numThreads);
+  std::vector<std::thread> threads(numThreads - 1);
 
   for (auto &thread : threads) {
     thread =

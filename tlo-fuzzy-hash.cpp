@@ -73,10 +73,8 @@ void hashFiles(const std::vector<std::string> &arguments,
     return;
   }
 
-  numThreads--;
-
   SharedState state;
-  std::vector<std::thread> threads(numThreads);
+  std::vector<std::thread> threads(numThreads - 1);
 
   for (auto &thread : threads) {
     thread = std::thread(hashFilesInQueue, std::ref(state));
