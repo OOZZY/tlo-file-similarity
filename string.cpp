@@ -4,20 +4,6 @@
 #include <iterator>
 
 namespace tlo {
-/*
- * On MinGW-w64:
- * split("4::", std::regex(":")) will split into "4" and ""
- * split("::4", std::regex(":")) will split into "", "", and "4"
- */
-std::vector<std::string> split(const std::string &string,
-                               const std::regex &delimiter) {
-  std::vector<std::string> strings;
-  std::copy(
-      std::sregex_token_iterator(string.begin(), string.end(), delimiter, -1),
-      std::sregex_token_iterator(), std::back_inserter(strings));
-  return strings;
-}
-
 std::vector<std::string> split(const std::string &string, char delimiter) {
   std::vector<std::string> strings;
   std::vector<std::size_t> delimiterPositions;

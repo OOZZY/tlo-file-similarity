@@ -7,9 +7,6 @@
 #include <vector>
 
 namespace tlo {
-std::vector<std::string> split(const std::string &string,
-                               const std::regex &delimiter);
-
 std::vector<std::string> split(const std::string &string, char delimiter);
 
 template <class T>
