@@ -14,8 +14,8 @@ namespace fs = std::filesystem;
 
 namespace {
 void readHashesFromFile(std::vector<tlo::FuzzyHash> &hashes,
-                        const fs::path &path) {
-  std::ifstream ifstream(path, std::ifstream::in);
+                        const fs::path &file) {
+  std::ifstream ifstream(file, std::ifstream::in);
   std::string line;
 
   while (std::getline(ifstream, line)) {
@@ -27,8 +27,10 @@ void readHashesFromFile(std::vector<tlo::FuzzyHash> &hashes,
   }
 }
 
-void readHashes(std::vector<tlo::FuzzyHash> &hashes,
-                const std::vector<std::string> &arguments) {
+std::vector<tlo::FuzzyHash> readHashes(
+    const std::vector<std::string> &arguments) {
+  std::vector<tlo::FuzzyHash> hashes;
+
   for (std::size_t i = 0; i < arguments.size(); ++i) {
     fs::path path = arguments[i];
 
@@ -40,6 +42,8 @@ void readHashes(std::vector<tlo::FuzzyHash> &hashes,
 
     readHashesFromFile(hashes, path);
   }
+
+  return hashes;
 }
 
 void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
@@ -169,10 +173,8 @@ int main(int argc, char **argv) {
           "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
 
-    std::vector<tlo::FuzzyHash> hashes;
-
     std::cout << "Reading hashes." << std::endl;
-    readHashes(hashes, arguments.arguments());
+    std::vector<tlo::FuzzyHash> hashes = readHashes(arguments.arguments());
 
     std::cout << "Comparing hashes." << std::endl;
     compareHashes(hashes, similarityThreshold, numThreads);
