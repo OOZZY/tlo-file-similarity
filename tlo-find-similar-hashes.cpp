@@ -13,20 +13,21 @@
 namespace fs = std::filesystem;
 
 namespace {
-void readHashesFromFile(std::vector<FuzzyHash> &hashes, const fs::path &path) {
+void readHashesFromFile(std::vector<tlo::FuzzyHash> &hashes,
+                        const fs::path &path) {
   std::ifstream ifstream(path, std::ifstream::in);
   std::string line;
 
   while (std::getline(ifstream, line)) {
     try {
-      hashes.push_back(parseHash(line));
+      hashes.push_back(tlo::parseHash(line));
     } catch (const std::exception &exception) {
       std::cerr << exception.what() << std::endl;
     }
   }
 }
 
-void readHashes(std::vector<FuzzyHash> &hashes,
+void readHashes(std::vector<tlo::FuzzyHash> &hashes,
                 const std::vector<std::string> &arguments) {
   for (std::size_t i = 0; i < arguments.size(); ++i) {
     fs::path path = arguments[i];
@@ -41,11 +42,11 @@ void readHashes(std::vector<FuzzyHash> &hashes,
   }
 }
 
-void compareHashes(const std::vector<FuzzyHash> &hashes,
+void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
                    int similarityThreshold) {
   for (std::size_t i = 0; i < hashes.size(); ++i) {
     for (std::size_t j = i + 1; j < hashes.size(); ++j) {
-      if (hashesAreComparable(hashes[i], hashes[j])) {
+      if (tlo::hashesAreComparable(hashes[i], hashes[j])) {
         double similarityScore = compareHashes(hashes[i], hashes[j]);
 
         if (similarityScore >= similarityThreshold) {
@@ -64,10 +65,11 @@ struct SharedState {
 
   std::mutex coutMutex;
 
-  const std::vector<FuzzyHash> &hashes;
+  const std::vector<tlo::FuzzyHash> &hashes;
   const int similarityThreshold;
 
-  SharedState(const std::vector<FuzzyHash> &hashes_, int similarityThreshold_)
+  SharedState(const std::vector<tlo::FuzzyHash> &hashes_,
+              int similarityThreshold_)
       : hashes(hashes_), similarityThreshold(similarityThreshold_) {}
 };
 
@@ -84,7 +86,7 @@ void compareHashAtIndexWithAllSubsequentHashes(SharedState &state) {
     indexUniqueLock.unlock();
 
     for (std::size_t j = i + 1; j < state.hashes.size(); ++j) {
-      if (hashesAreComparable(state.hashes[i], state.hashes[j])) {
+      if (tlo::hashesAreComparable(state.hashes[i], state.hashes[j])) {
         double similarityScore =
             compareHashes(state.hashes[i], state.hashes[j]);
 
@@ -100,7 +102,7 @@ void compareHashAtIndexWithAllSubsequentHashes(SharedState &state) {
 }
 
 // numThreads includes main thread.
-void compareHashes(const std::vector<FuzzyHash> &hashes,
+void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
                    int similarityThreshold, std::size_t numThreads) {
   if (numThreads <= 1) {
     compareHashes(hashes, similarityThreshold);
@@ -133,7 +135,7 @@ constexpr std::size_t DEFAULT_NUM_THREADS = 1;
 constexpr std::size_t MIN_NUM_THREADS = 1;
 constexpr std::size_t MAX_NUM_THREADS = 256;
 
-const std::unordered_map<std::string, OptionAttributes> validOptions{
+const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
     {"--similarity-threshold",
      {true,
       "Display only the file pairs with a similarity score greater than or "
@@ -145,7 +147,7 @@ const std::unordered_map<std::string, OptionAttributes> validOptions{
 
 int main(int argc, char **argv) {
   try {
-    const CommandLineArguments arguments(argc, argv, validOptions);
+    const tlo::CommandLineArguments arguments(argc, argv, validOptions);
     if (arguments.arguments().empty()) {
       std::cerr << "Usage: " << arguments.program()
                 << " [options] <text file with hashes>..." << std::endl;
@@ -167,7 +169,7 @@ int main(int argc, char **argv) {
           "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
 
-    std::vector<FuzzyHash> hashes;
+    std::vector<tlo::FuzzyHash> hashes;
 
     std::cout << "Reading hashes." << std::endl;
     readHashes(hashes, arguments.arguments());

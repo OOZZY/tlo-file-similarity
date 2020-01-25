@@ -6,6 +6,7 @@
 #include <ostream>
 #include <string>
 
+namespace tlo {
 struct FuzzyHash {
   std::size_t blockSize = 0;
 
@@ -38,5 +39,6 @@ bool hashesAreComparable(const FuzzyHash &hash1, const FuzzyHash &hash2);
 // closer to 100 means the hashes are more similar. Throws std::runtime_error
 // if hashes are not comparable.
 double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2);
+}  // namespace tlo
 
 #endif  // TLOFS_FUZZY_HPP

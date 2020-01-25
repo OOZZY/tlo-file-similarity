@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iterator>
 
+namespace tlo {
 /*
  * On MinGW-w64:
  * split("4::", std::regex(":")) will split into "4" and ""
@@ -50,3 +51,4 @@ std::vector<std::string> split(const std::string &string, char delimiter) {
 
   return strings;
 }
+}  // namespace tlo

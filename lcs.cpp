@@ -1,5 +1,6 @@
 #include "lcs.hpp"
 
+namespace tlo {
 std::ostream &operator<<(std::ostream &os, const LCSLengthResult &result) {
   return os << '{' << result.lcsLength << ", " << result.lcsEndPosition1 << ", "
             << result.lcsEndPosition2 << '}';
@@ -28,3 +29,4 @@ std::size_t lookup(const std::vector<std::size_t> &array, std::size_t i) {
     return 0;
   }
 }
+}  // namespace tlo

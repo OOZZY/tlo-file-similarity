@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+namespace tlo {
 std::vector<std::string> split(const std::string &string,
                                const std::regex &delimiter);
 
@@ -17,5 +18,6 @@ std::string toString(const T &object) {
   oss << object;
   return oss.str();
 }
+}  // namespace tlo
 
 #endif  // TLOFS_STRING_HPP

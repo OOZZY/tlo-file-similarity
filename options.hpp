@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
+namespace tlo {
 struct OptionAttributes {
   bool valueRequired;
   std::string description;
@@ -52,5 +53,6 @@ class CommandLineArguments {
 
 std::ostream &operator<<(std::ostream &ostream,
                          const CommandLineArguments &arguments);
+}  // namespace tlo
 
 #endif  // TLOFS_OPTIONS_HPP

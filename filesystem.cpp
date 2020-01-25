@@ -5,6 +5,7 @@
 
 namespace fs = std::filesystem;
 
+namespace tlo {
 std::uintmax_t getFileSize(const fs::path &path) {
   std::ifstream ifstream(path, std::ifstream::in | std::ifstream::binary);
 
@@ -23,3 +24,4 @@ std::uintmax_t getFileSize(const fs::path &path) {
 
   return static_cast<std::uintmax_t>(size);
 }
+}  // namespace tlo

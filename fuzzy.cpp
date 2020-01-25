@@ -13,6 +13,7 @@
 
 namespace fs = std::filesystem;
 
+namespace tlo {
 std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash) {
   return os << hash.blockSize << ':' << hash.part1 << ':' << hash.part2 << ','
             << hash.path;
@@ -219,3 +220,4 @@ double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2) {
                              toString(hash2) + "\" are not comparable.");
   }
 }
+}  // namespace tlo

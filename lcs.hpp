@@ -11,6 +11,7 @@
 #include <iostream>
 #endif
 
+namespace tlo {
 struct LCSLengthResult {
   // length of the LCS
   std::size_t lcsLength;
@@ -232,5 +233,6 @@ LCSLengthResult lcsLength3(const CharSequence &sequence1,
   return lcsLength3_(sequence1, 0, sequence1.size(), sequence2, 0,
                      sequence2.size(), lcsLength);
 }
+}  // namespace tlo
 
 #endif  // TLOFS_LCS_HPP

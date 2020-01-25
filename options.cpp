@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <utility>
 
+namespace tlo {
 CommandLineArguments::CommandLineArguments(
     int argc, char **argv,
     const std::unordered_map<std::string, OptionAttributes> &validOptions)
@@ -168,3 +169,4 @@ std::ostream &operator<<(std::ostream &ostream,
   ostream << "}}";
   return ostream;
 }
+}  // namespace tlo

@@ -19,11 +19,11 @@ void hashFiles(const std::vector<std::string> &arguments) {
     fs::path path = arguments[i];
 
     if (fs::is_regular_file(path)) {
-      std::cout << fuzzyHash(path) << std::endl;
+      std::cout << tlo::fuzzyHash(path) << std::endl;
     } else if (fs::is_directory(path)) {
       for (auto &entry : fs::recursive_directory_iterator(path)) {
         if (fs::is_regular_file(entry.path())) {
-          std::cout << fuzzyHash(entry.path()) << std::endl;
+          std::cout << tlo::fuzzyHash(entry.path()) << std::endl;
         }
       }
     } else {
@@ -58,7 +58,7 @@ void hashFilesInQueue(SharedState &state) {
     state.files.pop();
     queueUniqueLock.unlock();
 
-    FuzzyHash hash = fuzzyHash(file);
+    tlo::FuzzyHash hash = tlo::fuzzyHash(file);
 
     const std::lock_guard<std::mutex> coutLockGuard(state.coutMutex);
     std::cout << hash << std::endl;
@@ -119,14 +119,14 @@ constexpr std::size_t DEFAULT_NUM_THREADS = 1;
 constexpr std::size_t MIN_NUM_THREADS = 1;
 constexpr std::size_t MAX_NUM_THREADS = 256;
 
-const std::unordered_map<std::string, OptionAttributes> validOptions{
+const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
     {"--num-threads",
      {true, "Number of threads the program will use (default: " +
                 std::to_string(DEFAULT_NUM_THREADS) + ")."}}};
 
 int main(int argc, char **argv) {
   try {
-    const CommandLineArguments arguments(argc, argv, validOptions);
+    const tlo::CommandLineArguments arguments(argc, argv, validOptions);
     if (arguments.arguments().empty()) {
       std::cerr << "Usage: " << arguments.program()
                 << " [options] <file or directory>..." << std::endl;
