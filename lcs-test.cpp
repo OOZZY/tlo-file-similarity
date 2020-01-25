@@ -69,27 +69,20 @@ int main() {
   EXPECT(equal(tlo::lcsLength3("aaabbbccc"s, "aaabbb___bbbccc"s, lcsLength1s),
                {9, 8, 14}));
 
-  const auto &lcsLength2s = tlo::lcsLength2_<std::string>;
-  EXPECT(equal(tlo::lcsLength3(""s, ""s, lcsLength2s), {0, 0, 0}));
-  EXPECT(equal(tlo::lcsLength3("GAC"s, ""s, lcsLength2s), {0, 0, 0}));
-  EXPECT(equal(tlo::lcsLength3(""s, "AGCAT"s, lcsLength2s), {0, 0, 0}));
-  EXPECT(equal(tlo::lcsLength3("GAC"s, "AGCAT"s, lcsLength2s), {2, 2, 2}));
+  EXPECT(equal(tlo::lcsLength3(""s, ""s), {0, 0, 0}));
+  EXPECT(equal(tlo::lcsLength3("GAC"s, ""s), {0, 0, 0}));
+  EXPECT(equal(tlo::lcsLength3(""s, "AGCAT"s), {0, 0, 0}));
+  EXPECT(equal(tlo::lcsLength3("GAC"s, "AGCAT"s), {2, 2, 2}));
+  EXPECT(equal(tlo::lcsLength3("XMJYAUZ"s, "MZJAWXU"s), {4, 5, 6}));
   EXPECT(
-      equal(tlo::lcsLength3("XMJYAUZ"s, "MZJAWXU"s, lcsLength2s), {4, 5, 6}));
-  EXPECT(equal(tlo::lcsLength3("___XMJYAUZ___"s, "__MZJAWXU___"s, lcsLength2s),
-               {9, 12, 11}));
-  EXPECT(equal(tlo::lcsLength3("__XMJYAUZ___"s, "___MZJAWXU___-"s, lcsLength2s),
-               {9, 11, 12}));
-  EXPECT(equal(tlo::lcsLength3("0123456789"s, "0123456789"s, lcsLength2s),
-               {10, 9, 9}));
-  EXPECT(equal(tlo::lcsLength3("01234567"s, "abcdefghij"s, lcsLength2s),
-               {0, 0, 0}));
-  EXPECT(equal(tlo::lcsLength3("aaabbb"s, "aaabbb___bbbccc"s, lcsLength2s),
-               {6, 5, 5}));
-  EXPECT(equal(tlo::lcsLength3("bbbccc"s, "aaabbb___bbbccc"s, lcsLength2s),
-               {6, 5, 14}));
-  EXPECT(equal(tlo::lcsLength3("aaabbbccc"s, "aaabbb___bbbccc"s, lcsLength2s),
-               {9, 8, 14}));
+      equal(tlo::lcsLength3("___XMJYAUZ___"s, "__MZJAWXU___"s), {9, 12, 11}));
+  EXPECT(
+      equal(tlo::lcsLength3("__XMJYAUZ___"s, "___MZJAWXU___-"s), {9, 11, 12}));
+  EXPECT(equal(tlo::lcsLength3("0123456789"s, "0123456789"s), {10, 9, 9}));
+  EXPECT(equal(tlo::lcsLength3("01234567"s, "abcdefghij"s), {0, 0, 0}));
+  EXPECT(equal(tlo::lcsLength3("aaabbb"s, "aaabbb___bbbccc"s), {6, 5, 5}));
+  EXPECT(equal(tlo::lcsLength3("bbbccc"s, "aaabbb___bbbccc"s), {6, 5, 14}));
+  EXPECT(equal(tlo::lcsLength3("aaabbbccc"s, "aaabbb___bbbccc"s), {9, 8, 14}));
 
   if (passed) {
     std::cout << "All tests passed." << std::endl;

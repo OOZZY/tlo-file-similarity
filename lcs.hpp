@@ -169,12 +169,13 @@ LCSLengthResult lcsLength2(const CharSequence &sequence1,
 // Returns the length of the LCS of sequence1[startIndex1..startIndex1+size1]
 // and sequence2[startIndex2..startIndex2+size2]. Does additional optimizations
 // on top of one of the other lcsLength functions.
-template <class CharSequence, class LengthOfLCSFunction>
-LCSLengthResult lcsLength3_(const CharSequence &sequence1,
-                            std::size_t startIndex1, std::size_t size1,
-                            const CharSequence &sequence2,
-                            std::size_t startIndex2, std::size_t size2,
-                            LengthOfLCSFunction lcsLength) {
+template <class CharSequence>
+LCSLengthResult lcsLength3_(
+    const CharSequence &sequence1, std::size_t startIndex1, std::size_t size1,
+    const CharSequence &sequence2, std::size_t startIndex2, std::size_t size2,
+    LCSLengthResult (*lcsLength)(const CharSequence &, std::size_t, std::size_t,
+                                 const CharSequence &, std::size_t,
+                                 std::size_t) = lcsLength2_<CharSequence>) {
   assert(startIndex1 + size1 <= sequence1.size());
   assert(startIndex2 + size2 <= sequence2.size());
 
@@ -226,10 +227,12 @@ LCSLengthResult lcsLength3_(const CharSequence &sequence1,
   return result;
 }
 
-template <class CharSequence, class LengthOfLCSFunction>
-LCSLengthResult lcsLength3(const CharSequence &sequence1,
-                           const CharSequence &sequence2,
-                           LengthOfLCSFunction lcsLength) {
+template <class CharSequence>
+LCSLengthResult lcsLength3(
+    const CharSequence &sequence1, const CharSequence &sequence2,
+    LCSLengthResult (*lcsLength)(const CharSequence &, std::size_t, std::size_t,
+                                 const CharSequence &, std::size_t,
+                                 std::size_t) = lcsLength2_<CharSequence>) {
   return lcsLength3_(sequence1, 0, sequence1.size(), sequence2, 0,
                      sequence2.size(), lcsLength);
 }
