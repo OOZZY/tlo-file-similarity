@@ -6,6 +6,8 @@
 #include <fstream>
 #include <stdexcept>
 #include <string_view>
+#include <tuple>
+#include <utility>
 
 #include "filesystem.hpp"
 #include "lcs.hpp"
@@ -80,7 +82,60 @@ constexpr std::size_t BUFFER_SIZE = 1000000;
 constexpr std::string_view BASE64_ALPHABET =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-FuzzyHash fuzzyHash(const std::filesystem::path &path) {
+std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
+                                              std::size_t blockSize) {
+  std::ifstream ifstream(file, std::ifstream::in | std::ifstream::binary);
+
+  if (!ifstream.is_open()) {
+    throw std::runtime_error("Error: Failed to open \"" +
+                             file.generic_string() + "\".");
+  }
+
+  std::vector<char> buffer(BUFFER_SIZE, 0);
+  RollingHasher rollingHasher;
+  FNV1Hasher fnv1Hasher1;
+  FNV1Hasher fnv1Hasher2;
+  std::string part1;
+  std::string part2;
+
+  while (!ifstream.eof()) {
+    ifstream.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+    std::size_t numCharsRead = static_cast<std::size_t>(ifstream.gcount());
+
+    for (std::size_t i = 0; i < numCharsRead; ++i) {
+      unsigned char byte = static_cast<unsigned char>(buffer[i]);
+      rollingHasher.addByte(byte);
+      fnv1Hasher1.addByte(byte);
+      fnv1Hasher2.addByte(byte);
+
+      if (rollingHasher.getHash() % blockSize == blockSize - 1) {
+        part1 +=
+            BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
+        fnv1Hasher1 = FNV1Hasher();
+      }
+
+      if (rollingHasher.getHash() % (blockSize * 2) == blockSize * 2 - 1) {
+        part2 +=
+            BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
+        fnv1Hasher2 = FNV1Hasher();
+      }
+    }
+  }
+
+  if (fnv1Hasher1.bytesWereAdded()) {
+    part1 += BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
+    fnv1Hasher1 = FNV1Hasher();
+  }
+
+  if (fnv1Hasher2.bytesWereAdded()) {
+    part2 += BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
+    fnv1Hasher2 = FNV1Hasher();
+  }
+
+  return std::pair(part1, part2);
+}
+
+FuzzyHash fuzzyHash(const fs::path &path) {
   if (!fs::is_regular_file(path)) {
     throw std::runtime_error("Error: \"" + path.generic_string() +
                              "\" is not a file.");
@@ -104,54 +159,7 @@ FuzzyHash fuzzyHash(const std::filesystem::path &path) {
   std::string part2;
 
   for (;;) {
-    RollingHasher rollingHasher;
-    FNV1Hasher fnv1Hasher1;
-    FNV1Hasher fnv1Hasher2;
-
-    part1.clear();
-    part2.clear();
-
-    std::ifstream ifstream(path, std::ifstream::in | std::ifstream::binary);
-    std::vector<char> buffer(BUFFER_SIZE, 0);
-
-    if (!ifstream.is_open()) {
-      throw std::runtime_error("Error: Failed to open \"" +
-                               path.generic_string() + "\".");
-    }
-
-    while (!ifstream.eof()) {
-      ifstream.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
-      std::size_t numCharsRead = static_cast<std::size_t>(ifstream.gcount());
-
-      for (std::size_t i = 0; i < numCharsRead; ++i) {
-        unsigned char byte = static_cast<unsigned char>(buffer[i]);
-        rollingHasher.addByte(byte);
-        fnv1Hasher1.addByte(byte);
-        fnv1Hasher2.addByte(byte);
-
-        if (rollingHasher.getHash() % blockSize == blockSize - 1) {
-          part1 +=
-              BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
-          fnv1Hasher1 = FNV1Hasher();
-        }
-
-        if (rollingHasher.getHash() % (blockSize * 2) == blockSize * 2 - 1) {
-          part2 +=
-              BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
-          fnv1Hasher2 = FNV1Hasher();
-        }
-      }
-    }
-
-    if (fnv1Hasher1.bytesWereAdded()) {
-      part1 += BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
-      fnv1Hasher1 = FNV1Hasher();
-    }
-
-    if (fnv1Hasher2.bytesWereAdded()) {
-      part2 += BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
-      fnv1Hasher2 = FNV1Hasher();
-    }
+    std::tie(part1, part2) = fuzzyHash(path, blockSize);
 
     if (part1.size() < SPAMSUM_LENGTH / 2 && blockSize / 2 >= MIN_BLOCK_SIZE) {
       blockSize /= 2;
