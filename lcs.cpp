@@ -13,6 +13,7 @@ bool operator==(const LCSLengthResult &result1,
          result1.lcsEndPosition2 == result2.lcsEndPosition2;
 }
 
+namespace internal {
 std::size_t lookup(const std::vector<std::vector<std::size_t>> &table,
                    std::size_t i, std::size_t j) {
   if (i < table.size() && j < table[i].size()) {
@@ -29,4 +30,5 @@ std::size_t lookup(const std::vector<std::size_t> &array, std::size_t i) {
     return 0;
   }
 }
+}  // namespace internal
 }  // namespace tlo

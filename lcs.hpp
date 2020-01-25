@@ -26,12 +26,14 @@ struct LCSLengthResult {
 std::ostream &operator<<(std::ostream &os, const LCSLengthResult &result);
 bool operator==(const LCSLengthResult &result1, const LCSLengthResult &result2);
 
+namespace internal {
 // Returns table[i][j] if i and j are within bounds, otherwise returns 0
 std::size_t lookup(const std::vector<std::vector<std::size_t>> &table,
                    std::size_t i, std::size_t j);
 
 // Returns array[i] if i is within bounds, otherwise returns 0
 std::size_t lookup(const std::vector<std::size_t> &array, std::size_t i);
+}  // namespace internal
 
 // Returns the length of the LCS of sequence1[startIndex1..startIndex1+size1]
 // and sequence2[startIndex2..startIndex2+size2]. Takes O(size1 * size2) time.
@@ -59,10 +61,10 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
   for (std::size_t i = 0; i < size1; ++i) {
     for (std::size_t j = 0; j < size2; ++j) {
       if (sequence1[startIndex1 + i] == sequence2[startIndex2 + j]) {
-        table[i][j] = lookup(table, i - 1, j - 1) + 1;
+        table[i][j] = internal::lookup(table, i - 1, j - 1) + 1;
       } else {
-        table[i][j] =
-            std::max(lookup(table, i, j - 1), lookup(table, i - 1, j));
+        table[i][j] = std::max(internal::lookup(table, i, j - 1),
+                               internal::lookup(table, i - 1, j));
       }
 
       if (result.lcsLength < table[i][j]) {
@@ -135,7 +137,8 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
       if (sequence1[startIndex1 + i] == sequence2[startIndex2 + j]) {
         array[j] = jMinus1thValueBeforeUpdate + 1;
       } else {
-        array[j] = std::max(lookup(array, j - 1), lookup(array, j));
+        array[j] = std::max(internal::lookup(array, j - 1),
+                            internal::lookup(array, j));
       }
 
       jMinus1thValueBeforeUpdate = jthValueBeforeUpdate;
