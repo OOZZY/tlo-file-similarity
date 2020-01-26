@@ -13,26 +13,33 @@
 
 namespace tlo {
 struct LCSLengthResult {
-  // length of the LCS
+  // Length of the LCS.
   std::size_t lcsLength;
 
-  // position in first sequence of the last character of the first found LCS
+  // Position in first sequence of the last character of the first found LCS.
   std::size_t lcsEndPosition1;
 
-  // position in second sequence of the last character of the first found LCS
+  // Position in second sequence of the last character of the first found LCS.
   std::size_t lcsEndPosition2;
+
+  // LCS distance (edit distance when only insertion and deletion is allowed).
+  std::size_t lcsDistance;
 };
 
 std::ostream &operator<<(std::ostream &os, const LCSLengthResult &result);
 bool operator==(const LCSLengthResult &result1, const LCSLengthResult &result2);
 
 namespace internal {
-// Returns table[i][j] if i and j are within bounds, otherwise returns 0
+// Returns table[i][j] if i and j are within bounds, otherwise returns 0.
 std::size_t lookup(const std::vector<std::vector<std::size_t>> &table,
                    std::size_t i, std::size_t j);
 
-// Returns array[i] if i is within bounds, otherwise returns 0
+// Returns array[i] if i is within bounds, otherwise returns 0.
 std::size_t lookup(const std::vector<std::size_t> &array, std::size_t i);
+
+// Calculate LCS distance for a pair of strings with given sizes and LCS length.
+std::size_t lcsDistance(std::size_t size1, std::size_t size2,
+                        std::size_t lcsLength);
 }  // namespace internal
 
 // Returns the length of the LCS of sequence1[startIndex1..startIndex1+size1]
@@ -47,16 +54,16 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
   assert(startIndex2 + size2 <= sequence2.size());
 
   if (size1 == 0 || size2 == 0) {
-    return {0, 0, 0};
+    return {0, 0, 0, internal::lcsDistance(size1, size2, 0)};
   }
 
   // table[m][n] will store the length of the LCS of
   // sequence1[startIndex1..startIndex1+m+1] and
-  // sequence2[startIndex2..startIndex2+n+1]
+  // sequence2[startIndex2..startIndex2+n+1].
   std::vector<std::vector<std::size_t>> table(
       size1, std::vector<std::size_t>(size2, 0));
 
-  LCSLengthResult result = {0, 0, 0};
+  LCSLengthResult result = {0, 0, 0, 0};
 
   for (std::size_t i = 0; i < size1; ++i) {
     for (std::size_t j = 0; j < size2; ++j) {
@@ -85,6 +92,7 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
   }
 #endif
 
+  result.lcsDistance = internal::lcsDistance(size1, size2, result.lcsLength);
   return result;
 }
 
@@ -115,15 +123,15 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
   assert(size2 <= size1);
 
   if (size1 == 0 || size2 == 0) {
-    return {0, 0, 0};
+    return {0, 0, 0, internal::lcsDistance(size1, size2, 0)};
   }
 
   // array[n] will store the length of the LCS of
   // sequence1[startIndex1..startIndex1+size1] and
-  // sequence2[startIndex2..startIndex2+n+1]
+  // sequence2[startIndex2..startIndex2+n+1].
   std::vector<std::size_t> array(size2, 0);
 
-  LCSLengthResult result = {0, 0, 0};
+  LCSLengthResult result = {0, 0, 0, 0};
 
   for (std::size_t i = 0; i < size1; ++i) {
     std::size_t jMinus1thValueBeforeUpdate = 0;
@@ -159,6 +167,7 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
   std::cerr << std::endl;
 #endif
 
+  result.lcsDistance = internal::lcsDistance(size1, size2, result.lcsLength);
   return result;
 }
 
@@ -183,7 +192,7 @@ LCSLengthResult lcsLength3_(
   assert(startIndex2 + size2 <= sequence2.size());
 
   if (size1 == 0 || size2 == 0) {
-    return {0, 0, 0};
+    return {0, 0, 0, internal::lcsDistance(size1, size2, 0)};
   }
 
   std::size_t prefixLength = 0;
@@ -198,7 +207,8 @@ LCSLengthResult lcsLength3_(
   std::size_t smallerSize = std::min(size1, size2);
   if (prefixLength == smallerSize) {
     return {prefixLength, startIndex1 + prefixLength - 1,
-            startIndex2 + prefixLength - 1};
+            startIndex2 + prefixLength - 1,
+            internal::lcsDistance(size1, size2, prefixLength)};
   }
 
   std::size_t remainingLength = smallerSize - prefixLength;
@@ -227,6 +237,7 @@ LCSLengthResult lcsLength3_(
     result.lcsEndPosition2 = startIndex2 + size2 - 1;
   }
 
+  result.lcsDistance = internal::lcsDistance(size1, size2, result.lcsLength);
   return result;
 }
 
@@ -239,6 +250,9 @@ LCSLengthResult lcsLength3(
   return lcsLength3_(sequence1, 0, sequence1.size(), sequence2, 0,
                      sequence2.size(), lcsLength);
 }
+
+// Calculate max LCS distance for a pair of strings with given sizes.
+std::size_t maxLCSDistance(std::size_t size1, std::size_t size2);
 }  // namespace tlo
 
 #endif  // TLOFS_LCS_HPP

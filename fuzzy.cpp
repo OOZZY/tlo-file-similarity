@@ -205,9 +205,10 @@ bool hashesAreComparable(const FuzzyHash &hash1, const FuzzyHash &hash2) {
 namespace {
 double calculateSimilarity(const std::string &string1,
                            const std::string &string2) {
-  auto lcsLength = lcsLength3(string1, string2).lcsLength;
-  auto largerSize = std::max(string1.size(), string2.size());
-  return static_cast<double>(lcsLength) / largerSize * 100;
+  auto lcsDistance = lcsLength3(string1, string2).lcsDistance;
+  auto maxLCSDistance = ::tlo::maxLCSDistance(string1.size(), string2.size());
+  return static_cast<double>(maxLCSDistance - lcsDistance) / maxLCSDistance *
+         100.0;
 }
 }  // namespace
 
