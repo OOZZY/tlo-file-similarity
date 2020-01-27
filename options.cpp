@@ -66,15 +66,25 @@ void CommandLineArguments::printValidOptions(std::ostream &ostream) const {
   if (!validOptions_.empty()) {
     ostream << "Valid options:" << std::endl;
 
+    bool first = true;
+
     for (const auto &option : validOptions_) {
-      ostream << option.first;
+      if (!first) {
+        ostream << std::endl;
+      }
+
+      ostream << "  " << option.first;
 
       if (option.second.valueRequired) {
         ostream << "=value";
       }
 
       ostream << std::endl;
-      ostream << "  " << option.second.description << std::endl;
+      ostream << "    " << option.second.description << std::endl;
+
+      if (first) {
+        first = false;
+      }
     }
   }
 }
