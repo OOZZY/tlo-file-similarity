@@ -47,7 +47,9 @@ std::vector<tlo::FuzzyHash> readHashes(
 }
 
 void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
-                   int similarityThreshold) {
+                   int similarityThreshold, bool printStatus) {
+  std::size_t numHashesDone = 0;
+
   for (std::size_t i = 0; i < hashes.size(); ++i) {
     for (std::size_t j = i + 1; j < hashes.size(); ++j) {
       if (tlo::hashesAreComparable(hashes[i], hashes[j])) {
@@ -60,6 +62,20 @@ void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
         }
       }
     }
+
+    if (printStatus) {
+      numHashesDone++;
+
+      std::cerr << "Done with " << numHashesDone;
+
+      if (numHashesDone == 1) {
+        std::cerr << " hash.";
+      } else {
+        std::cerr << " hashes.";
+      }
+
+      std::cerr << std::endl;
+    }
   }
 }
 
@@ -67,14 +83,18 @@ struct SharedState {
   std::mutex indexMutex;
   std::size_t index = 0;
 
-  std::mutex coutMutex;
+  std::mutex outputMutex;
+  std::size_t numHashesDone = 0;
 
   const std::vector<tlo::FuzzyHash> &hashes;
   const int similarityThreshold;
+  const bool printStatus;
 
   SharedState(const std::vector<tlo::FuzzyHash> &hashes_,
-              int similarityThreshold_)
-      : hashes(hashes_), similarityThreshold(similarityThreshold_) {}
+              int similarityThreshold_, bool printStatus_)
+      : hashes(hashes_),
+        similarityThreshold(similarityThreshold_),
+        printStatus(printStatus_) {}
 };
 
 void compareHashAtIndexWithAllSubsequentHashes(SharedState &state) {
@@ -95,25 +115,42 @@ void compareHashAtIndexWithAllSubsequentHashes(SharedState &state) {
             compareHashes(state.hashes[i], state.hashes[j]);
 
         if (similarityScore >= state.similarityThreshold) {
-          const std::lock_guard<std::mutex> coutLockGuard(state.coutMutex);
+          const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
           std::cout << '"' << state.hashes[i].path << "\" and \""
                     << state.hashes[j].path << "\" are about "
                     << similarityScore << "% similar." << std::endl;
         }
       }
     }
+
+    if (state.printStatus) {
+      const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
+
+      state.numHashesDone++;
+
+      std::cerr << "Done with " << state.numHashesDone;
+
+      if (state.numHashesDone == 1) {
+        std::cerr << " hash.";
+      } else {
+        std::cerr << " hashes.";
+      }
+
+      std::cerr << std::endl;
+    }
   }
 }
 
 // numThreads includes main thread.
 void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
-                   int similarityThreshold, std::size_t numThreads) {
+                   int similarityThreshold, std::size_t numThreads,
+                   bool printStatus) {
   if (numThreads <= 1) {
-    compareHashes(hashes, similarityThreshold);
+    compareHashes(hashes, similarityThreshold, printStatus);
     return;
   }
 
-  SharedState state(hashes, similarityThreshold);
+  SharedState state(hashes, similarityThreshold, printStatus);
   std::vector<std::thread> threads(numThreads - 1);
 
   for (auto &thread : threads) {
@@ -145,7 +182,10 @@ const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
           std::to_string(DEFAULT_SIMILARITY_THRESHOLD) + ")."}},
     {"--num-threads",
      {true, "Number of threads the program will use (default: " +
-                std::to_string(DEFAULT_NUM_THREADS) + ")."}}};
+                std::to_string(DEFAULT_NUM_THREADS) + ")."}},
+    {"--print-status",
+     {false,
+      "Allow program to print status updates to stderr (default: off)."}}};
 
 int main(int argc, char **argv) {
   try {
@@ -159,6 +199,7 @@ int main(int argc, char **argv) {
 
     int similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD;
     std::size_t numThreads = DEFAULT_NUM_THREADS;
+    bool printStatus = false;
 
     if (arguments.specifiedOption("--similarity-threshold")) {
       similarityThreshold = arguments.getOptionValueAsInt(
@@ -171,11 +212,21 @@ int main(int argc, char **argv) {
           "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
 
-    std::cout << "Reading hashes." << std::endl;
+    if (arguments.specifiedOption("--print-status")) {
+      printStatus = true;
+    }
+
+    if (printStatus) {
+      std::cerr << "Reading hashes." << std::endl;
+    }
+
     std::vector<tlo::FuzzyHash> hashes = readHashes(arguments.arguments());
 
-    std::cout << "Comparing hashes." << std::endl;
-    compareHashes(hashes, similarityThreshold, numThreads);
+    if (printStatus) {
+      std::cerr << "Comparing hashes." << std::endl;
+    }
+
+    compareHashes(hashes, similarityThreshold, numThreads, printStatus);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
     return 1;
