@@ -25,8 +25,19 @@ struct FuzzyHash {
 
 std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash);
 
-// Based on spamsum and ssdeep. Throws std::runtime_error on error.
-FuzzyHash fuzzyHash(const std::filesystem::path &path);
+class FuzzyHashEventHandler {
+ public:
+  virtual void onBlockHash() = 0;
+  virtual void onFileHash(const FuzzyHash &hash) = 0;
+};
+
+// Based on spamsum and ssdeep. Throws std::runtime_error on error. If handler
+// is not nullptr, will call handler->onBlockHash() every time a file block has
+// finished hashing with whatever the current blockSize is (not 2 * blockSize).
+// Also, will call handler->onFileHash() every time a file has finished
+// hashing.
+FuzzyHash fuzzyHash(const std::filesystem::path &path,
+                    FuzzyHashEventHandler *handler = nullptr);
 
 // Given string should have the format
 // <blockSize>:<part1>:<part2>,<path>. Throws std::runtime_error on

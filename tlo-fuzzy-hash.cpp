@@ -14,16 +14,54 @@
 namespace fs = std::filesystem;
 
 namespace {
-void hashFiles(const std::vector<std::string> &arguments) {
+class StatusUpdater : public tlo::FuzzyHashEventHandler {
+ public:
+  const bool printStatus;
+  std::size_t numFilesHashed = 0;
+
+  StatusUpdater(bool printStatus_) : printStatus(printStatus_) {}
+
+  void onBlockHash() override {
+    if (printStatus) {
+      std::cerr << '.';
+    }
+  }
+
+  void onFileHash(const tlo::FuzzyHash &hash) override {
+    if (printStatus) {
+      std::cerr << std::endl;
+    }
+
+    std::cout << hash << std::endl;
+
+    if (printStatus) {
+      numFilesHashed++;
+
+      std::cerr << "Hashed " << numFilesHashed;
+
+      if (numFilesHashed == 1) {
+        std::cerr << " file.";
+      } else {
+        std::cerr << " files.";
+      }
+
+      std::cerr << std::endl;
+    }
+  }
+};
+
+void hashFiles(const std::vector<std::string> &arguments, bool printStatus) {
+  StatusUpdater updater(printStatus);
+
   for (std::size_t i = 0; i < arguments.size(); ++i) {
     fs::path path = arguments[i];
 
     if (fs::is_regular_file(path)) {
-      std::cout << tlo::fuzzyHash(path) << std::endl;
+      tlo::fuzzyHash(path, &updater);
     } else if (fs::is_directory(path)) {
       for (auto &entry : fs::recursive_directory_iterator(path)) {
         if (fs::is_regular_file(entry.path())) {
-          std::cout << tlo::fuzzyHash(entry.path()) << std::endl;
+          tlo::fuzzyHash(entry.path(), &updater);
         }
       }
     } else {
@@ -39,10 +77,71 @@ struct SharedState {
   std::queue<fs::path> files;
   std::condition_variable filesQueued;
 
-  std::mutex coutMutex;
+  std::mutex outputMutex;
+  std::size_t numFilesHashed = 0;
+  std::thread::id previousOutputtingThread;
+  bool previousOutputEndsWithNewline = true;
+
+  const bool printStatus;
+
+  SharedState(bool printStatus_) : printStatus(printStatus_) {}
 };
 
-void hashFilesInQueue(SharedState &state) {
+class SynchronizingStatusUpdater : public tlo::FuzzyHashEventHandler {
+ public:
+  SharedState &state;
+
+  SynchronizingStatusUpdater(SharedState &state_) : state(state_) {}
+
+  void onBlockHash() override {
+    if (state.printStatus) {
+      const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
+
+      if (state.previousOutputtingThread == std::this_thread::get_id() &&
+          !state.previousOutputEndsWithNewline) {
+        std::cerr << '.';
+      } else {
+        if (!state.previousOutputEndsWithNewline) {
+          std::cerr << ' ';
+        }
+
+        std::cerr << 'T' << std::this_thread::get_id() << '.';
+      }
+
+      state.previousOutputtingThread = std::this_thread::get_id();
+      state.previousOutputEndsWithNewline = false;
+    }
+  }
+
+  void onFileHash(const tlo::FuzzyHash &hash) override {
+    const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
+
+    if (!state.previousOutputEndsWithNewline) {
+      std::cerr << std::endl;
+    }
+
+    std::cout << hash << std::endl;
+
+    if (state.printStatus) {
+      state.numFilesHashed++;
+
+      std::cerr << "Hashed " << state.numFilesHashed;
+
+      if (state.numFilesHashed == 1) {
+        std::cerr << " file.";
+      } else {
+        std::cerr << " files.";
+      }
+
+      std::cerr << std::endl;
+    }
+
+    state.previousOutputtingThread = std::this_thread::get_id();
+    state.previousOutputEndsWithNewline = true;
+  }
+};
+
+void hashFilesInQueue(SharedState &state, SynchronizingStatusUpdater &updater) {
   for (;;) {
     std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
 
@@ -58,26 +157,24 @@ void hashFilesInQueue(SharedState &state) {
     state.files.pop();
     queueUniqueLock.unlock();
 
-    tlo::FuzzyHash hash = tlo::fuzzyHash(file);
-
-    const std::lock_guard<std::mutex> coutLockGuard(state.coutMutex);
-    std::cout << hash << std::endl;
+    tlo::fuzzyHash(file, &updater);
   }
 }
 
 // numThreads includes main thread.
 void hashFiles(const std::vector<std::string> &arguments,
-               std::size_t numThreads) {
+               std::size_t numThreads, bool printStatus) {
   if (numThreads <= 1) {
-    hashFiles(arguments);
+    hashFiles(arguments, printStatus);
     return;
   }
 
-  SharedState state;
+  SharedState state(printStatus);
+  SynchronizingStatusUpdater updater(state);
   std::vector<std::thread> threads(numThreads - 1);
 
   for (auto &thread : threads) {
-    thread = std::thread(hashFilesInQueue, std::ref(state));
+    thread = std::thread(hashFilesInQueue, std::ref(state), std::ref(updater));
   }
 
   for (std::size_t i = 0; i < arguments.size(); ++i) {
@@ -96,8 +193,17 @@ void hashFiles(const std::vector<std::string> &arguments,
         }
       }
     } else {
+      const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
+
+      if (!state.previousOutputEndsWithNewline) {
+        std::cerr << std::endl;
+      }
+
       std::cerr << "Error: \"" << path.generic_string()
                 << "\" is not a file or directory." << std::endl;
+
+      state.previousOutputtingThread = std::this_thread::get_id();
+      state.previousOutputEndsWithNewline = true;
     }
   }
 
@@ -105,7 +211,7 @@ void hashFiles(const std::vector<std::string> &arguments,
   state.allFilesQueued = true;
   queueUniqueLock.unlock();
 
-  hashFilesInQueue(state);
+  hashFilesInQueue(state, updater);
 
   for (auto &thread : threads) {
     thread.join();
@@ -120,7 +226,10 @@ constexpr std::size_t MAX_NUM_THREADS = 256;
 const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
     {"--num-threads",
      {true, "Number of threads the program will use (default: " +
-                std::to_string(DEFAULT_NUM_THREADS) + ")."}}};
+                std::to_string(DEFAULT_NUM_THREADS) + ")."}},
+    {"--print-status",
+     {false,
+      "Allow program to print status updates to stderr (default: off)."}}};
 
 int main(int argc, char **argv) {
   try {
@@ -133,13 +242,22 @@ int main(int argc, char **argv) {
     }
 
     std::size_t numThreads = DEFAULT_NUM_THREADS;
+    bool printStatus = false;
 
     if (arguments.specifiedOption("--num-threads")) {
       numThreads = arguments.getOptionValueAsULong(
           "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
 
-    hashFiles(arguments.arguments(), numThreads);
+    if (arguments.specifiedOption("--print-status")) {
+      printStatus = true;
+    }
+
+    if (printStatus) {
+      std::cerr << "Hashing files." << std::endl;
+    }
+
+    hashFiles(arguments.arguments(), numThreads, printStatus);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
     return 1;

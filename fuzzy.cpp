@@ -83,7 +83,8 @@ constexpr std::string_view BASE64_ALPHABET =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
-                                              std::size_t blockSize) {
+                                              std::size_t blockSize,
+                                              FuzzyHashEventHandler *handler) {
   std::ifstream ifstream(file, std::ifstream::in | std::ifstream::binary);
 
   if (!ifstream.is_open()) {
@@ -112,6 +113,10 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
         part1 +=
             BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
         fnv1Hasher1 = FNV1Hasher();
+
+        if (handler) {
+          handler->onBlockHash();
+        }
       }
 
       if (rollingHasher.getHash() % (blockSize * 2) == blockSize * 2 - 1) {
@@ -125,6 +130,10 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
   if (fnv1Hasher1.bytesWereAdded()) {
     part1 += BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
     fnv1Hasher1 = FNV1Hasher();
+
+    if (handler) {
+      handler->onBlockHash();
+    }
   }
 
   if (fnv1Hasher2.bytesWereAdded()) {
@@ -135,7 +144,7 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
   return std::pair(part1, part2);
 }
 
-FuzzyHash fuzzyHash(const fs::path &path) {
+FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
   if (!fs::is_regular_file(path)) {
     throw std::runtime_error("Error: \"" + path.generic_string() +
                              "\" is not a file.");
@@ -159,7 +168,7 @@ FuzzyHash fuzzyHash(const fs::path &path) {
   std::string part2;
 
   for (;;) {
-    std::tie(part1, part2) = fuzzyHash(path, blockSize);
+    std::tie(part1, part2) = fuzzyHash(path, blockSize, handler);
 
     if (part1.size() < SPAMSUM_LENGTH / 2 && blockSize / 2 >= MIN_BLOCK_SIZE) {
       blockSize /= 2;
@@ -168,7 +177,13 @@ FuzzyHash fuzzyHash(const fs::path &path) {
     }
   }
 
-  return {blockSize, part1, part2, path.generic_string()};
+  FuzzyHash hash{blockSize, part1, part2, path.generic_string()};
+
+  if (handler) {
+    handler->onFileHash(hash);
+  }
+
+  return hash;
 }
 
 FuzzyHash parseHash(const std::string &hash) {
