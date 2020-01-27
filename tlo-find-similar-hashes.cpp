@@ -49,6 +49,7 @@ std::vector<tlo::FuzzyHash> readHashes(
 void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
                    int similarityThreshold, bool printStatus) {
   std::size_t numHashesDone = 0;
+  std::size_t numSimilarPairs = 0;
 
   for (std::size_t i = 0; i < hashes.size(); ++i) {
     for (std::size_t j = i + 1; j < hashes.size(); ++j) {
@@ -56,6 +57,8 @@ void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
         double similarityScore = compareHashes(hashes[i], hashes[j]);
 
         if (similarityScore >= similarityThreshold) {
+          numSimilarPairs++;
+
           std::cout << '"' << hashes[i].path << "\" and \"" << hashes[j].path
                     << "\" are about " << similarityScore << "% similar."
                     << std::endl;
@@ -74,6 +77,14 @@ void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
         std::cerr << " hashes.";
       }
 
+      std::cerr << " Found " << numSimilarPairs << " similar ";
+
+      if (numSimilarPairs == 1) {
+        std::cerr << "pair.";
+      } else {
+        std::cerr << "pairs.";
+      }
+
       std::cerr << std::endl;
     }
   }
@@ -85,6 +96,7 @@ struct SharedState {
 
   std::mutex outputMutex;
   std::size_t numHashesDone = 0;
+  std::size_t numSimilarPairs = 0;
 
   const std::vector<tlo::FuzzyHash> &hashes;
   const int similarityThreshold;
@@ -116,6 +128,9 @@ void compareHashAtIndexWithAllSubsequentHashes(SharedState &state) {
 
         if (similarityScore >= state.similarityThreshold) {
           const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
+
+          state.numSimilarPairs++;
+
           std::cout << '"' << state.hashes[i].path << "\" and \""
                     << state.hashes[j].path << "\" are about "
                     << similarityScore << "% similar." << std::endl;
@@ -134,6 +149,14 @@ void compareHashAtIndexWithAllSubsequentHashes(SharedState &state) {
         std::cerr << " hash.";
       } else {
         std::cerr << " hashes.";
+      }
+
+      std::cerr << " Found " << state.numSimilarPairs << " similar ";
+
+      if (state.numSimilarPairs == 1) {
+        std::cerr << "pair.";
+      } else {
+        std::cerr << "pairs.";
       }
 
       std::cerr << std::endl;
