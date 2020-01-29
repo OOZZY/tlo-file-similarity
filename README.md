@@ -96,6 +96,6 @@ $ ./tlo-find-similar-hashes hashes.txt
     * Off by default
 * TLOFS\_LINK\_FS
     * Link to filesystem library of older GNU and Clang (GNU/Clang only)
-    * Prior to LLVM 9, using <filesystem> required linker option -lc++fs
-    * Prior to GCC 9, using <filesystem> required linker option -lstdc++fs
+    * Prior to LLVM 9, using `std::filesystem` required linker option `-lc++fs`
+    * Prior to GCC 9, using `std::filesystem` required linker option `-lstdc++fs`
     * Off by default

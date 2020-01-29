@@ -42,10 +42,10 @@ option(TLOFS_LINK_FS
   "Link to filesystem library of older GNU and Clang (GNU/Clang only)." OFF)
 if (TLOFS_LINK_FS)
   if (TLOFS_USE_LIBCPP)
-    # Prior to LLVM 9, using <filesystem> required linker option -lc++fs.
+    # Prior to LLVM 9, using std::filesystem required linker option -lc++fs.
     set(global_link_libraries ${global_link_libraries} c++fs)
   else()
-    # Prior to GCC 9, using <filesystem> required linker option -lstdc++fs.
+    # Prior to GCC 9, using std::filesystem required linker option -lstdc++fs.
     set(global_link_libraries ${global_link_libraries} stdc++fs)
   endif()
 endif()
