@@ -16,12 +16,6 @@ struct LCSLengthResult {
   // Length of the LCS.
   std::size_t lcsLength;
 
-  // Position in first sequence of the last character of the first found LCS.
-  std::size_t lcsEndPosition1;
-
-  // Position in second sequence of the last character of the first found LCS.
-  std::size_t lcsEndPosition2;
-
   // LCS distance (edit distance when only insertion and deletion is allowed).
   std::size_t lcsDistance;
 };
@@ -54,7 +48,7 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
   assert(startIndex2 + size2 <= sequence2.size());
 
   if (size1 == 0 || size2 == 0) {
-    return {0, 0, 0, internal::lcsDistance(size1, size2, 0)};
+    return {0, internal::lcsDistance(size1, size2, 0)};
   }
 
   // table[m][n] will store the length of the LCS of
@@ -63,7 +57,7 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
   std::vector<std::vector<std::size_t>> table(
       size1, std::vector<std::size_t>(size2, 0));
 
-  LCSLengthResult result = {0, 0, 0, 0};
+  LCSLengthResult result = {0, 0};
 
   for (std::size_t i = 0; i < size1; ++i) {
     for (std::size_t j = 0; j < size2; ++j) {
@@ -76,8 +70,6 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
 
       if (result.lcsLength < table[i][j]) {
         result.lcsLength = table[i][j];
-        result.lcsEndPosition1 = startIndex1 + i;
-        result.lcsEndPosition2 = startIndex2 + j;
       }
     }
   }
@@ -112,10 +104,8 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
                             const CharSequence &sequence2,
                             std::size_t startIndex2, std::size_t size2) {
   if (size1 < size2) {
-    LCSLengthResult result = lcsLength2_(sequence2, startIndex2, size2,
-                                         sequence1, startIndex1, size1);
-    std::swap(result.lcsEndPosition1, result.lcsEndPosition2);
-    return result;
+    return lcsLength2_(sequence2, startIndex2, size2, sequence1, startIndex1,
+                       size1);
   }
 
   assert(startIndex1 + size1 <= sequence1.size());
@@ -123,7 +113,7 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
   assert(size2 <= size1);
 
   if (size1 == 0 || size2 == 0) {
-    return {0, 0, 0, internal::lcsDistance(size1, size2, 0)};
+    return {0, internal::lcsDistance(size1, size2, 0)};
   }
 
   // array[n] will store the length of the LCS of
@@ -131,7 +121,7 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
   // sequence2[startIndex2..startIndex2+n+1].
   std::vector<std::size_t> array(size2, 0);
 
-  LCSLengthResult result = {0, 0, 0, 0};
+  LCSLengthResult result = {0, 0};
 
   for (std::size_t i = 0; i < size1; ++i) {
     std::size_t jMinus1thValueBeforeUpdate = 0;
@@ -153,8 +143,6 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
 
       if (result.lcsLength < array[j]) {
         result.lcsLength = array[j];
-        result.lcsEndPosition1 = startIndex1 + i;
-        result.lcsEndPosition2 = startIndex2 + j;
       }
     }
   }
@@ -192,7 +180,7 @@ LCSLengthResult lcsLength3_(
   assert(startIndex2 + size2 <= sequence2.size());
 
   if (size1 == 0 || size2 == 0) {
-    return {0, 0, 0, internal::lcsDistance(size1, size2, 0)};
+    return {0, internal::lcsDistance(size1, size2, 0)};
   }
 
   std::size_t prefixLength = 0;
@@ -206,9 +194,7 @@ LCSLengthResult lcsLength3_(
 
   std::size_t smallerSize = std::min(size1, size2);
   if (prefixLength == smallerSize) {
-    return {prefixLength, startIndex1 + prefixLength - 1,
-            startIndex2 + prefixLength - 1,
-            internal::lcsDistance(size1, size2, prefixLength)};
+    return {prefixLength, internal::lcsDistance(size1, size2, prefixLength)};
   }
 
   std::size_t remainingLength = smallerSize - prefixLength;
@@ -230,14 +216,10 @@ LCSLengthResult lcsLength3_(
                                      size1 - prefixLength - suffixLength,
                                      sequence2, startIndex2 + prefixLength,
                                      size2 - prefixLength - suffixLength);
+
   result.lcsLength += prefixLength + suffixLength;
-
-  if (suffixLength > 0) {
-    result.lcsEndPosition1 = startIndex1 + size1 - 1;
-    result.lcsEndPosition2 = startIndex2 + size2 - 1;
-  }
-
   result.lcsDistance = internal::lcsDistance(size1, size2, result.lcsLength);
+
   return result;
 }
 

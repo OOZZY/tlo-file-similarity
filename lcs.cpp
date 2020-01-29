@@ -2,15 +2,12 @@
 
 namespace tlo {
 std::ostream &operator<<(std::ostream &os, const LCSLengthResult &result) {
-  return os << '{' << result.lcsLength << ", " << result.lcsEndPosition1 << ", "
-            << result.lcsEndPosition2 << ", " << result.lcsDistance << '}';
+  return os << '{' << result.lcsLength << ", " << result.lcsDistance << '}';
 }
 
 bool operator==(const LCSLengthResult &result1,
                 const LCSLengthResult &result2) {
   return result1.lcsLength == result2.lcsLength &&
-         result1.lcsEndPosition1 == result2.lcsEndPosition1 &&
-         result1.lcsEndPosition2 == result2.lcsEndPosition2 &&
          result1.lcsDistance == result2.lcsDistance;
 }
 
