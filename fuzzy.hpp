@@ -29,6 +29,7 @@ class FuzzyHashEventHandler {
  public:
   virtual void onBlockHash() = 0;
   virtual void onFileHash(const FuzzyHash &hash) = 0;
+  virtual ~FuzzyHashEventHandler() = 0;
 };
 
 // Based on spamsum and ssdeep. Throws std::runtime_error on error. If handler

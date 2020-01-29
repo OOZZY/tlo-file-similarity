@@ -21,6 +21,8 @@ std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash) {
             << hash.path;
 }
 
+FuzzyHashEventHandler::~FuzzyHashEventHandler() {}
+
 /*
  * Algorithms from:
  * https://www.dfrws.org/sites/default/files/session-files/paper-identifying_almost_identical_files_using_context_triggered_piecewise_hashing.pdf
@@ -82,6 +84,7 @@ constexpr std::size_t BUFFER_SIZE = 1000000;
 constexpr std::string_view BASE64_ALPHABET =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
+namespace {
 std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
                                               std::size_t blockSize,
                                               FuzzyHashEventHandler *handler) {
@@ -143,6 +146,7 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
 
   return std::pair(part1, part2);
 }
+}  // namespace
 
 FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
   if (!fs::is_regular_file(path)) {
