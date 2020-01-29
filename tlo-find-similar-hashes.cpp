@@ -53,6 +53,60 @@ std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>> readHashes(
   return blockSizesToHashes;
 }
 
+void printStatus(std::size_t numHashesDone, std::size_t numSimilarPairs) {
+  std::cerr << "Done with " << numHashesDone;
+
+  if (numHashesDone == 1) {
+    std::cerr << " hash.";
+  } else {
+    std::cerr << " hashes.";
+  }
+
+  std::cerr << " Found " << numSimilarPairs << " similar ";
+
+  if (numSimilarPairs == 1) {
+    std::cerr << "pair.";
+  } else {
+    std::cerr << "pairs.";
+  }
+
+  std::cerr << std::endl;
+}
+
+void printSimilarPair(const tlo::FuzzyHash &hash1, const tlo::FuzzyHash &hash2,
+                      double similarityScore) {
+  std::cout << '"' << hash1.path << "\" and \"" << hash2.path << "\" are about "
+            << similarityScore << "% similar." << std::endl;
+}
+
+// Compare hash with hashes[startIndex .. end]. Returns number of similar pairs
+// found (pairs that have a similarity score above similarityThreshold).
+std::size_t compareHashWithOthers(const tlo::FuzzyHash &hash,
+                                  const std::vector<tlo::FuzzyHash> &hashes,
+                                  std::size_t startIndex,
+                                  int similarityThreshold,
+                                  std::mutex *outputMutex = nullptr) {
+  std::size_t numSimilarPairs = 0;
+
+  for (std::size_t j = startIndex; j < hashes.size(); ++j) {
+    if (tlo::hashesAreComparable(hash, hashes[j])) {
+      double similarityScore = compareHashes(hash, hashes[j]);
+
+      if (similarityScore >= similarityThreshold) {
+        numSimilarPairs++;
+
+        auto outputUniqueLock = outputMutex
+                                    ? std::unique_lock<std::mutex>(*outputMutex)
+                                    : std::unique_lock<std::mutex>();
+
+        printSimilarPair(hash, hashes[j], similarityScore);
+      }
+    }
+  }
+
+  return numSimilarPairs;
+}
+
 void compareHashes(
     const std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
         &blockSizesToHashes,
@@ -79,56 +133,17 @@ void compareHashes(
     }
 
     for (std::size_t i = 0; i < hashes.size(); ++i) {
-      for (std::size_t j = i + 1; j < hashes.size(); ++j) {
-        if (tlo::hashesAreComparable(hashes[i], hashes[j])) {
-          double similarityScore = compareHashes(hashes[i], hashes[j]);
-
-          if (similarityScore >= similarityThreshold) {
-            numSimilarPairs++;
-
-            std::cout << '"' << hashes[i].path << "\" and \"" << hashes[j].path
-                      << "\" are about " << similarityScore << "% similar."
-                      << std::endl;
-          }
-        }
-      }
+      numSimilarPairs +=
+          compareHashWithOthers(hashes[i], hashes, i + 1, similarityThreshold);
 
       if (moreHashes) {
-        for (std::size_t j = 0; j < moreHashes->size(); ++j) {
-          if (tlo::hashesAreComparable(hashes[i], (*moreHashes)[j])) {
-            double similarityScore = compareHashes(hashes[i], (*moreHashes)[j]);
-
-            if (similarityScore >= similarityThreshold) {
-              numSimilarPairs++;
-
-              std::cout << '"' << hashes[i].path << "\" and \""
-                        << (*moreHashes)[j].path << "\" are about "
-                        << similarityScore << "% similar." << std::endl;
-            }
-          }
-        }
+        numSimilarPairs += compareHashWithOthers(hashes[i], *moreHashes, 0,
+                                                 similarityThreshold);
       }
 
       if (printStatus) {
         numHashesDone++;
-
-        std::cerr << "Done with " << numHashesDone;
-
-        if (numHashesDone == 1) {
-          std::cerr << " hash.";
-        } else {
-          std::cerr << " hashes.";
-        }
-
-        std::cerr << " Found " << numSimilarPairs << " similar ";
-
-        if (numSimilarPairs == 1) {
-          std::cerr << "pair.";
-        } else {
-          std::cerr << "pairs.";
-        }
-
-        std::cerr << std::endl;
+        ::printStatus(numHashesDone, numSimilarPairs);
       }
     }
   }
@@ -188,63 +203,24 @@ void compareHashAtIndexWithComparableHashes(SharedState &state) {
       moreHashes = &iterator->second;
     }
 
-    for (std::size_t j = i + 1; j < hashes.size(); ++j) {
-      if (tlo::hashesAreComparable(hashes[i], hashes[j])) {
-        double similarityScore = compareHashes(hashes[i], hashes[j]);
+    std::size_t numSimilarPairs = 0;
 
-        if (similarityScore >= state.similarityThreshold) {
-          const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
-
-          state.numSimilarPairs++;
-
-          std::cout << '"' << hashes[i].path << "\" and \"" << hashes[j].path
-                    << "\" are about " << similarityScore << "% similar."
-                    << std::endl;
-        }
-      }
-    }
+    numSimilarPairs +=
+        compareHashWithOthers(hashes[i], hashes, i + 1,
+                              state.similarityThreshold, &state.outputMutex);
 
     if (moreHashes) {
-      for (std::size_t j = 0; j < moreHashes->size(); ++j) {
-        if (tlo::hashesAreComparable(hashes[i], (*moreHashes)[j])) {
-          double similarityScore = compareHashes(hashes[i], (*moreHashes)[j]);
-
-          if (similarityScore >= state.similarityThreshold) {
-            const std::lock_guard<std::mutex> outputLockGuard(
-                state.outputMutex);
-
-            state.numSimilarPairs++;
-
-            std::cout << '"' << hashes[i].path << "\" and \""
-                      << (*moreHashes)[j].path << "\" are about "
-                      << similarityScore << "% similar." << std::endl;
-          }
-        }
-      }
+      numSimilarPairs +=
+          compareHashWithOthers(hashes[i], *moreHashes, 0,
+                                state.similarityThreshold, &state.outputMutex);
     }
 
     if (state.printStatus) {
       const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
 
+      state.numSimilarPairs += numSimilarPairs;
       state.numHashesDone++;
-
-      std::cerr << "Done with " << state.numHashesDone;
-
-      if (state.numHashesDone == 1) {
-        std::cerr << " hash.";
-      } else {
-        std::cerr << " hashes.";
-      }
-
-      std::cerr << " Found " << state.numSimilarPairs << " similar ";
-
-      if (state.numSimilarPairs == 1) {
-        std::cerr << "pair.";
-      } else {
-        std::cerr << "pairs.";
-      }
-
-      std::cerr << std::endl;
+      printStatus(state.numHashesDone, state.numSimilarPairs);
     }
   }
 }

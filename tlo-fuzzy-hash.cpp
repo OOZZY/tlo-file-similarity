@@ -14,6 +14,18 @@
 namespace fs = std::filesystem;
 
 namespace {
+void printStatus(std::size_t numFilesHashed) {
+  std::cerr << "Hashed " << numFilesHashed;
+
+  if (numFilesHashed == 1) {
+    std::cerr << " file.";
+  } else {
+    std::cerr << " files.";
+  }
+
+  std::cerr << std::endl;
+}
+
 class StatusUpdater : public tlo::FuzzyHashEventHandler {
  public:
   const bool printStatus;
@@ -36,16 +48,7 @@ class StatusUpdater : public tlo::FuzzyHashEventHandler {
 
     if (printStatus) {
       numFilesHashed++;
-
-      std::cerr << "Hashed " << numFilesHashed;
-
-      if (numFilesHashed == 1) {
-        std::cerr << " file.";
-      } else {
-        std::cerr << " files.";
-      }
-
-      std::cerr << std::endl;
+      ::printStatus(numFilesHashed);
     }
   }
 };
@@ -124,16 +127,7 @@ class SynchronizingStatusUpdater : public tlo::FuzzyHashEventHandler {
 
     if (state.printStatus) {
       state.numFilesHashed++;
-
-      std::cerr << "Hashed " << state.numFilesHashed;
-
-      if (state.numFilesHashed == 1) {
-        std::cerr << " file.";
-      } else {
-        std::cerr << " files.";
-      }
-
-      std::cerr << std::endl;
+      printStatus(state.numFilesHashed);
     }
 
     state.previousOutputtingThread = std::this_thread::get_id();
@@ -155,6 +149,7 @@ void hashFilesInQueue(SharedState &state, SynchronizingStatusUpdater &updater) {
 
     fs::path file = std::move(state.files.front());
     state.files.pop();
+
     queueUniqueLock.unlock();
 
     tlo::fuzzyHash(file, &updater);
@@ -182,12 +177,14 @@ void hashFiles(const std::vector<std::string> &arguments,
 
     if (fs::is_regular_file(path)) {
       const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+
       state.files.push(std::move(path));
       state.filesQueued.notify_one();
     } else if (fs::is_directory(path)) {
       for (auto &entry : fs::recursive_directory_iterator(path)) {
         if (fs::is_regular_file(entry.path())) {
           const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+
           state.files.push(entry.path());
           state.filesQueued.notify_one();
         }
