@@ -15,7 +15,7 @@ endif()
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(global_compile_options ${global_compile_options} -Weverything
     -Wno-c++98-compat -Wno-padded -Wno-exit-time-destructors
-    -Wno-global-constructors)
+    -Wno-global-constructors -Wno-weak-vtables)
 endif()
 
 set(global_link_libraries Threads::Threads)
@@ -35,6 +35,18 @@ if (TLOFS_USE_LIBCPP)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     set(global_compile_options ${global_compile_options} -stdlib=libc++)
     set(global_link_libraries ${global_link_libraries} c++)
+  endif()
+endif()
+
+option(TLOFS_LINK_FS
+  "Link to filesystem library of older GNU and Clang (GNU/Clang only)." OFF)
+if (TLOFS_LINK_FS)
+  if (TLOFS_USE_LIBCPP)
+    # Prior to LLVM 9, using <filesystem> required linker option -lc++fs.
+    set(global_link_libraries ${global_link_libraries} c++fs)
+  else()
+    # Prior to GCC 9, using <filesystem> required linker option -lstdc++fs.
+    set(global_link_libraries ${global_link_libraries} stdc++fs)
   endif()
 endif()
 
