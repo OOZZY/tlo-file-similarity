@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <exception>
 #include <filesystem>
 #include <fstream>
@@ -5,6 +6,8 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "fuzzy.hpp"
@@ -13,23 +16,27 @@
 namespace fs = std::filesystem;
 
 namespace {
-void readHashesFromFile(std::vector<tlo::FuzzyHash> &hashes,
-                        const fs::path &file) {
+void readHashesFromFile(
+    std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
+        &blockSizesToHashes,
+    const fs::path &file) {
   std::ifstream ifstream(file, std::ifstream::in);
   std::string line;
 
   while (std::getline(ifstream, line)) {
     try {
-      hashes.push_back(tlo::parseHash(line));
+      tlo::FuzzyHash hash = tlo::parseHash(line);
+      blockSizesToHashes[hash.blockSize].push_back(std::move(hash));
     } catch (const std::exception &exception) {
       std::cerr << exception.what() << std::endl;
     }
   }
 }
 
-std::vector<tlo::FuzzyHash> readHashes(
+std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>> readHashes(
     const std::vector<std::string> &arguments) {
-  std::vector<tlo::FuzzyHash> hashes;
+  std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
+      blockSizesToHashes;
 
   for (std::size_t i = 0; i < arguments.size(); ++i) {
     fs::path path = arguments[i];
@@ -40,24 +47,155 @@ std::vector<tlo::FuzzyHash> readHashes(
       continue;
     }
 
-    readHashesFromFile(hashes, path);
+    readHashesFromFile(blockSizesToHashes, path);
   }
 
-  return hashes;
+  return blockSizesToHashes;
 }
 
-void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
-                   int similarityThreshold, bool printStatus) {
+void compareHashes(
+    const std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
+        &blockSizesToHashes,
+    int similarityThreshold, bool printStatus) {
+  std::vector<std::size_t> blockSizes;
+
+  for (const auto &pair : blockSizesToHashes) {
+    blockSizes.push_back(pair.first);
+  }
+
+  std::sort(blockSizes.begin(), blockSizes.end());
+
   std::size_t numHashesDone = 0;
   std::size_t numSimilarPairs = 0;
 
-  for (std::size_t i = 0; i < hashes.size(); ++i) {
+  for (const auto blockSize : blockSizes) {
+    const std::vector<tlo::FuzzyHash> &hashes =
+        blockSizesToHashes.at(blockSize);
+    const std::vector<tlo::FuzzyHash> *moreHashes = nullptr;
+    const auto iterator = blockSizesToHashes.find(2 * blockSize);
+
+    if (iterator != blockSizesToHashes.end()) {
+      moreHashes = &iterator->second;
+    }
+
+    for (std::size_t i = 0; i < hashes.size(); ++i) {
+      for (std::size_t j = i + 1; j < hashes.size(); ++j) {
+        if (tlo::hashesAreComparable(hashes[i], hashes[j])) {
+          double similarityScore = compareHashes(hashes[i], hashes[j]);
+
+          if (similarityScore >= similarityThreshold) {
+            numSimilarPairs++;
+
+            std::cout << '"' << hashes[i].path << "\" and \"" << hashes[j].path
+                      << "\" are about " << similarityScore << "% similar."
+                      << std::endl;
+          }
+        }
+      }
+
+      if (moreHashes) {
+        for (std::size_t j = 0; j < moreHashes->size(); ++j) {
+          if (tlo::hashesAreComparable(hashes[i], (*moreHashes)[j])) {
+            double similarityScore = compareHashes(hashes[i], (*moreHashes)[j]);
+
+            if (similarityScore >= similarityThreshold) {
+              numSimilarPairs++;
+
+              std::cout << '"' << hashes[i].path << "\" and \""
+                        << (*moreHashes)[j].path << "\" are about "
+                        << similarityScore << "% similar." << std::endl;
+            }
+          }
+        }
+      }
+
+      if (printStatus) {
+        numHashesDone++;
+
+        std::cerr << "Done with " << numHashesDone;
+
+        if (numHashesDone == 1) {
+          std::cerr << " hash.";
+        } else {
+          std::cerr << " hashes.";
+        }
+
+        std::cerr << " Found " << numSimilarPairs << " similar ";
+
+        if (numSimilarPairs == 1) {
+          std::cerr << "pair.";
+        } else {
+          std::cerr << "pairs.";
+        }
+
+        std::cerr << std::endl;
+      }
+    }
+  }
+}
+
+struct SharedState {
+  std::mutex indexMutex;
+  std::size_t blockSizeIndex = 0;
+  std::size_t hashIndex = 0;
+
+  std::mutex outputMutex;
+  std::size_t numHashesDone = 0;
+  std::size_t numSimilarPairs = 0;
+
+  const std::vector<std::size_t> blockSizes;
+  const std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
+      &blockSizesToHashes;
+  const int similarityThreshold;
+  const bool printStatus;
+
+  SharedState(const std::vector<std::size_t> &blockSizes_,
+              const std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
+                  &blockSizesToHashes_,
+              int similarityThreshold_, bool printStatus_)
+      : blockSizes(blockSizes_),
+        blockSizesToHashes(blockSizesToHashes_),
+        similarityThreshold(similarityThreshold_),
+        printStatus(printStatus_) {}
+};
+
+void compareHashAtIndexWithComparableHashes(SharedState &state) {
+  for (;;) {
+    std::unique_lock<std::mutex> indexUniqueLock(state.indexMutex);
+
+    if (state.blockSizeIndex >= state.blockSizes.size()) {
+      break;
+    }
+
+    const std::size_t blockSize = state.blockSizes[state.blockSizeIndex];
+    const std::vector<tlo::FuzzyHash> &hashes =
+        state.blockSizesToHashes.at(blockSize);
+    const std::size_t i = state.hashIndex;
+
+    state.hashIndex++;
+
+    if (state.hashIndex >= hashes.size()) {
+      state.blockSizeIndex++;
+      state.hashIndex = 0;
+    }
+
+    indexUniqueLock.unlock();
+
+    const std::vector<tlo::FuzzyHash> *moreHashes = nullptr;
+    const auto iterator = state.blockSizesToHashes.find(2 * blockSize);
+
+    if (iterator != state.blockSizesToHashes.end()) {
+      moreHashes = &iterator->second;
+    }
+
     for (std::size_t j = i + 1; j < hashes.size(); ++j) {
       if (tlo::hashesAreComparable(hashes[i], hashes[j])) {
         double similarityScore = compareHashes(hashes[i], hashes[j]);
 
-        if (similarityScore >= similarityThreshold) {
-          numSimilarPairs++;
+        if (similarityScore >= state.similarityThreshold) {
+          const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
+
+          state.numSimilarPairs++;
 
           std::cout << '"' << hashes[i].path << "\" and \"" << hashes[j].path
                     << "\" are about " << similarityScore << "% similar."
@@ -66,74 +204,21 @@ void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
       }
     }
 
-    if (printStatus) {
-      numHashesDone++;
+    if (moreHashes) {
+      for (std::size_t j = 0; j < moreHashes->size(); ++j) {
+        if (tlo::hashesAreComparable(hashes[i], (*moreHashes)[j])) {
+          double similarityScore = compareHashes(hashes[i], (*moreHashes)[j]);
 
-      std::cerr << "Done with " << numHashesDone;
+          if (similarityScore >= state.similarityThreshold) {
+            const std::lock_guard<std::mutex> outputLockGuard(
+                state.outputMutex);
 
-      if (numHashesDone == 1) {
-        std::cerr << " hash.";
-      } else {
-        std::cerr << " hashes.";
-      }
+            state.numSimilarPairs++;
 
-      std::cerr << " Found " << numSimilarPairs << " similar ";
-
-      if (numSimilarPairs == 1) {
-        std::cerr << "pair.";
-      } else {
-        std::cerr << "pairs.";
-      }
-
-      std::cerr << std::endl;
-    }
-  }
-}
-
-struct SharedState {
-  std::mutex indexMutex;
-  std::size_t index = 0;
-
-  std::mutex outputMutex;
-  std::size_t numHashesDone = 0;
-  std::size_t numSimilarPairs = 0;
-
-  const std::vector<tlo::FuzzyHash> &hashes;
-  const int similarityThreshold;
-  const bool printStatus;
-
-  SharedState(const std::vector<tlo::FuzzyHash> &hashes_,
-              int similarityThreshold_, bool printStatus_)
-      : hashes(hashes_),
-        similarityThreshold(similarityThreshold_),
-        printStatus(printStatus_) {}
-};
-
-void compareHashAtIndexWithAllSubsequentHashes(SharedState &state) {
-  for (;;) {
-    std::unique_lock<std::mutex> indexUniqueLock(state.indexMutex);
-
-    if (state.index >= state.hashes.size()) {
-      break;
-    }
-
-    std::size_t i = state.index;
-    state.index++;
-    indexUniqueLock.unlock();
-
-    for (std::size_t j = i + 1; j < state.hashes.size(); ++j) {
-      if (tlo::hashesAreComparable(state.hashes[i], state.hashes[j])) {
-        double similarityScore =
-            compareHashes(state.hashes[i], state.hashes[j]);
-
-        if (similarityScore >= state.similarityThreshold) {
-          const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
-
-          state.numSimilarPairs++;
-
-          std::cout << '"' << state.hashes[i].path << "\" and \""
-                    << state.hashes[j].path << "\" are about "
-                    << similarityScore << "% similar." << std::endl;
+            std::cout << '"' << hashes[i].path << "\" and \""
+                      << (*moreHashes)[j].path << "\" are about "
+                      << similarityScore << "% similar." << std::endl;
+          }
         }
       }
     }
@@ -165,23 +250,33 @@ void compareHashAtIndexWithAllSubsequentHashes(SharedState &state) {
 }
 
 // numThreads includes main thread.
-void compareHashes(const std::vector<tlo::FuzzyHash> &hashes,
-                   int similarityThreshold, std::size_t numThreads,
-                   bool printStatus) {
+void compareHashes(
+    const std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
+        &blockSizesToHashes,
+    int similarityThreshold, std::size_t numThreads, bool printStatus) {
   if (numThreads <= 1) {
-    compareHashes(hashes, similarityThreshold, printStatus);
+    compareHashes(blockSizesToHashes, similarityThreshold, printStatus);
     return;
   }
 
-  SharedState state(hashes, similarityThreshold, printStatus);
+  std::vector<std::size_t> blockSizes;
+
+  for (const auto &pair : blockSizesToHashes) {
+    blockSizes.push_back(pair.first);
+  }
+
+  std::sort(blockSizes.begin(), blockSizes.end());
+
+  SharedState state(blockSizes, blockSizesToHashes, similarityThreshold,
+                    printStatus);
   std::vector<std::thread> threads(numThreads - 1);
 
   for (auto &thread : threads) {
     thread =
-        std::thread(compareHashAtIndexWithAllSubsequentHashes, std::ref(state));
+        std::thread(compareHashAtIndexWithComparableHashes, std::ref(state));
   }
 
-  compareHashAtIndexWithAllSubsequentHashes(state);
+  compareHashAtIndexWithComparableHashes(state);
 
   for (auto &thread : threads) {
     thread.join();
@@ -243,13 +338,15 @@ int main(int argc, char **argv) {
       std::cerr << "Reading hashes." << std::endl;
     }
 
-    std::vector<tlo::FuzzyHash> hashes = readHashes(arguments.arguments());
+    std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
+        blockSizesToHashes = readHashes(arguments.arguments());
 
     if (printStatus) {
       std::cerr << "Comparing hashes." << std::endl;
     }
 
-    compareHashes(hashes, similarityThreshold, numThreads, printStatus);
+    compareHashes(blockSizesToHashes, similarityThreshold, numThreads,
+                  printStatus);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
     return 1;
