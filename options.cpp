@@ -5,6 +5,8 @@
 #include <stdexcept>
 #include <utility>
 
+#include "print.hpp"
+
 namespace tlo {
 CommandLineArguments::CommandLineArguments(
     int argc, char **argv,
@@ -140,43 +142,9 @@ int CommandLineArguments::getOptionValueAsInt(const std::string &option,
 
 std::ostream &operator<<(std::ostream &ostream,
                          const CommandLineArguments &arguments) {
-  ostream << "{" << arguments.program() << ", {";
-
-  bool first = true;
-
-  for (const auto &option : arguments.options()) {
-    if (!first) {
-      ostream << ", ";
-    }
-
-    if (option.second.empty()) {
-      ostream << option.first;
-    } else {
-      ostream << option.first << "=" << option.second;
-    }
-
-    if (first) {
-      first = false;
-    }
-  }
-
-  ostream << "}, {";
-
-  first = true;
-
-  for (const auto &argument : arguments.arguments()) {
-    if (!first) {
-      ostream << ", ";
-    }
-
-    ostream << argument;
-
-    if (first) {
-      first = false;
-    }
-  }
-
-  ostream << "}}";
+  ostream << "{program: " << arguments.program() << ", ";
+  print(ostream << "options: ", arguments.options()) << ", ";
+  print(ostream << "arguments: ", arguments.arguments()) << '}';
   return ostream;
 }
 }  // namespace tlo

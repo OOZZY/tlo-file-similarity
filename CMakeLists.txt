@@ -50,7 +50,8 @@ if (TLOFS_LINK_FS)
   endif()
 endif()
 
-set(core_headers filesystem.hpp fuzzy.hpp lcs.hpp options.hpp string.hpp)
+set(core_headers filesystem.hpp fuzzy.hpp lcs.hpp options.hpp print.hpp
+  string.hpp)
 set(core_sources filesystem.cpp fuzzy.cpp lcs.cpp options.cpp string.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
