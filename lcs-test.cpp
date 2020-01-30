@@ -15,7 +15,7 @@ bool passed = true;
 #define EXPECT(condition)                                        \
   do {                                                           \
     if (!(condition)) {                                          \
-      std::cerr << "Expect failed: " << #condition << std::endl; \
+      std::cout << "Expect failed: " << #condition << std::endl; \
       passed = false;                                            \
     }                                                            \
   } while (0)
