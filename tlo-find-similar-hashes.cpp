@@ -5,6 +5,7 @@
 #include <functional>
 #include <iostream>
 #include <mutex>
+#include <stdexcept>
 #include <thread>
 #include <unordered_map>
 #include <utility>
@@ -73,10 +74,21 @@ void printStatus(std::size_t numHashesDone, std::size_t numSimilarPairs) {
   std::cerr << std::endl;
 }
 
+enum class OutputFormat { REGULAR, CSV, TSV };
+
 void printSimilarPair(const tlo::FuzzyHash &hash1, const tlo::FuzzyHash &hash2,
-                      double similarityScore) {
-  std::cout << '"' << hash1.path << "\" and \"" << hash2.path << "\" are about "
-            << similarityScore << "% similar." << std::endl;
+                      double similarityScore, OutputFormat outputFormat) {
+  if (outputFormat == OutputFormat::REGULAR) {
+    std::cout << '"' << hash1.path << "\" and \"" << hash2.path
+              << "\" are about " << similarityScore << "% similar."
+              << std::endl;
+  } else if (outputFormat == OutputFormat::CSV) {
+    std::cout << '"' << hash1.path << "\",\"" << hash2.path << "\",\""
+              << similarityScore << '"' << std::endl;
+  } else if (outputFormat == OutputFormat::TSV) {
+    std::cout << '"' << hash1.path << "\"\t\"" << hash2.path << "\"\t\""
+              << similarityScore << '"' << std::endl;
+  }
 }
 
 // Compare hash with hashes[startIndex .. end]. Returns number of similar pairs
@@ -85,6 +97,7 @@ std::size_t compareHashWithOthers(const tlo::FuzzyHash &hash,
                                   const std::vector<tlo::FuzzyHash> &hashes,
                                   std::size_t startIndex,
                                   int similarityThreshold,
+                                  OutputFormat outputFormat,
                                   std::mutex *outputMutex = nullptr) {
   std::size_t numSimilarPairs = 0;
 
@@ -99,7 +112,7 @@ std::size_t compareHashWithOthers(const tlo::FuzzyHash &hash,
                                     ? std::unique_lock<std::mutex>(*outputMutex)
                                     : std::unique_lock<std::mutex>();
 
-        printSimilarPair(hash, hashes[j], similarityScore);
+        printSimilarPair(hash, hashes[j], similarityScore, outputFormat);
       }
     }
   }
@@ -110,7 +123,7 @@ std::size_t compareHashWithOthers(const tlo::FuzzyHash &hash,
 void compareHashes(
     const std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
         &blockSizesToHashes,
-    int similarityThreshold, bool printStatus) {
+    int similarityThreshold, bool printStatus, OutputFormat outputFormat) {
   std::vector<std::size_t> blockSizes;
 
   for (const auto &pair : blockSizesToHashes) {
@@ -133,12 +146,12 @@ void compareHashes(
     }
 
     for (std::size_t i = 0; i < hashes.size(); ++i) {
-      numSimilarPairs +=
-          compareHashWithOthers(hashes[i], hashes, i + 1, similarityThreshold);
+      numSimilarPairs += compareHashWithOthers(
+          hashes[i], hashes, i + 1, similarityThreshold, outputFormat);
 
       if (moreHashes) {
-        numSimilarPairs += compareHashWithOthers(hashes[i], *moreHashes, 0,
-                                                 similarityThreshold);
+        numSimilarPairs += compareHashWithOthers(
+            hashes[i], *moreHashes, 0, similarityThreshold, outputFormat);
       }
 
       if (printStatus) {
@@ -163,15 +176,18 @@ struct SharedState {
       &blockSizesToHashes;
   const int similarityThreshold;
   const bool printStatus;
+  const OutputFormat outputFormat;
 
   SharedState(const std::vector<std::size_t> &blockSizes_,
               const std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
                   &blockSizesToHashes_,
-              int similarityThreshold_, bool printStatus_)
+              int similarityThreshold_, bool printStatus_,
+              OutputFormat outputFormat_)
       : blockSizes(blockSizes_),
         blockSizesToHashes(blockSizesToHashes_),
         similarityThreshold(similarityThreshold_),
-        printStatus(printStatus_) {}
+        printStatus(printStatus_),
+        outputFormat(outputFormat_) {}
 };
 
 void compareHashAtIndexWithComparableHashes(SharedState &state) {
@@ -205,14 +221,14 @@ void compareHashAtIndexWithComparableHashes(SharedState &state) {
 
     std::size_t numSimilarPairs = 0;
 
-    numSimilarPairs +=
-        compareHashWithOthers(hashes[i], hashes, i + 1,
-                              state.similarityThreshold, &state.outputMutex);
+    numSimilarPairs += compareHashWithOthers(
+        hashes[i], hashes, i + 1, state.similarityThreshold, state.outputFormat,
+        &state.outputMutex);
 
     if (moreHashes) {
-      numSimilarPairs +=
-          compareHashWithOthers(hashes[i], *moreHashes, 0,
-                                state.similarityThreshold, &state.outputMutex);
+      numSimilarPairs += compareHashWithOthers(
+          hashes[i], *moreHashes, 0, state.similarityThreshold,
+          state.outputFormat, &state.outputMutex);
     }
 
     if (state.printStatus) {
@@ -229,9 +245,11 @@ void compareHashAtIndexWithComparableHashes(SharedState &state) {
 void compareHashes(
     const std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
         &blockSizesToHashes,
-    int similarityThreshold, std::size_t numThreads, bool printStatus) {
+    int similarityThreshold, std::size_t numThreads, bool printStatus,
+    OutputFormat outputFormat) {
   if (numThreads <= 1) {
-    compareHashes(blockSizesToHashes, similarityThreshold, printStatus);
+    compareHashes(blockSizesToHashes, similarityThreshold, printStatus,
+                  outputFormat);
     return;
   }
 
@@ -244,7 +262,7 @@ void compareHashes(
   std::sort(blockSizes.begin(), blockSizes.end());
 
   SharedState state(blockSizes, blockSizesToHashes, similarityThreshold,
-                    printStatus);
+                    printStatus, outputFormat);
   std::vector<std::thread> threads(numThreads - 1);
 
   for (auto &thread : threads) {
@@ -258,6 +276,20 @@ void compareHashes(
     thread.join();
   }
 }
+
+// Throws on error.
+OutputFormat stringToOutputFormat(const std::string &string) {
+  if (string == "regular") {
+    return OutputFormat::REGULAR;
+  } else if (string == "csv") {
+    return OutputFormat::CSV;
+  } else if (string == "tsv") {
+    return OutputFormat::TSV;
+  } else {
+    throw std::runtime_error("Error: \"" + string +
+                             "\" is not a recognized output format.");
+  }
+}
 }  // namespace
 
 constexpr int DEFAULT_SIMILARITY_THRESHOLD = 50;
@@ -267,6 +299,8 @@ constexpr int MAX_SIMILARITY_THRESHOLD = 99;
 constexpr std::size_t DEFAULT_NUM_THREADS = 1;
 constexpr std::size_t MIN_NUM_THREADS = 1;
 constexpr std::size_t MAX_NUM_THREADS = 256;
+
+const std::string DEFAULT_OUTPUT_FORMAT = "regular";
 
 const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
     {"--similarity-threshold",
@@ -279,7 +313,12 @@ const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
                 std::to_string(DEFAULT_NUM_THREADS) + ")."}},
     {"--print-status",
      {false,
-      "Allow program to print status updates to stderr (default: off)."}}};
+      "Allow program to print status updates to stderr (default: off)."}},
+    {"--output-format",
+     {true,
+      "Set output format to regular, csv (comma-separated values), or tsv "
+      "(tab-separated values) (default: " +
+          DEFAULT_OUTPUT_FORMAT + ")."}}};
 
 int main(int argc, char **argv) {
   try {
@@ -294,6 +333,7 @@ int main(int argc, char **argv) {
     int similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD;
     std::size_t numThreads = DEFAULT_NUM_THREADS;
     bool printStatus = false;
+    std::string outputFormat = DEFAULT_OUTPUT_FORMAT;
 
     if (commandLine.specifiedOption("--similarity-threshold")) {
       similarityThreshold = commandLine.getOptionValueAsInt(
@@ -310,6 +350,10 @@ int main(int argc, char **argv) {
       printStatus = true;
     }
 
+    if (commandLine.specifiedOption("--output-format")) {
+      outputFormat = commandLine.getOptionValue("--output-format");
+    }
+
     if (printStatus) {
       std::cerr << "Reading hashes." << std::endl;
     }
@@ -322,7 +366,7 @@ int main(int argc, char **argv) {
     }
 
     compareHashes(blockSizesToHashes, similarityThreshold, numThreads,
-                  printStatus);
+                  printStatus, stringToOutputFormat(outputFormat));
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
     return 1;
