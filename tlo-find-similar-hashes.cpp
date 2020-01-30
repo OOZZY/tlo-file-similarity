@@ -302,7 +302,7 @@ constexpr std::size_t MAX_NUM_THREADS = 256;
 
 const std::string DEFAULT_OUTPUT_FORMAT = "regular";
 
-const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
+const std::unordered_map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
     {"--similarity-threshold",
      {true,
       "Display only the file pairs with a similarity score greater than or "
@@ -322,7 +322,7 @@ const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
 
 int main(int argc, char **argv) {
   try {
-    const tlo::CommandLine commandLine(argc, argv, validOptions);
+    const tlo::CommandLine commandLine(argc, argv, VALID_OPTIONS);
     if (commandLine.arguments().empty()) {
       std::cerr << "Usage: " << commandLine.program()
                 << " [options] <text file with hashes>..." << std::endl;

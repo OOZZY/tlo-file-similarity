@@ -220,7 +220,7 @@ constexpr std::size_t DEFAULT_NUM_THREADS = 1;
 constexpr std::size_t MIN_NUM_THREADS = 1;
 constexpr std::size_t MAX_NUM_THREADS = 256;
 
-const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
+const std::unordered_map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
     {"--num-threads",
      {true, "Number of threads the program will use (default: " +
                 std::to_string(DEFAULT_NUM_THREADS) + ")."}},
@@ -230,7 +230,7 @@ const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
 
 int main(int argc, char **argv) {
   try {
-    const tlo::CommandLine commandLine(argc, argv, validOptions);
+    const tlo::CommandLine commandLine(argc, argv, VALID_OPTIONS);
     if (commandLine.arguments().empty()) {
       std::cerr << "Usage: " << commandLine.program()
                 << " [options] <file or directory>..." << std::endl;
