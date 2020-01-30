@@ -230,23 +230,23 @@ const std::unordered_map<std::string, tlo::OptionAttributes> validOptions{
 
 int main(int argc, char **argv) {
   try {
-    const tlo::CommandLineArguments arguments(argc, argv, validOptions);
-    if (arguments.arguments().empty()) {
-      std::cerr << "Usage: " << arguments.program()
+    const tlo::CommandLine commandLine(argc, argv, validOptions);
+    if (commandLine.arguments().empty()) {
+      std::cerr << "Usage: " << commandLine.program()
                 << " [options] <file or directory>..." << std::endl;
-      arguments.printValidOptions(std::cerr);
+      commandLine.printValidOptions(std::cerr);
       return 1;
     }
 
     std::size_t numThreads = DEFAULT_NUM_THREADS;
     bool printStatus = false;
 
-    if (arguments.specifiedOption("--num-threads")) {
-      numThreads = arguments.getOptionValueAsULong(
+    if (commandLine.specifiedOption("--num-threads")) {
+      numThreads = commandLine.getOptionValueAsULong(
           "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
 
-    if (arguments.specifiedOption("--print-status")) {
+    if (commandLine.specifiedOption("--print-status")) {
       printStatus = true;
     }
 
@@ -254,7 +254,7 @@ int main(int argc, char **argv) {
       std::cerr << "Hashing files." << std::endl;
     }
 
-    hashFiles(arguments.arguments(), numThreads, printStatus);
+    hashFiles(commandLine.arguments(), numThreads, printStatus);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
     return 1;

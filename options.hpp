@@ -13,7 +13,7 @@ struct OptionAttributes {
   std::string description;
 };
 
-class CommandLineArguments {
+class CommandLine {
  private:
   // Name or path of program (argv[0]).
   std::string program_;
@@ -28,9 +28,9 @@ class CommandLineArguments {
   std::unordered_map<std::string, OptionAttributes> validOptions_;
 
  public:
-  CommandLineArguments(int argc, char **argv,
-                       const std::unordered_map<std::string, OptionAttributes>
-                           &validOptions = {});
+  CommandLine(int argc, char **argv,
+              const std::unordered_map<std::string, OptionAttributes>
+                  &validOptions = {});
 
   const std::string &program() const;
   const std::unordered_map<std::string, std::string> &options() const;
@@ -51,8 +51,7 @@ class CommandLineArguments {
                           int maxValue = INT_MAX) const;
 };
 
-std::ostream &operator<<(std::ostream &ostream,
-                         const CommandLineArguments &arguments);
+std::ostream &operator<<(std::ostream &ostream, const CommandLine &arguments);
 }  // namespace tlo
 
 #endif  // TLOFS_OPTIONS_HPP

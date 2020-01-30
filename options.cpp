@@ -8,7 +8,7 @@
 #include "print.hpp"
 
 namespace tlo {
-CommandLineArguments::CommandLineArguments(
+CommandLine::CommandLine(
     int argc, char **argv,
     const std::unordered_map<std::string, OptionAttributes> &validOptions)
     : validOptions_(validOptions) {
@@ -48,23 +48,23 @@ CommandLineArguments::CommandLineArguments(
   }
 }
 
-const std::string &CommandLineArguments::program() const { return program_; }
+const std::string &CommandLine::program() const { return program_; }
 
-const std::unordered_map<std::string, std::string>
-    &CommandLineArguments::options() const {
+const std::unordered_map<std::string, std::string> &CommandLine::options()
+    const {
   return options_;
 }
 
-const std::vector<std::string> &CommandLineArguments::arguments() const {
+const std::vector<std::string> &CommandLine::arguments() const {
   return arguments_;
 }
 
 const std::unordered_map<std::string, OptionAttributes>
-    &CommandLineArguments::validOptions() const {
+    &CommandLine::validOptions() const {
   return validOptions_;
 }
 
-void CommandLineArguments::printValidOptions(std::ostream &ostream) const {
+void CommandLine::printValidOptions(std::ostream &ostream) const {
   if (!validOptions_.empty()) {
     ostream << "Valid options:" << std::endl;
 
@@ -91,7 +91,7 @@ void CommandLineArguments::printValidOptions(std::ostream &ostream) const {
   }
 }
 
-bool CommandLineArguments::specifiedOption(const std::string &option) const {
+bool CommandLine::specifiedOption(const std::string &option) const {
   return options_.find(option) != options_.end();
 }
 
@@ -99,8 +99,8 @@ constexpr int NUMBER_BASE = 10;
 
 template <class Integer>
 Integer getOptionsValueAsInteger(
-    const CommandLineArguments &arguments, const std::string &option,
-    Integer minValue, Integer maxValue,
+    const CommandLine &arguments, const std::string &option, Integer minValue,
+    Integer maxValue,
     Integer (*stringToInteger)(const std::string &, std::size_t *, int)) {
   Integer value;
 
@@ -127,21 +127,19 @@ Integer getOptionsValueAsInteger(
   return value;
 }
 
-unsigned long CommandLineArguments::getOptionValueAsULong(
-    const std::string &option, unsigned long minValue,
-    unsigned long maxValue) const {
+unsigned long CommandLine::getOptionValueAsULong(const std::string &option,
+                                                 unsigned long minValue,
+                                                 unsigned long maxValue) const {
   return getOptionsValueAsInteger(*this, option, minValue, maxValue,
                                   std::stoul);
 }
 
-int CommandLineArguments::getOptionValueAsInt(const std::string &option,
-                                              int minValue,
-                                              int maxValue) const {
+int CommandLine::getOptionValueAsInt(const std::string &option, int minValue,
+                                     int maxValue) const {
   return getOptionsValueAsInteger(*this, option, minValue, maxValue, std::stoi);
 }
 
-std::ostream &operator<<(std::ostream &ostream,
-                         const CommandLineArguments &arguments) {
+std::ostream &operator<<(std::ostream &ostream, const CommandLine &arguments) {
   ostream << "{program: " << arguments.program() << ", ";
   print(ostream << "options: ", arguments.options()) << ", ";
   print(ostream << "arguments: ", arguments.arguments()) << '}';
