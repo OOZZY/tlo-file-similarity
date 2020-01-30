@@ -8,6 +8,11 @@
 #include "print.hpp"
 
 namespace tlo {
+std::ostream &operator<<(std::ostream &ostream, const OptionDetails &details) {
+  return print(ostream << "{values: ", details.values)
+         << ", lastIndex: " << details.lastIndex << '}';
+}
+
 CommandLine::CommandLine(
     int argc, char **argv,
     const std::unordered_map<std::string, OptionAttributes> &validOptions)
@@ -27,7 +32,10 @@ CommandLine::CommandLine(
           continue;
         }
 
-        options_[std::move(argument)] = "";
+        OptionDetails &details = options_[std::move(argument)];
+
+        details.values.push_back("");
+        details.lastIndex = i;
       } else {
         std::string option = argument.substr(0, equalPosition);
 
@@ -40,7 +48,10 @@ CommandLine::CommandLine(
         auto nextPosition = equalPosition + 1;
         auto value =
             argument.substr(nextPosition, argument.size() - nextPosition);
-        options_[std::move(option)] = std::move(value);
+        OptionDetails &details = options_[std::move(option)];
+
+        details.values.push_back(std::move(value));
+        details.lastIndex = i;
       }
     } else {
       arguments_.push_back(std::move(argument));
@@ -50,7 +61,7 @@ CommandLine::CommandLine(
 
 const std::string &CommandLine::program() const { return program_; }
 
-const std::unordered_map<std::string, std::string> &CommandLine::options()
+const std::unordered_map<std::string, OptionDetails> &CommandLine::options()
     const {
   return options_;
 }
@@ -95,21 +106,26 @@ bool CommandLine::specifiedOption(const std::string &option) const {
   return options_.find(option) != options_.end();
 }
 
+const std::string &CommandLine::getOptionValue(
+    const std::string &option) const {
+  return options_.at(option).values.back();
+}
+
 constexpr int NUMBER_BASE = 10;
 
 template <class Integer>
 Integer getOptionsValueAsInteger(
-    const CommandLine &arguments, const std::string &option, Integer minValue,
+    const CommandLine &commandLine, const std::string &option, Integer minValue,
     Integer maxValue,
     Integer (*stringToInteger)(const std::string &, std::size_t *, int)) {
+  const std::string &string = commandLine.getOptionValue(option);
   Integer value;
 
   try {
-    value =
-        stringToInteger(arguments.options().at(option), nullptr, NUMBER_BASE);
+    value = stringToInteger(string, nullptr, NUMBER_BASE);
   } catch (const std::exception &) {
     throw std::runtime_error("Error: Cannot convert " + option + " value \"" +
-                             arguments.options().at(option) + "\" to integer.");
+                             string + "\" to integer.");
   }
 
   if (value < minValue) {
@@ -139,10 +155,20 @@ int CommandLine::getOptionValueAsInt(const std::string &option, int minValue,
   return getOptionsValueAsInteger(*this, option, minValue, maxValue, std::stoi);
 }
 
-std::ostream &operator<<(std::ostream &ostream, const CommandLine &arguments) {
-  ostream << "{program: " << arguments.program() << ", ";
-  print(ostream << "options: ", arguments.options()) << ", ";
-  print(ostream << "arguments: ", arguments.arguments()) << '}';
+const std::vector<std::string> &CommandLine::getOptionValues(
+    const std::string &option) const {
+  return options_.at(option).values;
+}
+
+int CommandLine::getOptionLastIndex(const std::string &option) const {
+  return options_.at(option).lastIndex;
+}
+
+std::ostream &operator<<(std::ostream &ostream,
+                         const CommandLine &commandLine) {
+  ostream << "{program: " << commandLine.program() << ", ";
+  print(ostream << "options: ", commandLine.options()) << ", ";
+  print(ostream << "arguments: ", commandLine.arguments()) << '}';
   return ostream;
 }
 }  // namespace tlo
