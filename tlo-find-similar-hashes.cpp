@@ -171,7 +171,7 @@ struct SharedState {
   std::size_t numHashesDone = 0;
   std::size_t numSimilarPairs = 0;
 
-  const std::vector<std::size_t> blockSizes;
+  const std::vector<std::size_t> &blockSizes;
   const std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
       &blockSizesToHashes;
   const int similarityThreshold;
