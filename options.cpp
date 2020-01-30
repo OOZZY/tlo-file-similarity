@@ -1,7 +1,6 @@
 #include "options.hpp"
 
 #include <exception>
-#include <iostream>
 #include <stdexcept>
 #include <utility>
 
@@ -27,9 +26,8 @@ CommandLine::CommandLine(
 
       if (equalPosition == std::string::npos) {
         if (validOptions_.find(argument) == validOptions_.end()) {
-          std::cerr << "Error: \"" << argument << "\" is not a valid option."
-                    << std::endl;
-          continue;
+          throw std::runtime_error("Error: \"" + argument +
+                                   "\" is not a valid option.");
         }
 
         OptionDetails &details = options_[std::move(argument)];
@@ -40,9 +38,8 @@ CommandLine::CommandLine(
         std::string option = argument.substr(0, equalPosition);
 
         if (validOptions_.find(option) == validOptions_.end()) {
-          std::cerr << "Error: \"" << option << "\" is not a valid option."
-                    << std::endl;
-          continue;
+          throw std::runtime_error("Error: \"" + option +
+                                   "\" is not a valid option.");
         }
 
         auto nextPosition = equalPosition + 1;
