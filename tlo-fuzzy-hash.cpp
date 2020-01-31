@@ -5,6 +5,7 @@
 #include <iostream>
 #include <mutex>
 #include <queue>
+#include <stdexcept>
 #include <thread>
 #include <utility>
 
@@ -54,6 +55,15 @@ class StatusUpdater : public tlo::FuzzyHashEventHandler {
 };
 
 void hashFiles(const std::vector<std::string> &arguments, bool printStatus) {
+  for (std::size_t i = 0; i < arguments.size(); ++i) {
+    fs::path path = arguments[i];
+
+    if (!fs::is_regular_file(path) && !fs::is_directory(path)) {
+      throw std::runtime_error("Error: \"" + path.generic_string() +
+                               "\" is not a file or directory.");
+    }
+  }
+
   StatusUpdater updater(printStatus);
 
   for (std::size_t i = 0; i < arguments.size(); ++i) {
@@ -67,9 +77,6 @@ void hashFiles(const std::vector<std::string> &arguments, bool printStatus) {
           tlo::fuzzyHash(entry.path(), &updater);
         }
       }
-    } else {
-      std::cerr << "Error: \"" << path.generic_string()
-                << "\" is not a file or directory." << std::endl;
     }
   }
 }
@@ -164,6 +171,15 @@ void hashFiles(const std::vector<std::string> &arguments,
     return;
   }
 
+  for (std::size_t i = 0; i < arguments.size(); ++i) {
+    fs::path path = arguments[i];
+
+    if (!fs::is_regular_file(path) && !fs::is_directory(path)) {
+      throw std::runtime_error("Error: \"" + path.generic_string() +
+                               "\" is not a file or directory.");
+    }
+  }
+
   SharedState state(printStatus);
   SynchronizingStatusUpdater updater(state);
   std::vector<std::thread> threads(numThreads - 1);
@@ -189,18 +205,6 @@ void hashFiles(const std::vector<std::string> &arguments,
           state.filesQueued.notify_one();
         }
       }
-    } else {
-      const std::lock_guard<std::mutex> outputLockGuard(state.outputMutex);
-
-      if (!state.previousOutputEndsWithNewline) {
-        std::cerr << std::endl;
-      }
-
-      std::cerr << "Error: \"" << path.generic_string()
-                << "\" is not a file or directory." << std::endl;
-
-      state.previousOutputtingThread = std::this_thread::get_id();
-      state.previousOutputEndsWithNewline = true;
     }
   }
 

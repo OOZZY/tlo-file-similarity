@@ -22,6 +22,12 @@ void readHashesFromFile(
         &blockSizesToHashes,
     const fs::path &file) {
   std::ifstream ifstream(file, std::ifstream::in);
+
+  if (!ifstream.is_open()) {
+    throw std::runtime_error("Error: Failed to open \"" +
+                             file.generic_string() + "\".");
+  }
+
   std::string line;
 
   while (std::getline(ifstream, line)) {
@@ -36,17 +42,20 @@ void readHashesFromFile(
 
 std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>> readHashes(
     const std::vector<std::string> &arguments) {
+  for (std::size_t i = 0; i < arguments.size(); ++i) {
+    fs::path path = arguments[i];
+
+    if (!fs::is_regular_file(path)) {
+      throw std::runtime_error("Error: \"" + path.generic_string() +
+                               "\" is not a file.");
+    }
+  }
+
   std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
       blockSizesToHashes;
 
   for (std::size_t i = 0; i < arguments.size(); ++i) {
     fs::path path = arguments[i];
-
-    if (!fs::is_regular_file(path)) {
-      std::cerr << "Error: \"" << path.generic_string() << "\" is not a file."
-                << std::endl;
-      continue;
-    }
 
     readHashesFromFile(blockSizesToHashes, path);
   }
