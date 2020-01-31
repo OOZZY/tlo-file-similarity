@@ -44,13 +44,6 @@ FuzzyHash fuzzyHash(const std::filesystem::path &path,
 // <blockSize>:<part1>:<part2>,<path>. Throws std::runtime_error on
 // error.
 FuzzyHash parseHash(const std::string &hash);
-
-bool hashesAreComparable(const FuzzyHash &hash1, const FuzzyHash &hash2);
-
-// Returns score from 0 to 100 of how similar the given hashes are. A score
-// closer to 100 means the hashes are more similar. Throws std::runtime_error
-// if hashes are not comparable.
-double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2);
 }  // namespace tlo
 
 #endif  // TLOFS_FUZZY_HPP

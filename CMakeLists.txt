@@ -50,9 +50,10 @@ if (TLOFS_LINK_FS)
   endif()
 endif()
 
-set(core_headers filesystem.hpp fuzzy.hpp lcs.hpp options.hpp print.hpp
-  string.hpp)
-set(core_sources filesystem.cpp fuzzy.cpp lcs.cpp options.cpp string.cpp)
+set(core_headers compare.hpp filesystem.hpp fuzzy.hpp lcs.hpp options.hpp
+  print.hpp string.hpp)
+set(core_sources compare.cpp filesystem.cpp fuzzy.cpp lcs.cpp options.cpp
+  string.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)
@@ -74,5 +75,6 @@ target_link_libraries(tlo-fuzzy-hash PRIVATE tlofs-core)
 
 add_executable(tlo-find-similar-hashes tlo-find-similar-hashes.cpp)
 set_target_properties(tlo-find-similar-hashes PROPERTIES CXX_EXTENSIONS OFF)
-target_compile_options(tlo-find-similar-hashes PRIVATE ${global_compile_options})
+target_compile_options(tlo-find-similar-hashes PRIVATE
+  ${global_compile_options})
 target_link_libraries(tlo-find-similar-hashes PRIVATE tlofs-core)

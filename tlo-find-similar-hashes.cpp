@@ -11,6 +11,7 @@
 #include <utility>
 #include <vector>
 
+#include "compare.hpp"
 #include "fuzzy.hpp"
 #include "options.hpp"
 
