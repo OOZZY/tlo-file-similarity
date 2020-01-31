@@ -32,12 +32,8 @@ void readHashesFromFile(
   std::string line;
 
   while (std::getline(ifstream, line)) {
-    try {
-      tlo::FuzzyHash hash = tlo::parseHash(line);
-      blockSizesToHashes[hash.blockSize].push_back(std::move(hash));
-    } catch (const std::exception &exception) {
-      std::cerr << exception.what() << std::endl;
-    }
+    tlo::FuzzyHash hash = tlo::parseHash(line);
+    blockSizesToHashes[hash.blockSize].push_back(std::move(hash));
   }
 }
 
