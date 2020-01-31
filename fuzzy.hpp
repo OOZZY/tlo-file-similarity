@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <ostream>
 #include <string>
+#include <vector>
 
 namespace tlo {
 struct FuzzyHash {
@@ -36,9 +37,19 @@ class FuzzyHashEventHandler {
 // is not nullptr, will call handler->onBlockHash() every time a file block has
 // finished hashing with whatever the current blockSize is (not 2 * blockSize).
 // Also, will call handler->onFileHash() every time a file has finished
-// hashing.
+// hashing. Expects path to be a path to a file.
 FuzzyHash fuzzyHash(const std::filesystem::path &path,
                     FuzzyHashEventHandler *handler = nullptr);
+
+// Expects strings in paths to be paths to files or directories. If a string is
+// a path to a file, will hash the file. If a string is a path to a directory,
+// will hash all files in the directory and all its subdirectories. If a string
+// is neither a file or directory, will throw std::runtime_error. Each file is
+// hashed by calling fuzzyHash(path, &handler). The handler can be used to
+// process the hashes. If numThreads > 1, make sure that the handler's member
+// functions are synchronized.
+void fuzzyHash(const std::vector<std::string> &paths,
+               FuzzyHashEventHandler &handler, std::size_t numThreads = 1);
 
 // Given string should have the format
 // <blockSize>:<part1>:<part2>,<path>. Throws std::runtime_error on

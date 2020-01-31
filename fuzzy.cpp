@@ -1,11 +1,17 @@
 #include "fuzzy.hpp"
 
+#include <cassert>
 #include <cmath>
+#include <condition_variable>
 #include <cstdint>
 #include <exception>
 #include <fstream>
+#include <functional>
+#include <mutex>
+#include <queue>
 #include <stdexcept>
 #include <string_view>
+#include <thread>
 #include <tuple>
 #include <utility>
 
@@ -187,6 +193,123 @@ FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
   }
 
   return hash;
+}
+
+namespace {
+void hashFilesWithSingleThread(const std::vector<std::string> &paths,
+                               FuzzyHashEventHandler &handler) {
+  for (const auto &string : paths) {
+    fs::path path = string;
+
+    if (!fs::is_regular_file(path) && !fs::is_directory(path)) {
+      throw std::runtime_error("Error: \"" + path.generic_string() +
+                               "\" is not a file or directory.");
+    }
+  }
+
+  for (const auto &string : paths) {
+    fs::path path = string;
+
+    if (fs::is_regular_file(path)) {
+      fuzzyHash(path, &handler);
+    } else if (fs::is_directory(path)) {
+      for (const auto &entry : fs::recursive_directory_iterator(path)) {
+        if (fs::is_regular_file(entry.path())) {
+          fuzzyHash(entry.path(), &handler);
+        }
+      }
+    }
+  }
+}
+
+struct SharedState {
+  std::mutex queueMutex;
+  bool allFilesQueued = false;
+  std::queue<fs::path> files;
+  std::condition_variable filesQueued;
+};
+
+void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler) {
+  for (;;) {
+    std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
+
+    if (state.allFilesQueued && state.files.empty()) {
+      break;
+    }
+
+    while (state.files.empty()) {
+      state.filesQueued.wait(queueUniqueLock);
+    }
+
+    fs::path file = std::move(state.files.front());
+    state.files.pop();
+
+    queueUniqueLock.unlock();
+
+    fuzzyHash(file, &handler);
+  }
+}
+
+void hashFilesWithMultipleThreads(const std::vector<std::string> &paths,
+                                  FuzzyHashEventHandler &handler,
+                                  std::size_t numThreads) {
+  assert(numThreads > 1);
+
+  for (const auto &string : paths) {
+    fs::path path = string;
+
+    if (!fs::is_regular_file(path) && !fs::is_directory(path)) {
+      throw std::runtime_error("Error: \"" + path.generic_string() +
+                               "\" is not a file or directory.");
+    }
+  }
+
+  SharedState state;
+  std::vector<std::thread> threads(numThreads - 1);
+
+  for (auto &thread : threads) {
+    thread = std::thread(hashFilesInQueue, std::ref(state), std::ref(handler));
+  }
+
+  for (const auto &string : paths) {
+    fs::path path = string;
+
+    if (fs::is_regular_file(path)) {
+      const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+
+      state.files.push(std::move(path));
+      state.filesQueued.notify_one();
+    } else if (fs::is_directory(path)) {
+      for (const auto &entry : fs::recursive_directory_iterator(path)) {
+        if (fs::is_regular_file(entry.path())) {
+          const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+
+          state.files.push(entry.path());
+          state.filesQueued.notify_one();
+        }
+      }
+    }
+  }
+
+  std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
+  state.allFilesQueued = true;
+  queueUniqueLock.unlock();
+
+  hashFilesInQueue(state, handler);
+
+  for (auto &thread : threads) {
+    thread.join();
+  }
+}
+}  // namespace
+
+void fuzzyHash(const std::vector<std::string> &paths,
+               FuzzyHashEventHandler &handler, std::size_t numThreads) {
+  if (numThreads <= 1) {
+    hashFilesWithSingleThread(paths, handler);
+  } else {
+    hashFilesWithMultipleThreads(paths, handler, numThreads);
+  }
 }
 
 FuzzyHash parseHash(const std::string &hash) {
