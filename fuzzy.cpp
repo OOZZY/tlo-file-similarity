@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstdint>
+#include <exception>
 #include <fstream>
 #include <stdexcept>
 #include <string_view>
@@ -192,18 +193,27 @@ FuzzyHash parseHash(const std::string &hash) {
   std::vector<std::string> commaSplit = split(hash, ',');
 
   if (commaSplit.size() < 2) {
-    throw std::runtime_error("Error: \"" + hash + "\" does not have a comma.");
+    throw std::runtime_error("Error: Hash \"" + hash +
+                             "\" does not have a comma.");
   }
 
   std::vector<std::string> colonSplit = split(commaSplit[0], ':');
 
   if (colonSplit.size() != 3) {
     throw std::runtime_error(
-        "Error: \"" + hash +
+        "Error: Hash \"" + hash +
         "\" has the wrong number of sections separated by a colon.");
   }
 
-  return {std::stoull(colonSplit[0]), colonSplit[1], colonSplit[2],
-          commaSplit[1]};
+  std::size_t blockSize;
+
+  try {
+    blockSize = std::stoull(colonSplit[0]);
+  } catch (const std::exception &) {
+    throw std::runtime_error("Error: Hash \"" + hash +
+                             "\" has non-integer block size.");
+  }
+
+  return {blockSize, colonSplit[1], colonSplit[2], commaSplit[1]};
 }
 }  // namespace tlo
