@@ -20,10 +20,11 @@ void printStatus(std::size_t numFilesHashed) {
 }
 
 class StatusUpdater : public tlo::FuzzyHashEventHandler {
- public:
+ private:
   const bool printStatus;
   std::size_t numFilesHashed = 0;
 
+ public:
   StatusUpdater(bool printStatus_) : printStatus(printStatus_) {}
 
   void onBlockHash() override {
@@ -47,13 +48,14 @@ class StatusUpdater : public tlo::FuzzyHashEventHandler {
 };
 
 class SynchronizingStatusUpdater : public tlo::FuzzyHashEventHandler {
- public:
+ private:
   const bool printStatus;
   std::mutex outputMutex;
   std::size_t numFilesHashed = 0;
   std::thread::id previousOutputtingThread;
   bool previousOutputEndsWithNewline = true;
 
+ public:
   SynchronizingStatusUpdater(bool printStatus_) : printStatus(printStatus_) {}
 
   void onBlockHash() override {
