@@ -1,6 +1,7 @@
 #include "compare.hpp"
 
 #include <algorithm>
+#include <exception>
 #include <fstream>
 #include <functional>
 #include <mutex>
@@ -167,45 +168,50 @@ struct SharedState {
         similarityThreshold(similarityThreshold_) {}
 };
 
-void compareHashAtIndexWithComparableHashes(
-    SharedState &state, HashComparisonEventHandler &handler) {
-  for (;;) {
-    std::unique_lock<std::mutex> indexUniqueLock(state.indexMutex);
+void compareHashAtIndexWithComparableHashes(SharedState &state,
+                                            HashComparisonEventHandler &handler,
+                                            std::exception_ptr &exception) {
+  try {
+    for (;;) {
+      std::unique_lock<std::mutex> indexUniqueLock(state.indexMutex);
 
-    if (state.blockSizeIndex >= state.blockSizes.size()) {
-      break;
+      if (state.blockSizeIndex >= state.blockSizes.size()) {
+        break;
+      }
+
+      const std::size_t blockSize = state.blockSizes[state.blockSizeIndex];
+      const std::vector<FuzzyHash> &hashes =
+          state.blockSizesToHashes.at(blockSize);
+      const std::size_t i = state.hashIndex;
+
+      state.hashIndex++;
+
+      if (state.hashIndex >= hashes.size()) {
+        state.blockSizeIndex++;
+        state.hashIndex = 0;
+      }
+
+      indexUniqueLock.unlock();
+
+      const std::vector<FuzzyHash> *moreHashes = nullptr;
+      const auto iterator = state.blockSizesToHashes.find(2 * blockSize);
+
+      if (iterator != state.blockSizesToHashes.end()) {
+        moreHashes = &iterator->second;
+      }
+
+      compareHashWithOthers(hashes[i], hashes, i + 1, state.similarityThreshold,
+                            handler);
+
+      if (moreHashes) {
+        compareHashWithOthers(hashes[i], *moreHashes, 0,
+                              state.similarityThreshold, handler);
+      }
+
+      handler.onHashDone();
     }
-
-    const std::size_t blockSize = state.blockSizes[state.blockSizeIndex];
-    const std::vector<FuzzyHash> &hashes =
-        state.blockSizesToHashes.at(blockSize);
-    const std::size_t i = state.hashIndex;
-
-    state.hashIndex++;
-
-    if (state.hashIndex >= hashes.size()) {
-      state.blockSizeIndex++;
-      state.hashIndex = 0;
-    }
-
-    indexUniqueLock.unlock();
-
-    const std::vector<FuzzyHash> *moreHashes = nullptr;
-    const auto iterator = state.blockSizesToHashes.find(2 * blockSize);
-
-    if (iterator != state.blockSizesToHashes.end()) {
-      moreHashes = &iterator->second;
-    }
-
-    compareHashWithOthers(hashes[i], hashes, i + 1, state.similarityThreshold,
-                          handler);
-
-    if (moreHashes) {
-      compareHashWithOthers(hashes[i], *moreHashes, 0,
-                            state.similarityThreshold, handler);
-    }
-
-    handler.onHashDone();
+  } catch (...) {
+    exception = std::current_exception();
   }
 }
 
@@ -223,17 +229,25 @@ void compareHashesWithMultipleThreads(
   std::sort(blockSizes.begin(), blockSizes.end());
 
   SharedState state(blockSizes, blockSizesToHashes, similarityThreshold);
+  std::vector<std::exception_ptr> exceptions(numThreads);
   std::vector<std::thread> threads(numThreads - 1);
 
-  for (auto &thread : threads) {
-    thread = std::thread(compareHashAtIndexWithComparableHashes,
-                         std::ref(state), std::ref(handler));
+  for (std::size_t i = 0; i < threads.size(); ++i) {
+    threads[i] =
+        std::thread(compareHashAtIndexWithComparableHashes, std::ref(state),
+                    std::ref(handler), std::ref(exceptions[i + 1]));
   }
 
-  compareHashAtIndexWithComparableHashes(state, handler);
+  compareHashAtIndexWithComparableHashes(state, handler, exceptions[0]);
 
   for (auto &thread : threads) {
     thread.join();
+  }
+
+  for (const auto &exception : exceptions) {
+    if (exception) {
+      std::rethrow_exception(exception);
+    }
   }
 }
 }  // namespace

@@ -229,24 +229,29 @@ struct SharedState {
   std::condition_variable filesQueued;
 };
 
-void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler) {
-  for (;;) {
-    std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
+void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
+                      std::exception_ptr &exception) {
+  try {
+    for (;;) {
+      std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
 
-    if (state.allFilesQueued && state.files.empty()) {
-      break;
+      if (state.allFilesQueued && state.files.empty()) {
+        break;
+      }
+
+      while (state.files.empty()) {
+        state.filesQueued.wait(queueUniqueLock);
+      }
+
+      fs::path file = std::move(state.files.front());
+      state.files.pop();
+
+      queueUniqueLock.unlock();
+
+      fuzzyHash(file, &handler);
     }
-
-    while (state.files.empty()) {
-      state.filesQueued.wait(queueUniqueLock);
-    }
-
-    fs::path file = std::move(state.files.front());
-    state.files.pop();
-
-    queueUniqueLock.unlock();
-
-    fuzzyHash(file, &handler);
+  } catch (...) {
+    exception = std::current_exception();
   }
 }
 
@@ -265,10 +270,12 @@ void hashFilesWithMultipleThreads(const std::vector<std::string> &paths,
   }
 
   SharedState state;
+  std::vector<std::exception_ptr> exceptions(numThreads);
   std::vector<std::thread> threads(numThreads - 1);
 
-  for (auto &thread : threads) {
-    thread = std::thread(hashFilesInQueue, std::ref(state), std::ref(handler));
+  for (std::size_t i = 0; i < threads.size(); ++i) {
+    threads[i] = std::thread(hashFilesInQueue, std::ref(state),
+                             std::ref(handler), std::ref(exceptions[i + 1]));
   }
 
   for (const auto &string : paths) {
@@ -295,10 +302,16 @@ void hashFilesWithMultipleThreads(const std::vector<std::string> &paths,
   state.allFilesQueued = true;
   queueUniqueLock.unlock();
 
-  hashFilesInQueue(state, handler);
+  hashFilesInQueue(state, handler, exceptions[0]);
 
   for (auto &thread : threads) {
     thread.join();
+  }
+
+  for (const auto &exception : exceptions) {
+    if (exception) {
+      std::rethrow_exception(exception);
+    }
   }
 }
 }  // namespace
