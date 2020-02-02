@@ -224,6 +224,7 @@ void hashFilesWithSingleThread(const std::vector<std::string> &paths,
 
 struct SharedState {
   std::mutex queueMutex;
+  bool exceptionThrown = false;
   bool allFilesQueued = false;
   std::queue<fs::path> files;
   std::condition_variable filesQueued;
@@ -234,6 +235,10 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
   try {
     for (;;) {
       std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
+
+      if (state.exceptionThrown) {
+        break;
+      }
 
       if (state.allFilesQueued && state.files.empty()) {
         break;
@@ -251,6 +256,9 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
       fuzzyHash(file, &handler);
     }
   } catch (...) {
+    std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+
+    state.exceptionThrown = true;
     exception = std::current_exception();
   }
 }

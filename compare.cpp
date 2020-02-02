@@ -156,6 +156,7 @@ struct SharedState {
   const int similarityThreshold;
 
   std::mutex indexMutex;
+  bool exceptionThrown = false;
   std::size_t blockSizeIndex = 0;
   std::size_t hashIndex = 0;
 
@@ -174,6 +175,10 @@ void compareHashAtIndexWithComparableHashes(SharedState &state,
   try {
     for (;;) {
       std::unique_lock<std::mutex> indexUniqueLock(state.indexMutex);
+
+      if (state.exceptionThrown) {
+        break;
+      }
 
       if (state.blockSizeIndex >= state.blockSizes.size()) {
         break;
@@ -211,6 +216,9 @@ void compareHashAtIndexWithComparableHashes(SharedState &state,
       handler.onHashDone();
     }
   } catch (...) {
+    std::lock_guard<std::mutex> indexLockGuard(state.indexMutex);
+
+    state.exceptionThrown = true;
     exception = std::current_exception();
   }
 }
