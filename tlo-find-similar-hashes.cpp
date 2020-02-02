@@ -132,7 +132,7 @@ constexpr std::size_t MAX_NUM_THREADS = 256;
 
 const std::string DEFAULT_OUTPUT_FORMAT = "regular";
 
-const std::unordered_map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
+const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
     {"--similarity-threshold",
      {true,
       "Display only the file pairs with a similarity score greater than or "

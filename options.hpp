@@ -2,6 +2,7 @@
 #define TLOFS_OPTIONS_HPP
 
 #include <climits>
+#include <map>
 #include <ostream>
 #include <string>
 #include <unordered_map>
@@ -32,17 +33,16 @@ class CommandLine {
   std::vector<std::string> arguments_;
 
   // All valid options. Maps options to their attributes.
-  std::unordered_map<std::string, OptionAttributes> validOptions_;
+  std::map<std::string, OptionAttributes> validOptions_;
 
  public:
   CommandLine(int argc, char **argv,
-              const std::unordered_map<std::string, OptionAttributes>
-                  &validOptions = {});
+              const std::map<std::string, OptionAttributes> &validOptions = {});
 
   const std::string &program() const;
   const std::unordered_map<std::string, OptionDetails> &options() const;
   const std::vector<std::string> &arguments() const;
-  const std::unordered_map<std::string, OptionAttributes> &validOptions() const;
+  const std::map<std::string, OptionAttributes> &validOptions() const;
   void printValidOptions(std::ostream &ostream) const;
 
   // Returns whether the given option was specified in the command line.

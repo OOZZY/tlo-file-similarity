@@ -14,7 +14,7 @@ std::ostream &operator<<(std::ostream &ostream, const OptionDetails &details) {
 
 CommandLine::CommandLine(
     int argc, char **argv,
-    const std::unordered_map<std::string, OptionAttributes> &validOptions)
+    const std::map<std::string, OptionAttributes> &validOptions)
     : validOptions_(validOptions) {
   program_ = argv[0];
 
@@ -67,8 +67,8 @@ const std::vector<std::string> &CommandLine::arguments() const {
   return arguments_;
 }
 
-const std::unordered_map<std::string, OptionAttributes>
-    &CommandLine::validOptions() const {
+const std::map<std::string, OptionAttributes> &CommandLine::validOptions()
+    const {
   return validOptions_;
 }
 

@@ -102,7 +102,7 @@ constexpr std::size_t DEFAULT_NUM_THREADS = 1;
 constexpr std::size_t MIN_NUM_THREADS = 1;
 constexpr std::size_t MAX_NUM_THREADS = 256;
 
-const std::unordered_map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
+const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
     {"--num-threads",
      {true, "Number of threads the program will use (default: " +
                 std::to_string(DEFAULT_NUM_THREADS) + ")."}},
