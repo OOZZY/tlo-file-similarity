@@ -77,7 +77,7 @@ const std::map<std::string, OptionAttributes> &CommandLine::validOptions()
 
 void CommandLine::printValidOptions(std::ostream &ostream) const {
   if (!validOptions_.empty()) {
-    ostream << "Valid options:" << std::endl;
+    ostream << "Options:" << std::endl;
 
     bool first = true;
 

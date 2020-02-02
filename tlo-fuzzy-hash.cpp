@@ -115,7 +115,8 @@ int main(int argc, char **argv) {
     const tlo::CommandLine commandLine(argc, argv, VALID_OPTIONS);
     if (commandLine.arguments().empty()) {
       std::cerr << "Usage: " << commandLine.program()
-                << " [options] <file or directory>..." << std::endl;
+                << " [options] <file or directory>...\n"
+                << std::endl;
       commandLine.printValidOptions(std::cerr);
       return 1;
     }

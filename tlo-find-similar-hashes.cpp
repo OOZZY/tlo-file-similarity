@@ -155,7 +155,8 @@ int main(int argc, char **argv) {
     const tlo::CommandLine commandLine(argc, argv, VALID_OPTIONS);
     if (commandLine.arguments().empty()) {
       std::cerr << "Usage: " << commandLine.program()
-                << " [options] <text file with hashes>..." << std::endl;
+                << " [options] <text file with hashes>...\n"
+                << std::endl;
       commandLine.printValidOptions(std::cerr);
       return 1;
     }
