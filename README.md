@@ -99,3 +99,39 @@ $ ./tlo-find-similar-hashes hashes.txt
     * Prior to LLVM 9, using `std::filesystem` required linker option `-lc++fs`
     * Prior to GCC 9, using `std::filesystem` required linker option `-lstdc++fs`
     * Off by default
+
+## Program Options
+
+### tlo-fuzzy-hash
+
+```
+$ ./tlo-fuzzy-hash
+Usage: tlo-fuzzy-hash [options] <file or directory>...
+
+Options:
+  --num-threads=value
+    Number of threads the program will use (default: 1).
+
+  --print-status
+    Allow program to print status updates to stderr (default: off).
+```
+
+### tlo-find-similar-hashes
+
+```
+$ ./tlo-find-similar-hashes
+Usage: tlo-find-similar-hashes [options] <text file with hashes>...
+
+Options:
+  --num-threads=value
+    Number of threads the program will use (default: 1).
+
+  --output-format=value
+    Set output format to regular, csv (comma-separated values), or tsv (tab-separated values) (default: regular).
+
+  --print-status
+    Allow program to print status updates to stderr (default: off).
+
+  --similarity-threshold=value
+    Display only the file pairs with a similarity score greater than or equal to this threshold (default: 50).
+```
