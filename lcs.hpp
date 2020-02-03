@@ -24,12 +24,12 @@ std::ostream &operator<<(std::ostream &os, const LCSLengthResult &result);
 bool operator==(const LCSLengthResult &result1, const LCSLengthResult &result2);
 
 namespace internal {
-// Returns table[i][j] if i and j are within bounds, otherwise returns 0.
-std::size_t lookup(const std::vector<std::vector<std::size_t>> &table,
+// Returns lcsLengths[i][j] if i and j are within bounds, otherwise returns 0.
+std::size_t lookup(const std::vector<std::vector<std::size_t>> &lcsLengths,
                    std::size_t i, std::size_t j);
 
-// Returns array[i] if i is within bounds, otherwise returns 0.
-std::size_t lookup(const std::vector<std::size_t> &array, std::size_t i);
+// Returns lcsLengths[i] if i is within bounds, otherwise returns 0.
+std::size_t lookup(const std::vector<std::size_t> &lcsLengths, std::size_t i);
 
 // Calculate LCS distance for a pair of strings with given sizes and LCS length.
 std::size_t lcsDistance(std::size_t size1, std::size_t size2,
@@ -51,10 +51,10 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
     return {0, internal::lcsDistance(size1, size2, 0)};
   }
 
-  // table[m][n] will store the length of the LCS of
+  // lcsLengths[m][n] will store the length of the LCS of
   // sequence1[startIndex1..startIndex1+m+1] and
   // sequence2[startIndex2..startIndex2+n+1].
-  std::vector<std::vector<std::size_t>> table(
+  std::vector<std::vector<std::size_t>> lcsLengths(
       size1, std::vector<std::size_t>(size2, 0));
 
   LCSLengthResult result = {0, 0};
@@ -62,23 +62,23 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
   for (std::size_t i = 0; i < size1; ++i) {
     for (std::size_t j = 0; j < size2; ++j) {
       if (sequence1[startIndex1 + i] == sequence2[startIndex2 + j]) {
-        table[i][j] = internal::lookup(table, i - 1, j - 1) + 1;
+        lcsLengths[i][j] = internal::lookup(lcsLengths, i - 1, j - 1) + 1;
       } else {
-        table[i][j] = std::max(internal::lookup(table, i, j - 1),
-                               internal::lookup(table, i - 1, j));
+        lcsLengths[i][j] = std::max(internal::lookup(lcsLengths, i, j - 1),
+                                    internal::lookup(lcsLengths, i - 1, j));
       }
 
-      if (result.lcsLength < table[i][j]) {
-        result.lcsLength = table[i][j];
+      if (result.lcsLength < lcsLengths[i][j]) {
+        result.lcsLength = lcsLengths[i][j];
       }
     }
   }
 
 #ifdef TLOFS_DEBUG_LLCS
-  std::cerr << __func__ << " table:" << std::endl;
+  std::cerr << __func__ << " lcsLengths:" << std::endl;
   for (std::size_t i = 0; i < size1; ++i) {
     for (std::size_t j = 0; j < size2; ++j) {
-      std::cerr << table[i][j] << " ";
+      std::cerr << lcsLengths[i][j] << " ";
     }
     std::cerr << std::endl;
   }
@@ -116,10 +116,10 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
     return {0, internal::lcsDistance(size1, size2, 0)};
   }
 
-  // array[n] will store the length of the LCS of
+  // lcsLengths[n] will store the length of the LCS of
   // sequence1[startIndex1..startIndex1+size1] and
   // sequence2[startIndex2..startIndex2+n+1].
-  std::vector<std::size_t> array(size2, 0);
+  std::vector<std::size_t> lcsLengths(size2, 0);
 
   LCSLengthResult result = {0, 0};
 
@@ -127,30 +127,30 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
     std::size_t jMinus1thValueBeforeUpdate = 0;
 
     for (std::size_t j = 0; j < size2; ++j) {
-      std::size_t jthValueBeforeUpdate = array[j];
+      std::size_t jthValueBeforeUpdate = lcsLengths[j];
 
-      // jMinus1thValueBeforeUpdate equivalent to table[i - 1][j - 1].
-      // array[j - 1] equivalent to table[i][j - 1].
-      // array[j] equivalent to table[i - 1][j].
+      // jMinus1thValueBeforeUpdate equivalent to lcsLengths[i - 1][j - 1].
+      // lcsLengths[j - 1] equivalent to lcsLengths[i][j - 1].
+      // lcsLengths[j] equivalent to lcsLengths[i - 1][j].
       if (sequence1[startIndex1 + i] == sequence2[startIndex2 + j]) {
-        array[j] = jMinus1thValueBeforeUpdate + 1;
+        lcsLengths[j] = jMinus1thValueBeforeUpdate + 1;
       } else {
-        array[j] = std::max(internal::lookup(array, j - 1),
-                            internal::lookup(array, j));
+        lcsLengths[j] = std::max(internal::lookup(lcsLengths, j - 1),
+                                 internal::lookup(lcsLengths, j));
       }
 
       jMinus1thValueBeforeUpdate = jthValueBeforeUpdate;
 
-      if (result.lcsLength < array[j]) {
-        result.lcsLength = array[j];
+      if (result.lcsLength < lcsLengths[j]) {
+        result.lcsLength = lcsLengths[j];
       }
     }
   }
 
 #ifdef TLOFS_DEBUG_LLCS
-  std::cerr << __func__ << " array:" << std::endl;
+  std::cerr << __func__ << " lcsLengths:" << std::endl;
   for (std::size_t j = 0; j < size2; ++j) {
-    std::cerr << array[j] << " ";
+    std::cerr << lcsLengths[j] << " ";
   }
   std::cerr << std::endl;
 #endif

@@ -12,18 +12,18 @@ bool operator==(const LCSLengthResult &result1,
 }
 
 namespace internal {
-std::size_t lookup(const std::vector<std::vector<std::size_t>> &table,
+std::size_t lookup(const std::vector<std::vector<std::size_t>> &lcsLengths,
                    std::size_t i, std::size_t j) {
-  if (i < table.size() && j < table[i].size()) {
-    return table[i][j];
+  if (i < lcsLengths.size() && j < lcsLengths[i].size()) {
+    return lcsLengths[i][j];
   } else {
     return 0;
   }
 }
 
-std::size_t lookup(const std::vector<std::size_t> &array, std::size_t i) {
-  if (i < array.size()) {
-    return array[i];
+std::size_t lookup(const std::vector<std::size_t> &lcsLengths, std::size_t i) {
+  if (i < lcsLengths.size()) {
+    return lcsLengths[i];
   } else {
     return 0;
   }
