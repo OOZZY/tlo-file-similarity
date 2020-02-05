@@ -67,7 +67,7 @@ class RollingHasher {
 constexpr uint32_t OFFSET_BASIS = 2166136261U;
 constexpr uint32_t FNV_PRIME = 16777619U;
 
-class FNV1Hasher {
+class Fnv1Hasher {
  private:
   uint32_t hash = OFFSET_BASIS;
   bool bytesWereAdded_ = false;
@@ -102,8 +102,8 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
 
   std::vector<char> buffer(BUFFER_SIZE, 0);
   RollingHasher rollingHasher;
-  FNV1Hasher fnv1Hasher1;
-  FNV1Hasher fnv1Hasher2;
+  Fnv1Hasher fnv1Hasher1;
+  Fnv1Hasher fnv1Hasher2;
   std::string part1;
   std::string part2;
 
@@ -120,7 +120,7 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
       if (rollingHasher.getHash() % blockSize == blockSize - 1) {
         part1 +=
             BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
-        fnv1Hasher1 = FNV1Hasher();
+        fnv1Hasher1 = Fnv1Hasher();
 
         if (handler) {
           handler->onBlockHash();
@@ -130,14 +130,14 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
       if (rollingHasher.getHash() % (blockSize * 2) == blockSize * 2 - 1) {
         part2 +=
             BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
-        fnv1Hasher2 = FNV1Hasher();
+        fnv1Hasher2 = Fnv1Hasher();
       }
     }
   }
 
   if (fnv1Hasher1.bytesWereAdded()) {
     part1 += BASE64_ALPHABET[fnv1Hasher1.getHash() % BASE64_ALPHABET.size()];
-    fnv1Hasher1 = FNV1Hasher();
+    fnv1Hasher1 = Fnv1Hasher();
 
     if (handler) {
       handler->onBlockHash();
@@ -146,7 +146,7 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
 
   if (fnv1Hasher2.bytesWereAdded()) {
     part2 += BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
-    fnv1Hasher2 = FNV1Hasher();
+    fnv1Hasher2 = Fnv1Hasher();
   }
 
   return std::pair(part1, part2);
