@@ -43,27 +43,23 @@ int main() {
   EXPECT(equal(tlo::lcsLength2("0123456789"s, "0123456789"s), {10, 0}));
   EXPECT(equal(tlo::lcsLength2("01234567"s, "abcdefghij"s), {0, 18}));
 
-  const auto &lcsLength1s = tlo::lcsLength1_<std::string>;
+  const auto &lcsl1_ = tlo::lcsLength1_<std::string>;
 
-  EXPECT(equal(tlo::lcsLength3(""s, ""s, lcsLength1s), {0, 0}));
-  EXPECT(equal(tlo::lcsLength3("GAC"s, ""s, lcsLength1s), {0, 3}));
-  EXPECT(equal(tlo::lcsLength3(""s, "AGCAT"s, lcsLength1s), {0, 5}));
-  EXPECT(equal(tlo::lcsLength3("GAC"s, "AGCAT"s, lcsLength1s), {2, 4}));
-  EXPECT(equal(tlo::lcsLength3("XMJYAUZ"s, "MZJAWXU"s, lcsLength1s), {4, 6}));
-  EXPECT(equal(tlo::lcsLength3("___XMJYAUZ___"s, "__MZJAWXU___"s, lcsLength1s),
+  EXPECT(equal(tlo::lcsLength3(""s, ""s, lcsl1_), {0, 0}));
+  EXPECT(equal(tlo::lcsLength3("GAC"s, ""s, lcsl1_), {0, 3}));
+  EXPECT(equal(tlo::lcsLength3(""s, "AGCAT"s, lcsl1_), {0, 5}));
+  EXPECT(equal(tlo::lcsLength3("GAC"s, "AGCAT"s, lcsl1_), {2, 4}));
+  EXPECT(equal(tlo::lcsLength3("XMJYAUZ"s, "MZJAWXU"s, lcsl1_), {4, 6}));
+  EXPECT(equal(tlo::lcsLength3("___XMJYAUZ___"s, "__MZJAWXU___"s, lcsl1_),
                {9, 7}));
-  EXPECT(equal(tlo::lcsLength3("__XMJYAUZ___"s, "___MZJAWXU___-"s, lcsLength1s),
+  EXPECT(equal(tlo::lcsLength3("__XMJYAUZ___"s, "___MZJAWXU___-"s, lcsl1_),
                {9, 8}));
-  EXPECT(equal(tlo::lcsLength3("0123456789"s, "0123456789"s, lcsLength1s),
-               {10, 0}));
+  EXPECT(equal(tlo::lcsLength3("0123456789"s, "0123456789"s, lcsl1_), {10, 0}));
+  EXPECT(equal(tlo::lcsLength3("01234567"s, "abcdefghij"s, lcsl1_), {0, 18}));
+  EXPECT(equal(tlo::lcsLength3("aaabbb"s, "aaabbb___bbbccc"s, lcsl1_), {6, 9}));
+  EXPECT(equal(tlo::lcsLength3("bbbccc"s, "aaabbb___bbbccc"s, lcsl1_), {6, 9}));
   EXPECT(
-      equal(tlo::lcsLength3("01234567"s, "abcdefghij"s, lcsLength1s), {0, 18}));
-  EXPECT(equal(tlo::lcsLength3("aaabbb"s, "aaabbb___bbbccc"s, lcsLength1s),
-               {6, 9}));
-  EXPECT(equal(tlo::lcsLength3("bbbccc"s, "aaabbb___bbbccc"s, lcsLength1s),
-               {6, 9}));
-  EXPECT(equal(tlo::lcsLength3("aaabbbccc"s, "aaabbb___bbbccc"s, lcsLength1s),
-               {9, 6}));
+      equal(tlo::lcsLength3("aaabbbccc"s, "aaabbb___bbbccc"s, lcsl1_), {9, 6}));
 
   EXPECT(equal(tlo::lcsLength3(""s, ""s), {0, 0}));
   EXPECT(equal(tlo::lcsLength3("GAC"s, ""s), {0, 3}));
