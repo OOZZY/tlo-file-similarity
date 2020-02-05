@@ -51,8 +51,9 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
       size1 + 1, std::vector<std::size_t>(size2 + 1, 0));
 
   for (std::size_t i = 0; i < size1; ++i) {
+    std::size_t row = i + 1;
+
     for (std::size_t j = 0; j < size2; ++j) {
-      std::size_t row = i + 1;
       std::size_t col = j + 1;
 
       if (sequence1[startIndex1 + i] == sequence2[startIndex2 + j]) {
