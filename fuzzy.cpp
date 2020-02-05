@@ -109,10 +109,12 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
 
   while (!ifstream.eof()) {
     ifstream.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
+
     std::size_t numCharsRead = static_cast<std::size_t>(ifstream.gcount());
 
     for (std::size_t i = 0; i < numCharsRead; ++i) {
       unsigned char byte = static_cast<unsigned char>(buffer[i]);
+
       rollingHasher.addByte(byte);
       fnv1Hasher1.addByte(byte);
       fnv1Hasher2.addByte(byte);
@@ -160,6 +162,7 @@ FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
   }
 
   auto fileSize = getFileSize(path);
+
   if (fileSize == 0) {
     return {MIN_BLOCK_SIZE, "", "", path.generic_string()};
   }
@@ -249,8 +252,8 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
       }
 
       fs::path file = std::move(state.files.front());
-      state.files.pop();
 
+      state.files.pop();
       queueUniqueLock.unlock();
 
       fuzzyHash(file, &handler);
@@ -307,6 +310,7 @@ void hashFilesWithMultipleThreads(const std::vector<std::string> &paths,
   }
 
   std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
+
   state.allFilesQueued = true;
   queueUniqueLock.unlock();
 

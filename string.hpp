@@ -12,6 +12,7 @@ std::vector<std::string> split(const std::string &string, char delimiter);
 template <class T>
 std::string toString(const T &object) {
   std::ostringstream oss;
+
   oss << object;
   return oss.str();
 }

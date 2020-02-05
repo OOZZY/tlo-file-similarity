@@ -15,6 +15,7 @@ std::uintmax_t getFileSize(const fs::path &path) {
   }
 
   ifstream.seekg(0, std::ifstream::end);
+
   auto size = ifstream.tellg();
 
   if (size < 0) {

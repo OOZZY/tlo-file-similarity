@@ -113,11 +113,13 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
 int main(int argc, char **argv) {
   try {
     const tlo::CommandLine commandLine(argc, argv, VALID_OPTIONS);
+
     if (commandLine.arguments().empty()) {
       std::cerr << "Usage: " << commandLine.program()
                 << " [options] <file or directory>...\n"
                 << std::endl;
       commandLine.printValidOptions(std::cerr);
+
       return 1;
     }
 
@@ -139,9 +141,11 @@ int main(int argc, char **argv) {
 
     if (numThreads <= 1) {
       StatusUpdater updater(printStatus);
+
       tlo::fuzzyHash(commandLine.arguments(), updater, numThreads);
     } else {
       SynchronizingStatusUpdater updater(printStatus);
+
       tlo::fuzzyHash(commandLine.arguments(), updater, numThreads);
     }
   } catch (const std::exception &exception) {

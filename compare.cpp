@@ -19,6 +19,7 @@ double compareWithLcsDistance(const std::string &string1,
                               const std::string &string2) {
   auto lcsDistance = lcsLength3(string1, string2).lcsDistance;
   auto maxLcsDistance = ::tlo::maxLcsDistance(string1.size(), string2.size());
+
   return static_cast<double>(maxLcsDistance - lcsDistance) / maxLcsDistance *
          100.0;
 }
@@ -28,6 +29,7 @@ double compareWithLevenshteinDistance(const std::string &string1,
   auto levenshteinDistance = levenshteinDistance3(string1, string2);
   auto maxLevenshteinDistance =
       ::tlo::maxLevenshteinDistance(string1.size(), string2.size());
+
   return static_cast<double>(maxLevenshteinDistance - levenshteinDistance) /
          maxLevenshteinDistance * 100.0;
 }
@@ -48,6 +50,7 @@ double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2) {
   if (hash1.blockSize == hash2.blockSize) {
     double part1Similarity = compareWithLcsDistance(hash1.part1, hash2.part1);
     double part2Similarity = compareWithLcsDistance(hash1.part2, hash2.part2);
+
     return std::max(part1Similarity, part2Similarity);
   } else if (hash1.blockSize == 2 * hash2.blockSize) {
     return compareWithLcsDistance(hash1.part1, hash2.part2);
@@ -74,6 +77,7 @@ void readHashesFromFile(
 
   while (std::getline(ifstream, line)) {
     FuzzyHash hash = parseHash(line);
+
     blockSizesToHashes[hash.blockSize].push_back(std::move(hash));
   }
 }

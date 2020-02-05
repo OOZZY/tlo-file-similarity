@@ -175,6 +175,7 @@ LcsLengthResult lcsLength3_(
   }
 
   std::size_t prefixLength = 0;
+
   for (std::size_t i = 0; i < size1 && i < size2; ++i) {
     if (sequence1[startIndex1 + i] != sequence2[startIndex2 + i]) {
       break;
@@ -184,12 +185,14 @@ LcsLengthResult lcsLength3_(
   }
 
   std::size_t smallerSize = std::min(size1, size2);
+
   if (prefixLength == smallerSize) {
     return {prefixLength, internal::lcsDistance(size1, size2, prefixLength)};
   }
 
   std::size_t remainingLength = smallerSize - prefixLength;
   std::size_t suffixLength = 0;
+
   for (std::size_t i = size1 - 1, j = size2 - 1; i < size1 && j < size2;
        --i, --j) {
     if (sequence1[startIndex1 + i] != sequence2[startIndex2 + j]) {
@@ -210,7 +213,6 @@ LcsLengthResult lcsLength3_(
 
   result.lcsLength += prefixLength + suffixLength;
   result.lcsDistance = internal::lcsDistance(size1, size2, result.lcsLength);
-
   return result;
 }
 

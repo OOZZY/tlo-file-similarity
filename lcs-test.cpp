@@ -44,6 +44,7 @@ int main() {
   EXPECT(equal(tlo::lcsLength2("01234567"s, "abcdefghij"s), {0, 18}));
 
   const auto &lcsLength1s = tlo::lcsLength1_<std::string>;
+
   EXPECT(equal(tlo::lcsLength3(""s, ""s, lcsLength1s), {0, 0}));
   EXPECT(equal(tlo::lcsLength3("GAC"s, ""s, lcsLength1s), {0, 3}));
   EXPECT(equal(tlo::lcsLength3(""s, "AGCAT"s, lcsLength1s), {0, 5}));

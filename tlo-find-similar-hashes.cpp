@@ -153,11 +153,13 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
 int main(int argc, char **argv) {
   try {
     const tlo::CommandLine commandLine(argc, argv, VALID_OPTIONS);
+
     if (commandLine.arguments().empty()) {
       std::cerr << "Usage: " << commandLine.program()
                 << " [options] <text file with hashes>...\n"
                 << std::endl;
       commandLine.printValidOptions(std::cerr);
+
       return 1;
     }
 
@@ -198,11 +200,13 @@ int main(int argc, char **argv) {
 
     if (numThreads <= 1) {
       StatusUpdater updater(printStatus, stringToOutputFormat(outputFormat));
+
       tlo::compareHashes(blockSizesToHashes, similarityThreshold, updater,
                          numThreads);
     } else {
       SynchronizingStatusUpdater updater(printStatus,
                                          stringToOutputFormat(outputFormat));
+
       tlo::compareHashes(blockSizesToHashes, similarityThreshold, updater,
                          numThreads);
     }
