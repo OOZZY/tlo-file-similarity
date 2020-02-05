@@ -24,13 +24,6 @@ std::ostream &operator<<(std::ostream &os, const LCSLengthResult &result);
 bool operator==(const LCSLengthResult &result1, const LCSLengthResult &result2);
 
 namespace internal {
-// Returns lcsLengths[i][j] if i and j are within bounds, otherwise returns 0.
-std::size_t lookup(const std::vector<std::vector<std::size_t>> &lcsLengths,
-                   std::size_t i, std::size_t j);
-
-// Returns lcsLengths[i] if i is within bounds, otherwise returns 0.
-std::size_t lookup(const std::vector<std::size_t> &lcsLengths, std::size_t i);
-
 // Calculate LCS distance for a pair of strings with given sizes and LCS length.
 std::size_t lcsDistance(std::size_t size1, std::size_t size2,
                         std::size_t lcsLength);
@@ -52,26 +45,29 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
   }
 
   // lcsLengths[m][n] will store the length of the LCS of
-  // sequence1[startIndex1 .. startIndex1+m+1] and
-  // sequence2[startIndex2 .. startIndex2+n+1].
+  // sequence1[startIndex1 .. startIndex1+m] and
+  // sequence2[startIndex2 .. startIndex2+n].
   std::vector<std::vector<std::size_t>> lcsLengths(
-      size1, std::vector<std::size_t>(size2, 0));
+      size1 + 1, std::vector<std::size_t>(size2 + 1, 0));
 
   for (std::size_t i = 0; i < size1; ++i) {
     for (std::size_t j = 0; j < size2; ++j) {
+      std::size_t row = i + 1;
+      std::size_t col = j + 1;
+
       if (sequence1[startIndex1 + i] == sequence2[startIndex2 + j]) {
-        lcsLengths[i][j] = internal::lookup(lcsLengths, i - 1, j - 1) + 1;
+        lcsLengths[row][col] = lcsLengths[row - 1][col - 1] + 1;
       } else {
-        lcsLengths[i][j] = std::max(internal::lookup(lcsLengths, i, j - 1),
-                                    internal::lookup(lcsLengths, i - 1, j));
+        lcsLengths[row][col] =
+            std::max(lcsLengths[row][col - 1], lcsLengths[row - 1][col]);
       }
     }
   }
 
 #ifdef TLOFS_DEBUG_LLCS
   std::cerr << __func__ << " lcsLengths:" << std::endl;
-  for (std::size_t i = 0; i < size1; ++i) {
-    for (std::size_t j = 0; j < size2; ++j) {
+  for (std::size_t i = 0; i <= size1; ++i) {
+    for (std::size_t j = 0; j <= size2; ++j) {
       std::cerr << lcsLengths[i][j] << " ";
     }
     std::cerr << std::endl;
@@ -80,7 +76,7 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
 
   LCSLengthResult result;
 
-  result.lcsLength = lcsLengths[size1 - 1][size2 - 1];
+  result.lcsLength = lcsLengths[size1][size2];
   result.lcsDistance = internal::lcsDistance(size1, size2, result.lcsLength);
   return result;
 }
@@ -115,32 +111,32 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
 
   // lcsLengths[n] will store the length of the LCS of
   // sequence1[startIndex1 .. startIndex1+size1] and
-  // sequence2[startIndex2 .. startIndex2+n+1].
-  std::vector<std::size_t> lcsLengths(size2, 0);
+  // sequence2[startIndex2 .. startIndex2+n].
+  std::vector<std::size_t> lcsLengths(size2 + 1, 0);
 
   for (std::size_t i = 0; i < size1; ++i) {
-    std::size_t jMinus1thValueBeforeUpdate = 0;
+    std::size_t valueInPreviousColumnBeforeUpdate = 0;
 
     for (std::size_t j = 0; j < size2; ++j) {
-      std::size_t jthValueBeforeUpdate = lcsLengths[j];
+      std::size_t col = j + 1;
+      std::size_t valueInColumnBeforeUpdate = lcsLengths[col];
 
-      // jMinus1thValueBeforeUpdate equivalent to lcsLengths[i - 1][j - 1].
-      // lcsLengths[j - 1] equivalent to lcsLengths[i][j - 1].
-      // lcsLengths[j] equivalent to lcsLengths[i - 1][j].
+      // lcsLengths[row - 1][col - 1] -> valueInPreviousColumnBeforeUpdate.
+      // lcsLengths[row][col - 1] -> lcsLengths[col - 1].
+      // lcsLengths[row - 1][col] -> lcsLengths[col].
       if (sequence1[startIndex1 + i] == sequence2[startIndex2 + j]) {
-        lcsLengths[j] = jMinus1thValueBeforeUpdate + 1;
+        lcsLengths[col] = valueInPreviousColumnBeforeUpdate + 1;
       } else {
-        lcsLengths[j] = std::max(internal::lookup(lcsLengths, j - 1),
-                                 internal::lookup(lcsLengths, j));
+        lcsLengths[col] = std::max(lcsLengths[col - 1], lcsLengths[col]);
       }
 
-      jMinus1thValueBeforeUpdate = jthValueBeforeUpdate;
+      valueInPreviousColumnBeforeUpdate = valueInColumnBeforeUpdate;
     }
   }
 
 #ifdef TLOFS_DEBUG_LLCS
   std::cerr << __func__ << " lcsLengths:" << std::endl;
-  for (std::size_t j = 0; j < size2; ++j) {
+  for (std::size_t j = 0; j <= size2; ++j) {
     std::cerr << lcsLengths[j] << " ";
   }
   std::cerr << std::endl;
@@ -148,7 +144,7 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
 
   LCSLengthResult result;
 
-  result.lcsLength = lcsLengths[size2 - 1];
+  result.lcsLength = lcsLengths[size2];
   result.lcsDistance = internal::lcsDistance(size1, size2, result.lcsLength);
   return result;
 }
