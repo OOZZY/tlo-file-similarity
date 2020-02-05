@@ -12,7 +12,7 @@
 #endif
 
 namespace tlo {
-struct LCSLengthResult {
+struct LcsLengthResult {
   // Length of the LCS.
   std::size_t lcsLength;
 
@@ -20,8 +20,8 @@ struct LCSLengthResult {
   std::size_t lcsDistance;
 };
 
-std::ostream &operator<<(std::ostream &os, const LCSLengthResult &result);
-bool operator==(const LCSLengthResult &result1, const LCSLengthResult &result2);
+std::ostream &operator<<(std::ostream &os, const LcsLengthResult &result);
+bool operator==(const LcsLengthResult &result1, const LcsLengthResult &result2);
 
 namespace internal {
 // Calculate LCS distance for a pair of strings with given sizes and LCS length.
@@ -33,7 +33,7 @@ std::size_t lcsDistance(std::size_t size1, std::size_t size2,
 // and sequence2[startIndex2, startIndex2+size2). Takes O(size1 * size2) time.
 // Uses O(size1 * size2) memory.
 template <class CharSequence>
-LCSLengthResult lcsLength1_(const CharSequence &sequence1,
+LcsLengthResult lcsLength1_(const CharSequence &sequence1,
                             std::size_t startIndex1, std::size_t size1,
                             const CharSequence &sequence2,
                             std::size_t startIndex2, std::size_t size2) {
@@ -75,7 +75,7 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
   }
 #endif
 
-  LCSLengthResult result;
+  LcsLengthResult result;
 
   result.lcsLength = lcsLengths[size1][size2];
   result.lcsDistance = internal::lcsDistance(size1, size2, result.lcsLength);
@@ -83,7 +83,7 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
 }
 
 template <class CharSequence>
-LCSLengthResult lcsLength1(const CharSequence &sequence1,
+LcsLengthResult lcsLength1(const CharSequence &sequence1,
                            const CharSequence &sequence2) {
   return lcsLength1_(sequence1, 0, sequence1.size(), sequence2, 0,
                      sequence2.size());
@@ -93,7 +93,7 @@ LCSLengthResult lcsLength1(const CharSequence &sequence1,
 // and sequence2[startIndex2, startIndex2+size2). Takes O(size1 * size2) time.
 // Uses only O(min(size1, size2)) memory.
 template <class CharSequence>
-LCSLengthResult lcsLength2_(const CharSequence &sequence1,
+LcsLengthResult lcsLength2_(const CharSequence &sequence1,
                             std::size_t startIndex1, std::size_t size1,
                             const CharSequence &sequence2,
                             std::size_t startIndex2, std::size_t size2) {
@@ -143,7 +143,7 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
   std::cerr << std::endl;
 #endif
 
-  LCSLengthResult result;
+  LcsLengthResult result;
 
   result.lcsLength = lcsLengths[size2];
   result.lcsDistance = internal::lcsDistance(size1, size2, result.lcsLength);
@@ -151,7 +151,7 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
 }
 
 template <class CharSequence>
-LCSLengthResult lcsLength2(const CharSequence &sequence1,
+LcsLengthResult lcsLength2(const CharSequence &sequence1,
                            const CharSequence &sequence2) {
   return lcsLength2_(sequence1, 0, sequence1.size(), sequence2, 0,
                      sequence2.size());
@@ -161,10 +161,10 @@ LCSLengthResult lcsLength2(const CharSequence &sequence1,
 // and sequence2[startIndex2, startIndex2+size2). Does additional optimizations
 // on top of one of the other lcsLength functions.
 template <class CharSequence>
-LCSLengthResult lcsLength3_(
+LcsLengthResult lcsLength3_(
     const CharSequence &sequence1, std::size_t startIndex1, std::size_t size1,
     const CharSequence &sequence2, std::size_t startIndex2, std::size_t size2,
-    LCSLengthResult (*lcsLength)(const CharSequence &, std::size_t, std::size_t,
+    LcsLengthResult (*lcsLength)(const CharSequence &, std::size_t, std::size_t,
                                  const CharSequence &, std::size_t,
                                  std::size_t) = lcsLength2_<CharSequence>) {
   assert(startIndex1 + size1 <= sequence1.size());
@@ -203,7 +203,7 @@ LCSLengthResult lcsLength3_(
     suffixLength++;
   }
 
-  LCSLengthResult result = lcsLength(sequence1, startIndex1 + prefixLength,
+  LcsLengthResult result = lcsLength(sequence1, startIndex1 + prefixLength,
                                      size1 - prefixLength - suffixLength,
                                      sequence2, startIndex2 + prefixLength,
                                      size2 - prefixLength - suffixLength);
@@ -215,9 +215,9 @@ LCSLengthResult lcsLength3_(
 }
 
 template <class CharSequence>
-LCSLengthResult lcsLength3(
+LcsLengthResult lcsLength3(
     const CharSequence &sequence1, const CharSequence &sequence2,
-    LCSLengthResult (*lcsLength)(const CharSequence &, std::size_t, std::size_t,
+    LcsLengthResult (*lcsLength)(const CharSequence &, std::size_t, std::size_t,
                                  const CharSequence &, std::size_t,
                                  std::size_t) = lcsLength2_<CharSequence>) {
   return lcsLength3_(sequence1, 0, sequence1.size(), sequence2, 0,
@@ -225,7 +225,7 @@ LCSLengthResult lcsLength3(
 }
 
 // Calculate max LCS distance for a pair of strings with given sizes.
-std::size_t maxLCSDistance(std::size_t size1, std::size_t size2);
+std::size_t maxLcsDistance(std::size_t size1, std::size_t size2);
 }  // namespace tlo
 
 #endif  // TLOFS_LCS_HPP

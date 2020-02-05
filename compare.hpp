@@ -8,7 +8,7 @@
 namespace tlo {
 // Returns score from 0 to 100 of how similar the given strings are. A score
 // closer to 100 means the hashes are more similar.
-double compareWithLCSDistance(const std::string &string1,
+double compareWithLcsDistance(const std::string &string1,
                               const std::string &string2);
 
 // Returns score from 0 to 100 of how similar the given strings are. A score
