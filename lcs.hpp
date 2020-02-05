@@ -36,8 +36,8 @@ std::size_t lcsDistance(std::size_t size1, std::size_t size2,
                         std::size_t lcsLength);
 }  // namespace internal
 
-// Returns the length of the LCS of sequence1[startIndex1..startIndex1+size1]
-// and sequence2[startIndex2..startIndex2+size2]. Takes O(size1 * size2) time.
+// Returns the length of the LCS of sequence1[startIndex1 .. startIndex1+size1]
+// and sequence2[startIndex2 .. startIndex2+size2]. Takes O(size1 * size2) time.
 // Uses O(size1 * size2) memory.
 template <class CharSequence>
 LCSLengthResult lcsLength1_(const CharSequence &sequence1,
@@ -52,8 +52,8 @@ LCSLengthResult lcsLength1_(const CharSequence &sequence1,
   }
 
   // lcsLengths[m][n] will store the length of the LCS of
-  // sequence1[startIndex1..startIndex1+m+1] and
-  // sequence2[startIndex2..startIndex2+n+1].
+  // sequence1[startIndex1 .. startIndex1+m+1] and
+  // sequence2[startIndex2 .. startIndex2+n+1].
   std::vector<std::vector<std::size_t>> lcsLengths(
       size1, std::vector<std::size_t>(size2, 0));
 
@@ -92,8 +92,8 @@ LCSLengthResult lcsLength1(const CharSequence &sequence1,
                      sequence2.size());
 }
 
-// Returns the length of the LCS of sequence1[startIndex1..startIndex1+size1]
-// and sequence2[startIndex2..startIndex2+size2]. Takes O(size1 * size2) time.
+// Returns the length of the LCS of sequence1[startIndex1 .. startIndex1+size1]
+// and sequence2[startIndex2 .. startIndex2+size2]. Takes O(size1 * size2) time.
 // Uses only O(min(size1, size2)) memory.
 template <class CharSequence>
 LCSLengthResult lcsLength2_(const CharSequence &sequence1,
@@ -114,8 +114,8 @@ LCSLengthResult lcsLength2_(const CharSequence &sequence1,
   }
 
   // lcsLengths[n] will store the length of the LCS of
-  // sequence1[startIndex1..startIndex1+size1] and
-  // sequence2[startIndex2..startIndex2+n+1].
+  // sequence1[startIndex1 .. startIndex1+size1] and
+  // sequence2[startIndex2 .. startIndex2+n+1].
   std::vector<std::size_t> lcsLengths(size2, 0);
 
   for (std::size_t i = 0; i < size1; ++i) {
@@ -160,9 +160,9 @@ LCSLengthResult lcsLength2(const CharSequence &sequence1,
                      sequence2.size());
 }
 
-// Returns the length of the LCS of sequence1[startIndex1..startIndex1+size1]
-// and sequence2[startIndex2..startIndex2+size2]. Does additional optimizations
-// on top of one of the other lcsLength functions.
+// Returns the length of the LCS of sequence1[startIndex1 .. startIndex1+size1]
+// and sequence2[startIndex2 .. startIndex2+size2]. Does additional
+// optimizations on top of one of the other lcsLength functions.
 template <class CharSequence>
 LCSLengthResult lcsLength3_(
     const CharSequence &sequence1, std::size_t startIndex1, std::size_t size1,
