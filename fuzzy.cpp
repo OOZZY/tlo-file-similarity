@@ -338,14 +338,15 @@ void fuzzyHash(const std::vector<std::string> &paths,
 }
 
 FuzzyHash parseHash(const std::string &hash) {
-  std::vector<std::string> commaSplit = split(hash, ',');
+  auto commaPosition = hash.find(',');
 
-  if (commaSplit.size() < 2) {
+  if (commaPosition == std::string::npos) {
     throw std::runtime_error("Error: Hash \"" + hash +
                              "\" does not have a comma.");
   }
 
-  std::vector<std::string> colonSplit = split(commaSplit[0], ':');
+  std::vector<std::string> colonSplit =
+      split(hash.substr(0, commaPosition), ':');
 
   if (colonSplit.size() != 3) {
     throw std::runtime_error(
@@ -362,6 +363,7 @@ FuzzyHash parseHash(const std::string &hash) {
                              "\" has non-integer block size.");
   }
 
-  return {blockSize, colonSplit[1], colonSplit[2], commaSplit[1]};
+  return {blockSize, colonSplit[1], colonSplit[2],
+          hash.substr(commaPosition + 1)};
 }
 }  // namespace tlo
