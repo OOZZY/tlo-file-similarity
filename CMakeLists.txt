@@ -50,10 +50,10 @@ if (TLOFS_LINK_FS)
   endif()
 endif()
 
-set(core_headers compare.hpp filesystem.hpp fuzzy.hpp lcs.hpp levenshtein.hpp
-  options.hpp print.hpp string.hpp)
-set(core_sources compare.cpp filesystem.cpp fuzzy.cpp lcs.cpp levenshtein.cpp
-  options.cpp string.cpp)
+set(core_headers compare.hpp damerau-levenshtein.hpp filesystem.hpp fuzzy.hpp
+  lcs.hpp levenshtein.hpp options.hpp print.hpp string.hpp)
+set(core_sources compare.cpp damerau-levenshtein.cpp filesystem.cpp fuzzy.cpp
+  lcs.cpp levenshtein.cpp options.cpp string.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)
@@ -71,8 +71,15 @@ set_target_properties(levenshtein-test PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(levenshtein-test PRIVATE ${global_compile_options})
 target_link_libraries(levenshtein-test PRIVATE tlofs-core)
 
+add_executable(damerau-levenshtein-test damerau-levenshtein-test.cpp)
+set_target_properties(damerau-levenshtein-test PROPERTIES CXX_EXTENSIONS OFF)
+target_compile_options(damerau-levenshtein-test PRIVATE
+  ${global_compile_options})
+target_link_libraries(damerau-levenshtein-test PRIVATE tlofs-core)
+
 add_test(NAME lcs-test COMMAND lcs-test)
 add_test(NAME levenshtein-test COMMAND levenshtein-test)
+add_test(NAME damerau-levenshtein-test COMMAND damerau-levenshtein-test)
 
 add_executable(tlo-fuzzy-hash tlo-fuzzy-hash.cpp)
 set_target_properties(tlo-fuzzy-hash PROPERTIES CXX_EXTENSIONS OFF)

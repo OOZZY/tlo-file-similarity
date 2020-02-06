@@ -43,8 +43,9 @@ std::size_t levenshteinDistance1_(const CharSequence &sequence1,
   }
 
   for (std::size_t i = 0; i < size1; ++i) {
+    std::size_t row = i + 1;
+
     for (std::size_t j = 0; j < size2; ++j) {
-      std::size_t row = i + 1;
       std::size_t col = j + 1;
 
       std::size_t deletionCost = distances[row - 1][col] + 1;

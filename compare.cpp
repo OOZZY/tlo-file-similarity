@@ -8,6 +8,7 @@
 #include <thread>
 #include <utility>
 
+#include "damerau-levenshtein.hpp"
 #include "lcs.hpp"
 #include "levenshtein.hpp"
 #include "string.hpp"
@@ -32,6 +33,16 @@ double compareWithLevenshteinDistance(const std::string &string1,
 
   return static_cast<double>(maxLevenshteinDistance - levenshteinDistance) /
          maxLevenshteinDistance * 100.0;
+}
+
+double compareWithDamerLevenDistance(const std::string &string1,
+                                     const std::string &string2) {
+  auto damerLevenDistance = damerLevenDistance2(string1, string2);
+  auto maxDamerLevenDistance =
+      ::tlo::maxDamerLevenDistance(string1.size(), string2.size());
+
+  return static_cast<double>(maxDamerLevenDistance - damerLevenDistance) /
+         maxDamerLevenDistance * 100.0;
 }
 
 bool hashesAreComparable(const FuzzyHash &hash1, const FuzzyHash &hash2) {
