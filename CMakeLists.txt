@@ -50,10 +50,10 @@ if (TLOFS_LINK_FS)
   endif()
 endif()
 
-set(core_headers compare.hpp damerau-levenshtein.hpp filesystem.hpp fuzzy.hpp
-  lcs.hpp levenshtein.hpp options.hpp print.hpp string.hpp)
-set(core_sources compare.cpp damerau-levenshtein.cpp filesystem.cpp fuzzy.cpp
-  lcs.cpp levenshtein.cpp options.cpp string.cpp)
+set(core_headers chrono.hpp compare.hpp damerau-levenshtein.hpp filesystem.hpp
+  fuzzy.hpp lcs.hpp levenshtein.hpp options.hpp print.hpp string.hpp)
+set(core_sources chrono.cpp compare.cpp damerau-levenshtein.cpp filesystem.cpp
+  fuzzy.cpp lcs.cpp levenshtein.cpp options.cpp string.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)
