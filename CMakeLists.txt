@@ -7,6 +7,8 @@ set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
+find_package(SQLite3 REQUIRED)
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
     "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(global_compile_options -pedantic -Wall -Wextra -Werror)
@@ -18,7 +20,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     -Wno-global-constructors -Wno-weak-vtables)
 endif()
 
-set(global_link_libraries Threads::Threads)
+set(global_link_libraries Threads::Threads SQLite::SQLite3)
 
 option(TLOFS_COLORED_DIAGNOSTICS
   "Tell the compiler to use colors in diagnostics (GNU/Clang only)." ON)
@@ -51,9 +53,10 @@ if (TLOFS_LINK_FS)
 endif()
 
 set(core_headers chrono.hpp compare.hpp damerau-levenshtein.hpp filesystem.hpp
-  fuzzy.hpp lcs.hpp levenshtein.hpp options.hpp print.hpp string.hpp)
+  fuzzy.hpp lcs.hpp levenshtein.hpp options.hpp print.hpp sqlite3.hpp
+  string.hpp)
 set(core_sources chrono.cpp compare.cpp damerau-levenshtein.cpp filesystem.cpp
-  fuzzy.cpp lcs.cpp levenshtein.cpp options.cpp string.cpp)
+  fuzzy.cpp lcs.cpp levenshtein.cpp options.cpp sqlite3.cpp string.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)
