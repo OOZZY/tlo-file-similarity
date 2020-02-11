@@ -96,8 +96,8 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
   std::ifstream ifstream(file, std::ifstream::in | std::ifstream::binary);
 
   if (!ifstream.is_open()) {
-    throw std::runtime_error("Error: Failed to open \"" +
-                             file.generic_string() + "\".");
+    throw std::runtime_error("Error: Failed to open \"" + file.string() +
+                             "\".");
   }
 
   std::vector<char> buffer(BUFFER_SIZE, 0);
@@ -157,14 +157,13 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
 
 FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
   if (!fs::is_regular_file(path)) {
-    throw std::runtime_error("Error: \"" + path.generic_string() +
-                             "\" is not a file.");
+    throw std::runtime_error("Error: \"" + path.string() + "\" is not a file.");
   }
 
   auto fileSize = getFileSize(path);
 
   if (fileSize == 0) {
-    return {MIN_BLOCK_SIZE, "", "", path.generic_string()};
+    return {MIN_BLOCK_SIZE, "", "", path.string()};
   }
 
   double exponent = std::floor(std::log2(static_cast<double>(fileSize) /
@@ -189,7 +188,7 @@ FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
     }
   }
 
-  FuzzyHash hash{blockSize, part1, part2, path.generic_string()};
+  FuzzyHash hash{blockSize, part1, part2, path.string()};
 
   if (handler) {
     handler->onFileHash(hash);
@@ -199,20 +198,16 @@ FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
 }
 
 namespace {
-void hashFilesWithSingleThread(const std::vector<std::string> &paths,
+void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
                                FuzzyHashEventHandler &handler) {
-  for (const auto &string : paths) {
-    fs::path path = string;
-
+  for (const auto &path : paths) {
     if (!fs::is_regular_file(path) && !fs::is_directory(path)) {
-      throw std::runtime_error("Error: \"" + path.generic_string() +
+      throw std::runtime_error("Error: \"" + path.string() +
                                "\" is not a file or directory.");
     }
   }
 
-  for (const auto &string : paths) {
-    fs::path path = string;
-
+  for (const auto &path : paths) {
     if (fs::is_regular_file(path)) {
       fuzzyHash(path, &handler);
     } else if (fs::is_directory(path)) {
@@ -266,16 +261,14 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
   }
 }
 
-void hashFilesWithMultipleThreads(const std::vector<std::string> &paths,
+void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
                                   FuzzyHashEventHandler &handler,
                                   std::size_t numThreads) {
   assert(numThreads > 1);
 
-  for (const auto &string : paths) {
-    fs::path path = string;
-
+  for (const auto &path : paths) {
     if (!fs::is_regular_file(path) && !fs::is_directory(path)) {
-      throw std::runtime_error("Error: \"" + path.generic_string() +
+      throw std::runtime_error("Error: \"" + path.string() +
                                "\" is not a file or directory.");
     }
   }
@@ -289,13 +282,11 @@ void hashFilesWithMultipleThreads(const std::vector<std::string> &paths,
                              std::ref(handler), std::ref(exceptions[i + 1]));
   }
 
-  for (const auto &string : paths) {
-    fs::path path = string;
-
+  for (const auto &path : paths) {
     if (fs::is_regular_file(path)) {
       const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
 
-      state.files.push(std::move(path));
+      state.files.push(path);
       state.filesQueued.notify_one();
     } else if (fs::is_directory(path)) {
       for (const auto &entry : fs::recursive_directory_iterator(path)) {
@@ -328,7 +319,7 @@ void hashFilesWithMultipleThreads(const std::vector<std::string> &paths,
 }
 }  // namespace
 
-void fuzzyHash(const std::vector<std::string> &paths,
+void fuzzyHash(const std::vector<fs::path> &paths,
                FuzzyHashEventHandler &handler, std::size_t numThreads) {
   if (numThreads <= 1) {
     hashFilesWithSingleThread(paths, handler);

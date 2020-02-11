@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 #include "compare.hpp"
+#include "filesystem.hpp"
 #include "options.hpp"
 
 namespace {
@@ -191,8 +192,8 @@ int main(int argc, char **argv) {
       std::cerr << "Reading hashes." << std::endl;
     }
 
-    std::unordered_map<std::size_t, std::vector<tlo::FuzzyHash>>
-        blockSizesToHashes = tlo::readHashes(commandLine.arguments());
+    auto paths = tlo::stringsToPaths(commandLine.arguments());
+    auto blockSizesToHashes = tlo::readHashes(paths);
 
     if (printStatus) {
       std::cerr << "Comparing hashes." << std::endl;

@@ -41,14 +41,14 @@ class FuzzyHashEventHandler {
 FuzzyHash fuzzyHash(const std::filesystem::path &path,
                     FuzzyHashEventHandler *handler = nullptr);
 
-// Expects strings in paths to be paths to files or directories. If a string is
-// a path to a file, will hash the file. If a string is a path to a directory,
-// will hash all files in the directory and all its subdirectories. If a string
-// is neither a file or directory, will throw std::runtime_error. Each file is
-// hashed by calling fuzzyHash(path, &handler). The handler can be used to
-// process the hashes. If numThreads > 1, make sure that the handler's member
-// functions are synchronized.
-void fuzzyHash(const std::vector<std::string> &paths,
+// Expects paths to be paths to files or directories. If a path refers to a
+// file, will hash the file. If a path refers to a directory, will hash all
+// files in the directory and all its subdirectories. If a path is neither a
+// file or directory, will throw std::runtime_error. Each file is hashed by
+// calling fuzzyHash(path, &handler). The handler can be used to process the
+// hashes. If numThreads > 1, make sure that the handler's member functions are
+// synchronized.
+void fuzzyHash(const std::vector<std::filesystem::path> &paths,
                FuzzyHashEventHandler &handler, std::size_t numThreads = 1);
 
 // Given string should have the format

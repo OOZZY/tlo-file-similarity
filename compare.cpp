@@ -80,8 +80,8 @@ void readHashesFromFile(
   std::ifstream ifstream(file, std::ifstream::in);
 
   if (!ifstream.is_open()) {
-    throw std::runtime_error("Error: Failed to open \"" +
-                             file.generic_string() + "\".");
+    throw std::runtime_error("Error: Failed to open \"" + file.string() +
+                             "\".");
   }
 
   std::string line;
@@ -95,21 +95,17 @@ void readHashesFromFile(
 }  // namespace
 
 std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashes(
-    const std::vector<std::string> &paths) {
-  for (const auto &string : paths) {
-    fs::path path = string;
-
+    const std::vector<fs::path> &paths) {
+  for (const auto &path : paths) {
     if (!fs::is_regular_file(path)) {
-      throw std::runtime_error("Error: \"" + path.generic_string() +
+      throw std::runtime_error("Error: \"" + path.string() +
                                "\" is not a file.");
     }
   }
 
   std::unordered_map<std::size_t, std::vector<FuzzyHash>> blockSizesToHashes;
 
-  for (const auto &string : paths) {
-    fs::path path = string;
-
+  for (const auto &path : paths) {
     readHashesFromFile(blockSizesToHashes, path);
   }
 

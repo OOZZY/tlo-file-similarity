@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <ctime>
 #include <filesystem>
+#include <string>
+#include <vector>
 
 namespace tlo {
 // On MinGW-w64, sometimes std::filesystem::file_size() returns the wrong size
@@ -11,6 +13,11 @@ namespace tlo {
 std::uintmax_t getFileSize(const std::filesystem::path &path);
 
 std::time_t getLastWriteTime(const std::filesystem::path &path);
+
+// Also removes duplicate paths while preserving order of items. Throws
+// std::runtime_error if a string refers to a path that doesn't exist.
+std::vector<std::filesystem::path> stringsToPaths(
+    const std::vector<std::string> &strings);
 }  // namespace tlo
 
 #endif  // TLOFS_FILESYSTEM_HPP

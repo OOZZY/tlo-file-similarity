@@ -3,6 +3,7 @@
 #include <mutex>
 #include <thread>
 
+#include "filesystem.hpp"
 #include "fuzzy.hpp"
 #include "options.hpp"
 
@@ -139,14 +140,16 @@ int main(int argc, char **argv) {
       std::cerr << "Hashing files." << std::endl;
     }
 
+    auto paths = tlo::stringsToPaths(commandLine.arguments());
+
     if (numThreads <= 1) {
       StatusUpdater updater(printStatus);
 
-      tlo::fuzzyHash(commandLine.arguments(), updater, numThreads);
+      tlo::fuzzyHash(paths, updater, numThreads);
     } else {
       SynchronizingStatusUpdater updater(printStatus);
 
-      tlo::fuzzyHash(commandLine.arguments(), updater, numThreads);
+      tlo::fuzzyHash(paths, updater, numThreads);
     }
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
