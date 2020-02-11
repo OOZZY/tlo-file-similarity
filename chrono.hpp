@@ -54,14 +54,6 @@ DstTimePoint convertTimePoint(
 
   return dstNow + (timePoint - srcNow);
 }
-
-// Returns a UTC timestamp in "%Y-%m-%d %H:%M:%S" format. Assumes localTime is
-// in local system time. Thread-safe.
-std::string toUtcTimestamp(std::time_t localTime);
-
-// Returns a std::time_t in local system time. Assumes utcTimestamp is a UTC
-// timestamp in "%Y-%m-%d %H:%M:%S" format. Thread-safe.
-std::time_t fromUtcTimestamp(const std::string &utcTimestamp);
 }  // namespace tlo
 
 #endif  // TLOFS_CHRONO_HPP
