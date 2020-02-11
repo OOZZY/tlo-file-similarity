@@ -9,5 +9,37 @@
 namespace tlo {
 namespace {
 std::mutex timeMutex;
+const char *TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S";
 }  // namespace
+
+std::string toLocalTimestamp(std::time_t localTime) {
+  std::tm localTimeObjectCopy;
+
+  std::unique_lock<std::mutex> timeUniqueLock(timeMutex);
+  std::tm *localTimeObject = std::localtime(&localTime);
+
+  std::memcpy(&localTimeObjectCopy, localTimeObject, sizeof(*localTimeObject));
+  timeUniqueLock.unlock();
+
+  std::ostringstream oss;
+
+  oss << std::put_time(&localTimeObjectCopy, TIMESTAMP_FORMAT);
+  oss << ' ' << localTimeObjectCopy.tm_isdst;
+  return oss.str();
+}
+
+std::time_t fromLocalTimestamp(const std::string &localTimestamp) {
+  std::istringstream iss(localTimestamp);
+  std::tm localTimeObject;
+
+  iss >> std::get_time(&localTimeObject, TIMESTAMP_FORMAT);
+  iss >> localTimeObject.tm_isdst;
+
+  if (iss.fail()) {
+    throw std::runtime_error("Error: Failed to parse timestamp \"" +
+                             localTimestamp + "\".");
+  }
+
+  return std::mktime(&localTimeObject);
+}
 }  // namespace tlo
