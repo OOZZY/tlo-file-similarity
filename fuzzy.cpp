@@ -218,19 +218,15 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
 
   for (const auto &path : paths) {
     if (fs::is_regular_file(path)) {
-      if (!handler.shouldHashFile(path)) {
-        continue;
+      if (handler.shouldHashFile(path)) {
+        handler.collect(fuzzyHash(path, &handler));
       }
-
-      handler.collect(fuzzyHash(path, &handler));
     } else if (fs::is_directory(path)) {
       for (const auto &entry : fs::recursive_directory_iterator(path)) {
         if (fs::is_regular_file(entry.path())) {
-          if (!handler.shouldHashFile(entry.path())) {
-            continue;
+          if (handler.shouldHashFile(entry.path())) {
+            handler.collect(fuzzyHash(entry.path(), &handler));
           }
-
-          handler.collect(fuzzyHash(entry.path(), &handler));
         }
       }
     }
@@ -268,11 +264,9 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
       state.filePaths.pop();
       queueUniqueLock.unlock();
 
-      if (!handler.shouldHashFile(filePath)) {
-        continue;
+      if (handler.shouldHashFile(filePath)) {
+        handler.collect(fuzzyHash(filePath, &handler));
       }
-
-      handler.collect(fuzzyHash(filePath, &handler));
     }
   } catch (...) {
     std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
