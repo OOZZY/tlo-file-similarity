@@ -45,7 +45,7 @@ void printStatus(std::size_t numHashesDone, std::size_t numSimilarPairs) {
   std::cerr << std::endl;
 }
 
-class StatusUpdater : public tlo::HashComparisonEventHandler {
+class EventHandler : public tlo::HashComparisonEventHandler {
  private:
   const bool printStatus;
   const OutputFormat outputFormat;
@@ -53,7 +53,7 @@ class StatusUpdater : public tlo::HashComparisonEventHandler {
   std::size_t numSimilarPairs = 0;
 
  public:
-  StatusUpdater(bool printStatus_, OutputFormat outputFormat_)
+  EventHandler(bool printStatus_, OutputFormat outputFormat_)
       : printStatus(printStatus_), outputFormat(outputFormat_) {}
 
   void onSimilarPairFound(const tlo::FuzzyHash &hash1,
@@ -74,7 +74,7 @@ class StatusUpdater : public tlo::HashComparisonEventHandler {
   }
 };
 
-class SynchronizingStatusUpdater : public tlo::HashComparisonEventHandler {
+class SynchronizingEventHandler : public tlo::HashComparisonEventHandler {
  private:
   const bool printStatus;
   const OutputFormat outputFormat;
@@ -83,7 +83,7 @@ class SynchronizingStatusUpdater : public tlo::HashComparisonEventHandler {
   std::size_t numSimilarPairs = 0;
 
  public:
-  SynchronizingStatusUpdater(bool printStatus_, OutputFormat outputFormat_)
+  SynchronizingEventHandler(bool printStatus_, OutputFormat outputFormat_)
       : printStatus(printStatus_), outputFormat(outputFormat_) {}
 
   void onSimilarPairFound(const tlo::FuzzyHash &hash1,
@@ -200,15 +200,15 @@ int main(int argc, char **argv) {
     }
 
     if (numThreads <= 1) {
-      StatusUpdater updater(printStatus, stringToOutputFormat(outputFormat));
+      EventHandler handler(printStatus, stringToOutputFormat(outputFormat));
 
-      tlo::compareHashes(blockSizesToHashes, similarityThreshold, updater,
+      tlo::compareHashes(blockSizesToHashes, similarityThreshold, handler,
                          numThreads);
     } else {
-      SynchronizingStatusUpdater updater(printStatus,
-                                         stringToOutputFormat(outputFormat));
+      SynchronizingEventHandler handler(printStatus,
+                                        stringToOutputFormat(outputFormat));
 
-      tlo::compareHashes(blockSizesToHashes, similarityThreshold, updater,
+      tlo::compareHashes(blockSizesToHashes, similarityThreshold, handler,
                          numThreads);
     }
   } catch (const std::exception &exception) {

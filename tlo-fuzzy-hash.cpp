@@ -23,14 +23,14 @@ void printStatus(std::size_t numFilesHashed) {
   std::cerr << std::endl;
 }
 
-class StatusUpdater : public tlo::FuzzyHashEventHandler {
+class EventHandler : public tlo::FuzzyHashEventHandler {
  private:
   const bool printStatus;
   std::size_t numFilesHashed = 0;
   std::unordered_map<std::string, tlo::FuzzyHash> pathsToNewHashes;
 
  public:
-  StatusUpdater(bool printStatus_) : printStatus(printStatus_) {}
+  EventHandler(bool printStatus_) : printStatus(printStatus_) {}
 
   void onBlockHash() override {
     if (printStatus) {
@@ -64,7 +64,7 @@ class StatusUpdater : public tlo::FuzzyHashEventHandler {
   }
 };
 
-class SynchronizingStatusUpdater : public tlo::FuzzyHashEventHandler {
+class SynchronizingEventHandler : public tlo::FuzzyHashEventHandler {
  private:
   const bool printStatus;
 
@@ -77,7 +77,7 @@ class SynchronizingStatusUpdater : public tlo::FuzzyHashEventHandler {
   std::unordered_map<std::string, tlo::FuzzyHash> pathsToNewHashes;
 
  public:
-  SynchronizingStatusUpdater(bool printStatus_) : printStatus(printStatus_) {}
+  SynchronizingEventHandler(bool printStatus_) : printStatus(printStatus_) {}
 
   void onBlockHash() override {
     if (printStatus) {
@@ -179,13 +179,13 @@ int main(int argc, char **argv) {
     auto paths = tlo::stringsToPaths(commandLine.arguments());
 
     if (numThreads <= 1) {
-      StatusUpdater updater(printStatus);
+      EventHandler handler(printStatus);
 
-      tlo::fuzzyHash(paths, updater, numThreads);
+      tlo::fuzzyHash(paths, handler, numThreads);
     } else {
-      SynchronizingStatusUpdater updater(printStatus);
+      SynchronizingEventHandler handler(printStatus);
 
-      tlo::fuzzyHash(paths, updater, numThreads);
+      tlo::fuzzyHash(paths, handler, numThreads);
     }
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
