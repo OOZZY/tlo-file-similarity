@@ -60,7 +60,7 @@ class EventHandler : public tlo::FuzzyHashEventHandler {
   }
 
   void collect(tlo::FuzzyHash &&hash) override {
-    pathsToNewHashes[hash.path] = std::move(hash);
+    pathsToNewHashes[hash.filePath] = std::move(hash);
   }
 };
 
@@ -130,7 +130,7 @@ class SynchronizingEventHandler : public tlo::FuzzyHashEventHandler {
   void collect(tlo::FuzzyHash &&hash) override {
     const std::lock_guard<std::mutex> newHashesLockGuard(newHashesMutex);
 
-    pathsToNewHashes[hash.path] = std::move(hash);
+    pathsToNewHashes[hash.filePath] = std::move(hash);
   }
 };
 }  // namespace

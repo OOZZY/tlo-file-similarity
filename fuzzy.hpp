@@ -20,8 +20,7 @@ struct FuzzyHash {
   // Similar to part1, except the block size used is 2 * blockSize.
   std::string part2;
 
-  // Path to the file.
-  std::string path;
+  std::string filePath;
 };
 
 std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash);

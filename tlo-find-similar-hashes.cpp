@@ -13,14 +13,14 @@ enum class OutputFormat { REGULAR, CSV, TSV };
 void printSimilarPair(const tlo::FuzzyHash &hash1, const tlo::FuzzyHash &hash2,
                       double similarityScore, OutputFormat outputFormat) {
   if (outputFormat == OutputFormat::REGULAR) {
-    std::cout << '"' << hash1.path << "\" and \"" << hash2.path
+    std::cout << '"' << hash1.filePath << "\" and \"" << hash2.filePath
               << "\" are about " << similarityScore << "% similar."
               << std::endl;
   } else if (outputFormat == OutputFormat::CSV) {
-    std::cout << '"' << hash1.path << "\",\"" << hash2.path << "\",\""
+    std::cout << '"' << hash1.filePath << "\",\"" << hash2.filePath << "\",\""
               << similarityScore << '"' << std::endl;
   } else if (outputFormat == OutputFormat::TSV) {
-    std::cout << '"' << hash1.path << "\"\t\"" << hash2.path << "\"\t\""
+    std::cout << '"' << hash1.filePath << "\"\t\"" << hash2.filePath << "\"\t\""
               << similarityScore << '"' << std::endl;
   }
 }
