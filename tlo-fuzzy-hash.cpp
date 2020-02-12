@@ -2,10 +2,13 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
+#include <unordered_map>
 
 #include "filesystem.hpp"
 #include "fuzzy.hpp"
 #include "options.hpp"
+
+namespace fs = std::filesystem;
 
 namespace {
 void printStatus(std::size_t numFilesHashed) {
@@ -24,6 +27,7 @@ class StatusUpdater : public tlo::FuzzyHashEventHandler {
  private:
   const bool printStatus;
   std::size_t numFilesHashed = 0;
+  std::unordered_map<std::string, tlo::FuzzyHash> pathsToNewHashes;
 
  public:
   StatusUpdater(bool printStatus_) : printStatus(printStatus_) {}
@@ -46,15 +50,31 @@ class StatusUpdater : public tlo::FuzzyHashEventHandler {
       ::printStatus(numFilesHashed);
     }
   }
+
+  bool shouldHashFile(const fs::path &filePath) {
+    if (pathsToNewHashes.find(filePath.string()) == pathsToNewHashes.end()) {
+      return true;
+    }
+
+    return false;
+  }
+
+  void collect(tlo::FuzzyHash &&hash) override {
+    pathsToNewHashes[hash.path] = std::move(hash);
+  }
 };
 
 class SynchronizingStatusUpdater : public tlo::FuzzyHashEventHandler {
  private:
   const bool printStatus;
+
   std::mutex outputMutex;
   std::size_t numFilesHashed = 0;
   std::thread::id previousOutputtingThread;
   bool previousOutputEndsWithNewline = true;
+
+  std::mutex newHashesMutex;
+  std::unordered_map<std::string, tlo::FuzzyHash> pathsToNewHashes;
 
  public:
   SynchronizingStatusUpdater(bool printStatus_) : printStatus(printStatus_) {}
@@ -95,6 +115,22 @@ class SynchronizingStatusUpdater : public tlo::FuzzyHashEventHandler {
 
     previousOutputtingThread = std::this_thread::get_id();
     previousOutputEndsWithNewline = true;
+  }
+
+  bool shouldHashFile(const fs::path &filePath) {
+    const std::lock_guard<std::mutex> newHashesLockGuard(newHashesMutex);
+
+    if (pathsToNewHashes.find(filePath.string()) == pathsToNewHashes.end()) {
+      return true;
+    }
+
+    return false;
+  }
+
+  void collect(tlo::FuzzyHash &&hash) override {
+    const std::lock_guard<std::mutex> newHashesLockGuard(newHashesMutex);
+
+    pathsToNewHashes[hash.path] = std::move(hash);
   }
 };
 }  // namespace

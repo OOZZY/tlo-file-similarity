@@ -38,13 +38,9 @@ std::time_t getLastWriteTime(const fs::path &path) {
   return std::chrono::system_clock::to_time_t(timeOnSystemClock);
 }
 
-namespace {
-struct HashPath {
-  std::size_t operator()(const fs::path &path) const {
-    return fs::hash_value(path);
-  }
-};
-}  // namespace
+std::size_t HashPath::operator()(const fs::path &path) const {
+  return fs::hash_value(path);
+}
 
 std::vector<fs::path> stringsToPaths(const std::vector<std::string> &strings) {
   std::vector<fs::path> paths;

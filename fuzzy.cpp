@@ -133,6 +133,10 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
         part2 +=
             BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
         fnv1Hasher2 = Fnv1Hasher();
+
+        if (handler) {
+          handler->onBlockHash();
+        }
       }
     }
   }
@@ -149,6 +153,10 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
   if (fnv1Hasher2.bytesWereAdded()) {
     part2 += BASE64_ALPHABET[fnv1Hasher2.getHash() % BASE64_ALPHABET.size()];
     fnv1Hasher2 = Fnv1Hasher();
+
+    if (handler) {
+      handler->onBlockHash();
+    }
   }
 
   return std::pair(part1, part2);
@@ -209,11 +217,19 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
 
   for (const auto &path : paths) {
     if (fs::is_regular_file(path)) {
-      fuzzyHash(path, &handler);
+      if (!handler.shouldHashFile(path)) {
+        continue;
+      }
+
+      handler.collect(fuzzyHash(path, &handler));
     } else if (fs::is_directory(path)) {
       for (const auto &entry : fs::recursive_directory_iterator(path)) {
         if (fs::is_regular_file(entry.path())) {
-          fuzzyHash(entry.path(), &handler);
+          if (!handler.shouldHashFile(entry.path())) {
+            continue;
+          }
+
+          handler.collect(fuzzyHash(entry.path(), &handler));
         }
       }
     }
@@ -251,7 +267,11 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
       state.files.pop();
       queueUniqueLock.unlock();
 
-      fuzzyHash(file, &handler);
+      if (!handler.shouldHashFile(file)) {
+        continue;
+      }
+
+      handler.collect(fuzzyHash(file, &handler));
     }
   } catch (...) {
     std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
@@ -354,7 +374,7 @@ FuzzyHash parseHash(const std::string &hash) {
                              "\" has non-integer block size.");
   }
 
-  return {blockSize, colonSplit[1], colonSplit[2],
+  return {blockSize, std::move(colonSplit[1]), std::move(colonSplit[2]),
           hash.substr(commaPosition + 1)};
 }
 }  // namespace tlo
