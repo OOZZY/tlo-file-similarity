@@ -67,7 +67,7 @@ class Sqlite3Connection {
   sqlite3 *connection;
 
  public:
-  Sqlite3Connection(const std::filesystem::path &path);
+  Sqlite3Connection(const std::filesystem::path &dbFilePath);
 
   // Make sure all prepared statements associated with this database connection
   // are finalized (destructed) before this destructor is called.

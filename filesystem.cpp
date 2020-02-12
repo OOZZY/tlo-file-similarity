@@ -10,11 +10,11 @@
 namespace fs = std::filesystem;
 
 namespace tlo {
-std::uintmax_t getFileSize(const fs::path &path) {
-  std::ifstream ifstream(path, std::ifstream::in | std::ifstream::binary);
+std::uintmax_t getFileSize(const fs::path &filePath) {
+  std::ifstream ifstream(filePath, std::ifstream::in | std::ifstream::binary);
 
   if (!ifstream.is_open()) {
-    throw std::runtime_error("Error: Failed to open \"" + path.string() +
+    throw std::runtime_error("Error: Failed to open \"" + filePath.string() +
                              "\".");
   }
 
@@ -23,8 +23,8 @@ std::uintmax_t getFileSize(const fs::path &path) {
   auto size = ifstream.tellg();
 
   if (size < 0) {
-    throw std::runtime_error("Error: Failed to get size of \"" + path.string() +
-                             "\".");
+    throw std::runtime_error("Error: Failed to get size of \"" +
+                             filePath.string() + "\".");
   }
 
   return static_cast<std::uintmax_t>(size);

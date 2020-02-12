@@ -39,7 +39,7 @@ class FuzzyHashEventHandler {
 // is not nullptr, will call handler->onBlockHash() whenever a file block has
 // just been hashed. Also, will call handler->onFileHash() whenever a file has
 // just been hashed. Expects path to be a path to a file.
-FuzzyHash fuzzyHash(const std::filesystem::path &path,
+FuzzyHash fuzzyHash(const std::filesystem::path &filePath,
                     FuzzyHashEventHandler *handler = nullptr);
 
 // Expects paths to be paths to files or directories. If a path refers to a

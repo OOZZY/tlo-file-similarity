@@ -203,8 +203,8 @@ int Sqlite3Statement::parameterIndex(const std::string &parameterName) {
   return sqlite3_bind_parameter_index(statement, parameterName.c_str());
 }
 
-Sqlite3Connection::Sqlite3Connection(const fs::path &path) {
-  int rc = sqlite3_open(path.generic_string().c_str(), &connection);
+Sqlite3Connection::Sqlite3Connection(const fs::path &dbFilePath) {
+  int rc = sqlite3_open(dbFilePath.generic_string().c_str(), &connection);
 
   throwIf(rc != SQLITE_OK, rc, "Error: Failed to open database connection: ");
 }

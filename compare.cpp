@@ -76,12 +76,12 @@ double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2) {
 namespace {
 void readHashesFromFile(
     std::unordered_map<std::size_t, std::vector<FuzzyHash>> &blockSizesToHashes,
-    const fs::path &file) {
-  std::ifstream ifstream(file, std::ifstream::in);
+    const fs::path &textFilePath) {
+  std::ifstream ifstream(textFilePath, std::ifstream::in);
 
   if (!ifstream.is_open()) {
-    throw std::runtime_error("Error: Failed to open \"" + file.string() +
-                             "\".");
+    throw std::runtime_error("Error: Failed to open \"" +
+                             textFilePath.string() + "\".");
   }
 
   std::string line;
@@ -95,18 +95,18 @@ void readHashesFromFile(
 }  // namespace
 
 std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashes(
-    const std::vector<fs::path> &paths) {
-  for (const auto &path : paths) {
-    if (!fs::is_regular_file(path)) {
-      throw std::runtime_error("Error: \"" + path.string() +
+    const std::vector<fs::path> &textFilePaths) {
+  for (const auto &textFilePath : textFilePaths) {
+    if (!fs::is_regular_file(textFilePath)) {
+      throw std::runtime_error("Error: \"" + textFilePath.string() +
                                "\" is not a file.");
     }
   }
 
   std::unordered_map<std::size_t, std::vector<FuzzyHash>> blockSizesToHashes;
 
-  for (const auto &path : paths) {
-    readHashesFromFile(blockSizesToHashes, path);
+  for (const auto &textFilePath : textFilePaths) {
+    readHashesFromFile(blockSizesToHashes, textFilePath);
   }
 
   return blockSizesToHashes;

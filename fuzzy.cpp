@@ -90,13 +90,13 @@ constexpr std::string_view BASE64_ALPHABET =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 namespace {
-std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
+std::pair<std::string, std::string> fuzzyHash(const fs::path &filePath,
                                               std::size_t blockSize,
                                               FuzzyHashEventHandler *handler) {
-  std::ifstream ifstream(file, std::ifstream::in | std::ifstream::binary);
+  std::ifstream ifstream(filePath, std::ifstream::in | std::ifstream::binary);
 
   if (!ifstream.is_open()) {
-    throw std::runtime_error("Error: Failed to open \"" + file.string() +
+    throw std::runtime_error("Error: Failed to open \"" + filePath.string() +
                              "\".");
   }
 
@@ -163,15 +163,16 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &file,
 }
 }  // namespace
 
-FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
-  if (!fs::is_regular_file(path)) {
-    throw std::runtime_error("Error: \"" + path.string() + "\" is not a file.");
+FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
+  if (!fs::is_regular_file(filePath)) {
+    throw std::runtime_error("Error: \"" + filePath.string() +
+                             "\" is not a file.");
   }
 
-  auto fileSize = getFileSize(path);
+  auto fileSize = getFileSize(filePath);
 
   if (fileSize == 0) {
-    return {MIN_BLOCK_SIZE, "", "", path.string()};
+    return {MIN_BLOCK_SIZE, "", "", filePath.string()};
   }
 
   double exponent = std::floor(std::log2(static_cast<double>(fileSize) /
@@ -187,7 +188,7 @@ FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
   std::string part2;
 
   for (;;) {
-    std::tie(part1, part2) = fuzzyHash(path, blockSize, handler);
+    std::tie(part1, part2) = fuzzyHash(filePath, blockSize, handler);
 
     if (part1.size() < SPAMSUM_LENGTH / 2 && blockSize / 2 >= MIN_BLOCK_SIZE) {
       blockSize /= 2;
@@ -196,7 +197,7 @@ FuzzyHash fuzzyHash(const fs::path &path, FuzzyHashEventHandler *handler) {
     }
   }
 
-  FuzzyHash hash{blockSize, part1, part2, path.string()};
+  FuzzyHash hash{blockSize, part1, part2, filePath.string()};
 
   if (handler) {
     handler->onFileHash(hash);
@@ -240,7 +241,7 @@ struct SharedState {
   std::mutex queueMutex;
   bool exceptionThrown = false;
   bool allFilesQueued = false;
-  std::queue<fs::path> files;
+  std::queue<fs::path> filePaths;
   std::condition_variable filesQueued;
 };
 
@@ -254,24 +255,24 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
         break;
       }
 
-      if (state.allFilesQueued && state.files.empty()) {
+      if (state.allFilesQueued && state.filePaths.empty()) {
         break;
       }
 
-      while (state.files.empty()) {
+      while (state.filePaths.empty()) {
         state.filesQueued.wait(queueUniqueLock);
       }
 
-      fs::path file = std::move(state.files.front());
+      fs::path filePath = std::move(state.filePaths.front());
 
-      state.files.pop();
+      state.filePaths.pop();
       queueUniqueLock.unlock();
 
-      if (!handler.shouldHashFile(file)) {
+      if (!handler.shouldHashFile(filePath)) {
         continue;
       }
 
-      handler.collect(fuzzyHash(file, &handler));
+      handler.collect(fuzzyHash(filePath, &handler));
     }
   } catch (...) {
     std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
@@ -306,14 +307,14 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
     if (fs::is_regular_file(path)) {
       const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
 
-      state.files.push(path);
+      state.filePaths.push(path);
       state.filesQueued.notify_one();
     } else if (fs::is_directory(path)) {
       for (const auto &entry : fs::recursive_directory_iterator(path)) {
         if (fs::is_regular_file(entry.path())) {
           const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
 
-          state.files.push(entry.path());
+          state.filePaths.push(entry.path());
           state.filesQueued.notify_one();
         }
       }
