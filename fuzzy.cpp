@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "filesystem.hpp"
+#include "hash.hpp"
 #include "string.hpp"
 
 namespace fs = std::filesystem;
@@ -24,6 +25,21 @@ namespace tlo {
 std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash) {
   return os << hash.blockSize << ':' << hash.part1 << ':' << hash.part2 << ','
             << hash.filePath;
+}
+
+bool operator==(const FuzzyHash &hash1, const FuzzyHash &hash2) {
+  return hash1.blockSize == hash2.blockSize && hash1.part1 == hash2.part1 &&
+         hash1.part2 == hash2.part2 && hash1.filePath == hash2.filePath;
+}
+
+std::size_t HashFuzzyHash::operator()(const FuzzyHash &hash) const {
+  BoostStyleHashCombiner combiner;
+
+  return combiner.combineWith(std::hash<std::size_t>()(hash.blockSize))
+      .combineWith(std::hash<std::string>()(hash.part1))
+      .combineWith(std::hash<std::string>()(hash.part2))
+      .combineWith(std::hash<std::string>()(hash.filePath))
+      .getHash();
 }
 
 FuzzyHashEventHandler::~FuzzyHashEventHandler() {}

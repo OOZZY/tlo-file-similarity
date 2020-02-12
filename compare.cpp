@@ -6,6 +6,7 @@
 #include <functional>
 #include <mutex>
 #include <thread>
+#include <unordered_set>
 #include <utility>
 
 #include "damerau-levenshtein.hpp"
@@ -76,6 +77,7 @@ double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2) {
 namespace {
 void readHashesFromFile(
     std::unordered_map<std::size_t, std::vector<FuzzyHash>> &blockSizesToHashes,
+    std::unordered_set<FuzzyHash, HashFuzzyHash> &hashesAdded,
     const fs::path &textFilePath) {
   std::ifstream ifstream(textFilePath, std::ifstream::in);
 
@@ -89,7 +91,10 @@ void readHashesFromFile(
   while (std::getline(ifstream, line)) {
     FuzzyHash hash = parseHash(line);
 
-    blockSizesToHashes[hash.blockSize].push_back(std::move(hash));
+    if (hashesAdded.find(hash) == hashesAdded.end()) {
+      blockSizesToHashes[hash.blockSize].push_back(hash);
+      hashesAdded.insert(std::move(hash));
+    }
   }
 }
 }  // namespace
@@ -104,9 +109,10 @@ std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashes(
   }
 
   std::unordered_map<std::size_t, std::vector<FuzzyHash>> blockSizesToHashes;
+  std::unordered_set<FuzzyHash, HashFuzzyHash> hashesAdded;
 
   for (const auto &textFilePath : textFilePaths) {
-    readHashesFromFile(blockSizesToHashes, textFilePath);
+    readHashesFromFile(blockSizesToHashes, hashesAdded, textFilePath);
   }
 
   return blockSizesToHashes;

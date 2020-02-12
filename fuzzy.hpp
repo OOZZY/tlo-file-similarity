@@ -24,6 +24,11 @@ struct FuzzyHash {
 };
 
 std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash);
+bool operator==(const FuzzyHash &hash1, const FuzzyHash &hash2);
+
+struct HashFuzzyHash {
+  std::size_t operator()(const FuzzyHash &hash) const;
+};
 
 class FuzzyHashEventHandler {
  public:
