@@ -52,11 +52,7 @@ class EventHandler : public tlo::FuzzyHashEventHandler {
   }
 
   bool shouldHashFile(const fs::path &filePath) {
-    if (pathsToNewHashes.find(filePath.string()) == pathsToNewHashes.end()) {
-      return true;
-    }
-
-    return false;
+    return pathsToNewHashes.find(filePath.string()) == pathsToNewHashes.end();
   }
 
   void collect(tlo::FuzzyHash &&hash) override {
@@ -120,11 +116,7 @@ class SynchronizingEventHandler : public tlo::FuzzyHashEventHandler {
   bool shouldHashFile(const fs::path &filePath) {
     const std::lock_guard<std::mutex> newHashesLockGuard(newHashesMutex);
 
-    if (pathsToNewHashes.find(filePath.string()) == pathsToNewHashes.end()) {
-      return true;
-    }
-
-    return false;
+    return pathsToNewHashes.find(filePath.string()) == pathsToNewHashes.end();
   }
 
   void collect(tlo::FuzzyHash &&hash) override {
