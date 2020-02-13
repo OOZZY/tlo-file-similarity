@@ -11,7 +11,7 @@ class Sqlite3Connection;
 
 class Sqlite3Statement {
  private:
-  sqlite3_stmt *statement;
+  sqlite3_stmt *statement = nullptr;
 
  public:
   Sqlite3Statement(const Sqlite3Connection &connection, const std::string &sql);
@@ -63,7 +63,7 @@ class Sqlite3Statement {
 
 class Sqlite3Connection {
  private:
-  sqlite3 *connection;
+  sqlite3 *connection = nullptr;
 
  public:
   Sqlite3Connection(const std::filesystem::path &dbFilePath);
