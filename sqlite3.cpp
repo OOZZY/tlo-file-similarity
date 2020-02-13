@@ -15,8 +15,20 @@ void throwIf(bool condition, int rc, const char *messagePrefix) {
 }
 }  // namespace
 
+Sqlite3Statement::Sqlite3Statement() {}
+
 Sqlite3Statement::Sqlite3Statement(const Sqlite3Connection &connection,
                                    const std::string &sql) {
+  assert(connection.connection);
+
+  prepare(connection, sql);
+}
+
+Sqlite3Statement::~Sqlite3Statement() { sqlite3_finalize(statement); }
+
+void Sqlite3Statement::prepare(const Sqlite3Connection &connection,
+                               const std::string &sql) {
+  assert(!statement);
   assert(connection.connection);
 
   int rc =
@@ -25,8 +37,6 @@ Sqlite3Statement::Sqlite3Statement(const Sqlite3Connection &connection,
 
   throwIf(rc != SQLITE_OK, rc, "Error: Failed to prepare SQL statement: ");
 }
-
-Sqlite3Statement::~Sqlite3Statement() { sqlite3_finalize(statement); }
 
 int Sqlite3Statement::step() {
   assert(statement);
@@ -264,11 +274,19 @@ int Sqlite3Statement::parameterIndex(const std::string &parameterName) {
   return sqlite3_bind_parameter_index(statement, parameterName.c_str());
 }
 
+Sqlite3Connection::Sqlite3Connection() {}
+
 Sqlite3Connection::Sqlite3Connection(const fs::path &dbFilePath) {
+  open(dbFilePath);
+}
+
+Sqlite3Connection::~Sqlite3Connection() { sqlite3_close(connection); }
+
+void Sqlite3Connection::open(const std::filesystem::path &dbFilePath) {
+  assert(!connection);
+
   int rc = sqlite3_open(dbFilePath.generic_string().c_str(), &connection);
 
   throwIf(rc != SQLITE_OK, rc, "Error: Failed to open database connection: ");
 }
-
-Sqlite3Connection::~Sqlite3Connection() { sqlite3_close(connection); }
 }  // namespace tlo

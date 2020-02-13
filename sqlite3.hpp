@@ -14,8 +14,14 @@ class Sqlite3Statement {
   sqlite3_stmt *statement = nullptr;
 
  public:
+  // If default constructed, make sure prepare() is called before calling any
+  // of the other functions.
+  Sqlite3Statement();
+
   Sqlite3Statement(const Sqlite3Connection &connection, const std::string &sql);
   ~Sqlite3Statement();
+
+  void prepare(const Sqlite3Connection &connection, const std::string &sql);
 
   // Returns SQLITE_ROW if a new row of data is ready for processing. Returns
   // SQLITE_DONE when the statement has finished executing successfully.
@@ -66,14 +72,22 @@ class Sqlite3Connection {
   sqlite3 *connection = nullptr;
 
  public:
+  // If default constructed, make sure open() is called before associating any
+  // prepared statements with this database connection.
+  Sqlite3Connection();
+
   Sqlite3Connection(const std::filesystem::path &dbFilePath);
 
   // Make sure all prepared statements associated with this database connection
   // are finalized (destructed) before this destructor is called.
   ~Sqlite3Connection();
 
+  void open(const std::filesystem::path &dbFilePath);
+
   friend Sqlite3Statement::Sqlite3Statement(const Sqlite3Connection &,
                                             const std::string &);
+  friend void Sqlite3Statement::prepare(const Sqlite3Connection &,
+                                        const std::string &);
 };
 }  // namespace tlo
 
