@@ -188,7 +188,14 @@ FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
   auto fileSize = getFileSize(filePath);
 
   if (fileSize == 0) {
-    return {MIN_BLOCK_SIZE, "", "", filePath.string()};
+    FuzzyHash hash{MIN_BLOCK_SIZE, "", "", filePath.string()};
+
+    if (handler) {
+      handler->onBlockHash();
+      handler->onFileHash(hash);
+    }
+
+    return hash;
   }
 
   double exponent = std::floor(std::log2(static_cast<double>(fileSize) /
