@@ -6,6 +6,7 @@ Command-line programs that use fuzzy hashing to compare files for similarity and
 
 * CMake
 * C++17 development environment for which CMake can generate build files
+* SQLite 3
 
 ## Clone, Build, and Run
 
