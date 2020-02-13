@@ -12,7 +12,6 @@ class Sqlite3Connection;
 class Sqlite3Statement {
  private:
   sqlite3_stmt *statement;
-  int rc;
 
  public:
   Sqlite3Statement(const Sqlite3Connection &connection, const std::string &sql);
