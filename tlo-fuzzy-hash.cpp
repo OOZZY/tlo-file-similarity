@@ -2,7 +2,7 @@
 #include <iostream>
 #include <mutex>
 #include <thread>
-#include <unordered_map>
+#include <unordered_set>
 
 #include "filesystem.hpp"
 #include "fuzzy.hpp"
@@ -27,7 +27,9 @@ class EventHandler : public tlo::FuzzyHashEventHandler {
  private:
   const bool printStatus;
   std::size_t numFilesHashed = 0;
-  std::unordered_map<std::string, tlo::FuzzyHash> pathsToNewHashes;
+  std::unordered_set<tlo::FuzzyHash, tlo::HashFuzzyHashPath,
+                     tlo::EqualFuzzyHashPath>
+      newHashes;
 
  public:
   EventHandler(bool printStatus_) : printStatus(printStatus_) {}
@@ -52,11 +54,11 @@ class EventHandler : public tlo::FuzzyHashEventHandler {
   }
 
   bool shouldHashFile(const fs::path &filePath) {
-    return pathsToNewHashes.find(filePath.string()) == pathsToNewHashes.end();
+    return newHashes.find({0, "", "", filePath.string()}) == newHashes.end();
   }
 
   void collect(tlo::FuzzyHash &&hash) override {
-    pathsToNewHashes[hash.filePath] = std::move(hash);
+    newHashes.insert(std::move(hash));
   }
 };
 
@@ -70,7 +72,9 @@ class SynchronizingEventHandler : public tlo::FuzzyHashEventHandler {
   bool previousOutputEndsWithNewline = true;
 
   std::mutex newHashesMutex;
-  std::unordered_map<std::string, tlo::FuzzyHash> pathsToNewHashes;
+  std::unordered_set<tlo::FuzzyHash, tlo::HashFuzzyHashPath,
+                     tlo::EqualFuzzyHashPath>
+      newHashes;
 
  public:
   SynchronizingEventHandler(bool printStatus_) : printStatus(printStatus_) {}
@@ -116,13 +120,13 @@ class SynchronizingEventHandler : public tlo::FuzzyHashEventHandler {
   bool shouldHashFile(const fs::path &filePath) {
     const std::lock_guard<std::mutex> newHashesLockGuard(newHashesMutex);
 
-    return pathsToNewHashes.find(filePath.string()) == pathsToNewHashes.end();
+    return newHashes.find({0, "", "", filePath.string()}) == newHashes.end();
   }
 
   void collect(tlo::FuzzyHash &&hash) override {
     const std::lock_guard<std::mutex> newHashesLockGuard(newHashesMutex);
 
-    pathsToNewHashes[hash.filePath] = std::move(hash);
+    newHashes.insert(std::move(hash));
   }
 };
 }  // namespace

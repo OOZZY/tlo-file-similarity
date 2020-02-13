@@ -26,8 +26,19 @@ struct FuzzyHash {
 std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash);
 bool operator==(const FuzzyHash &hash1, const FuzzyHash &hash2);
 
+// Hashes all fields of the FuzzyHash.
 struct HashFuzzyHash {
   std::size_t operator()(const FuzzyHash &hash) const;
+};
+
+// Hashes only the filePath field of the FuzzyHash.
+struct HashFuzzyHashPath {
+  std::size_t operator()(const FuzzyHash &hash) const;
+};
+
+// Compares for equality only the filePath fields of the two FuzzyHash objects.
+struct EqualFuzzyHashPath {
+  bool operator()(const FuzzyHash &hash1, const FuzzyHash &hash2) const;
 };
 
 class FuzzyHashEventHandler {

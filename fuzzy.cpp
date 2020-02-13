@@ -42,6 +42,15 @@ std::size_t HashFuzzyHash::operator()(const FuzzyHash &hash) const {
       .getHash();
 }
 
+std::size_t HashFuzzyHashPath::operator()(const FuzzyHash &hash) const {
+  return std::hash<std::string>()(hash.filePath);
+}
+
+bool EqualFuzzyHashPath::operator()(const FuzzyHash &hash1,
+                                    const FuzzyHash &hash2) const {
+  return hash1.filePath == hash2.filePath;
+}
+
 FuzzyHashEventHandler::~FuzzyHashEventHandler() {}
 
 /*
