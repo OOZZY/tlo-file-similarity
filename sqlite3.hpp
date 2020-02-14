@@ -3,7 +3,6 @@
 
 #include <sqlite3.h>
 
-#include <cstdlib>
 #include <filesystem>
 #include <string_view>
 
@@ -45,21 +44,21 @@ class Sqlite3Statement {
   void reset();
 
   void bindBlob(int parameterIndex, const void *value, int numBytes,
-                void (*destructor)(void *) = std::free);
+                void (*destructor)(void *) = SQLITE_STATIC);
   void bindBlob64(int parameterIndex, const void *value,
                   sqlite3_uint64 numBytes,
-                  void (*destructor)(void *) = std::free);
+                  void (*destructor)(void *) = SQLITE_STATIC);
   void bindDouble(int parameterIndex, double value);
   void bindInt(int parameterIndex, int value);
   void bindInt64(int parameterIndex, sqlite3_int64 value);
   void bindNull(int parameterIndex);
   void bindUtf8Text(int parameterIndex, const char *value, int numBytes,
-                    void (*destructor)(void *) = std::free);
+                    void (*destructor)(void *) = SQLITE_STATIC);
   void bindUtf16Text(int parameterIndex, const void *value, int numBytes,
-                     void (*destructor)(void *) = std::free);
+                     void (*destructor)(void *) = SQLITE_STATIC);
   void bindText64(int parameterIndex, unsigned char encoding, const char *value,
                   sqlite3_uint64 numBytes,
-                  void (*destructor)(void *) = std::free);
+                  void (*destructor)(void *) = SQLITE_STATIC);
   void bindZeroBlob(int parameterIndex, int numBytes);
   void bindZeroBlob64(int parameterIndex, sqlite3_uint64 numBytes);
 
