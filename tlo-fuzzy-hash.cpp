@@ -54,12 +54,19 @@ class EventHandler : public tlo::FuzzyHashEventHandler {
     }
   }
 
-  bool shouldHashFile(const fs::path &filePath) {
+  bool shouldHashFile(const fs::path &filePath, std::uintmax_t fileSize,
+                      const std::string &fileLastWriteTime) {
     static_cast<void>(filePath);
+    static_cast<void>(fileSize);
+    static_cast<void>(fileLastWriteTime);
     return true;
   }
 
-  void collect(tlo::FuzzyHash &&hash) override {
+  void collect(tlo::FuzzyHash &&hash, std::uintmax_t fileSize,
+               std::string &&fileLastWriteTime) override {
+    static_cast<void>(fileSize);
+    static_cast<void>(fileLastWriteTime);
+
     newHashes.insert(std::move(hash));
   }
 };
@@ -117,12 +124,19 @@ class SynchronizingEventHandler : public tlo::FuzzyHashEventHandler {
     previousOutputEndsWithNewline = true;
   }
 
-  bool shouldHashFile(const fs::path &filePath) {
+  bool shouldHashFile(const fs::path &filePath, std::uintmax_t fileSize,
+                      const std::string &fileLastWriteTime) {
     static_cast<void>(filePath);
+    static_cast<void>(fileSize);
+    static_cast<void>(fileLastWriteTime);
     return true;
   }
 
-  void collect(tlo::FuzzyHash &&hash) override {
+  void collect(tlo::FuzzyHash &&hash, std::uintmax_t fileSize,
+               std::string &&fileLastWriteTime) override {
+    static_cast<void>(fileSize);
+    static_cast<void>(fileLastWriteTime);
+
     const std::lock_guard<std::mutex> newHashesLockGuard(newHashesMutex);
 
     newHashes.insert(std::move(hash));

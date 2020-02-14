@@ -2,6 +2,7 @@
 #define TLOFS_FUZZY_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <ostream>
 #include <string>
@@ -45,8 +46,11 @@ class FuzzyHashEventHandler {
  public:
   virtual void onBlockHash() = 0;
   virtual void onFileHash(const FuzzyHash &hash) = 0;
-  virtual bool shouldHashFile(const std::filesystem::path &filePath) = 0;
-  virtual void collect(FuzzyHash &&hash) = 0;
+  virtual bool shouldHashFile(const std::filesystem::path &filePath,
+                              std::uintmax_t fileSize,
+                              const std::string &fileLastWriteTime) = 0;
+  virtual void collect(FuzzyHash &&hash, std::uintmax_t fileSize,
+                       std::string &&fileLastWriteTime) = 0;
   virtual ~FuzzyHashEventHandler() = 0;
 };
 
@@ -61,10 +65,11 @@ FuzzyHash fuzzyHash(const std::filesystem::path &filePath,
 // file, will hash the file. If a path refers to a directory, will hash all
 // files in the directory and all its subdirectories. If a path is neither a
 // file or directory, will throw std::runtime_error. Each file is hashed by
-// calling handler.collect(fuzzyHash(path, &handler)). Before hashing a file,
-// calls handler.shouldHashFile(path) to check if a file should be hashed. The
-// handler can be used to process the hashes. If numThreads > 1, make sure that
-// the handler's member functions are synchronized.
+// calling fuzzyHash(path, &handler). The resulting hash is passed to
+// handler.collect(). Before hashing a file, calls handler.shouldHashFile() to
+// check if a file should be hashed. The handler can be used to process the
+// hashes. If numThreads > 1, make sure that the handler's member functions are
+// synchronized.
 void fuzzyHash(const std::vector<std::filesystem::path> &paths,
                FuzzyHashEventHandler &handler, std::size_t numThreads = 1);
 

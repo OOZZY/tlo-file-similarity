@@ -16,6 +16,7 @@
 #include <unordered_set>
 #include <utility>
 
+#include "chrono.hpp"
 #include "filesystem.hpp"
 #include "hash.hpp"
 #include "string.hpp"
@@ -187,16 +188,9 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &filePath,
 
   return std::pair(part1, part2);
 }
-}  // namespace
 
-FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
-  if (!fs::is_regular_file(filePath)) {
-    throw std::runtime_error("Error: \"" + filePath.string() +
-                             "\" is not a file.");
-  }
-
-  auto fileSize = getFileSize(filePath);
-
+FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler,
+                    std::uintmax_t fileSize) {
   if (fileSize == 0) {
     FuzzyHash hash{MIN_BLOCK_SIZE, "", "", filePath.string()};
 
@@ -238,6 +232,16 @@ FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
 
   return hash;
 }
+}  // namespace
+
+FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
+  if (!fs::is_regular_file(filePath)) {
+    throw std::runtime_error("Error: \"" + filePath.string() +
+                             "\" is not a file.");
+  }
+
+  return fuzzyHash(filePath, handler, getFileSize(filePath));
+}
 
 namespace {
 void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
@@ -256,8 +260,15 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
       if (pathsSeen.find(path) == pathsSeen.end()) {
         pathsSeen.insert(path);
 
-        if (handler.shouldHashFile(path)) {
-          handler.collect(fuzzyHash(path, &handler));
+        std::uintmax_t fileSize = getFileSize(path);
+        std::string fileLastWriteTime =
+            toLocalTimestamp(getLastWriteTime(path));
+
+        if (handler.shouldHashFile(path, fileSize, fileLastWriteTime)) {
+          FuzzyHash hash = fuzzyHash(path, &handler, fileSize);
+
+          handler.collect(std::move(hash), fileSize,
+                          std::move(fileLastWriteTime));
         }
       }
     } else if (fs::is_directory(path)) {
@@ -266,8 +277,16 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
           if (pathsSeen.find(entry.path()) == pathsSeen.end()) {
             pathsSeen.insert(entry.path());
 
-            if (handler.shouldHashFile(entry.path())) {
-              handler.collect(fuzzyHash(entry.path(), &handler));
+            std::uintmax_t fileSize = getFileSize(entry.path());
+            std::string fileLastWriteTime =
+                toLocalTimestamp(getLastWriteTime(entry.path()));
+
+            if (handler.shouldHashFile(entry.path(), fileSize,
+                                       fileLastWriteTime)) {
+              FuzzyHash hash = fuzzyHash(entry.path(), &handler, fileSize);
+
+              handler.collect(std::move(hash), fileSize,
+                              std::move(fileLastWriteTime));
             }
           }
         }
@@ -307,8 +326,15 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
       state.filePaths.pop();
       queueUniqueLock.unlock();
 
-      if (handler.shouldHashFile(filePath)) {
-        handler.collect(fuzzyHash(filePath, &handler));
+      std::uintmax_t fileSize = getFileSize(filePath);
+      std::string fileLastWriteTime =
+          toLocalTimestamp(getLastWriteTime(filePath));
+
+      if (handler.shouldHashFile(filePath, fileSize, fileLastWriteTime)) {
+        FuzzyHash hash = fuzzyHash(filePath, &handler, fileSize);
+
+        handler.collect(std::move(hash), fileSize,
+                        std::move(fileLastWriteTime));
       }
     }
   } catch (...) {
