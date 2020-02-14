@@ -11,6 +11,9 @@
 namespace fs = std::filesystem;
 
 namespace {
+using FuzzyHashSet = std::unordered_set<tlo::FuzzyHash, tlo::HashFuzzyHashPath,
+                                        tlo::EqualFuzzyHashPath>;
+
 void printStatus(std::size_t numFilesHashed) {
   std::cerr << "Hashed " << numFilesHashed;
 
@@ -27,9 +30,7 @@ class EventHandler : public tlo::FuzzyHashEventHandler {
  private:
   const bool printStatus;
   std::size_t numFilesHashed = 0;
-  std::unordered_set<tlo::FuzzyHash, tlo::HashFuzzyHashPath,
-                     tlo::EqualFuzzyHashPath>
-      newHashes;
+  FuzzyHashSet newHashes;
 
  public:
   EventHandler(bool printStatus_) : printStatus(printStatus_) {}
@@ -72,9 +73,7 @@ class SynchronizingEventHandler : public tlo::FuzzyHashEventHandler {
   bool previousOutputEndsWithNewline = true;
 
   std::mutex newHashesMutex;
-  std::unordered_set<tlo::FuzzyHash, tlo::HashFuzzyHashPath,
-                     tlo::EqualFuzzyHashPath>
-      newHashes;
+  FuzzyHashSet newHashes;
 
  public:
   SynchronizingEventHandler(bool printStatus_) : printStatus(printStatus_) {}
