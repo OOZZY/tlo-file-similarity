@@ -244,6 +244,17 @@ FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
 }
 
 namespace {
+void hashFile(const fs::path &filePath, FuzzyHashEventHandler &handler) {
+  std::uintmax_t fileSize = getFileSize(filePath);
+  std::string fileLastWriteTime = toLocalTimestamp(getLastWriteTime(filePath));
+
+  if (handler.shouldHashFile(filePath, fileSize, fileLastWriteTime)) {
+    FuzzyHash hash = fuzzyHash(filePath, &handler, fileSize);
+
+    handler.collect(std::move(hash), fileSize, std::move(fileLastWriteTime));
+  }
+}
+
 void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
                                FuzzyHashEventHandler &handler) {
   for (const auto &path : paths) {
@@ -259,35 +270,14 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
     if (fs::is_regular_file(path)) {
       if (pathsSeen.find(path) == pathsSeen.end()) {
         pathsSeen.insert(path);
-
-        std::uintmax_t fileSize = getFileSize(path);
-        std::string fileLastWriteTime =
-            toLocalTimestamp(getLastWriteTime(path));
-
-        if (handler.shouldHashFile(path, fileSize, fileLastWriteTime)) {
-          FuzzyHash hash = fuzzyHash(path, &handler, fileSize);
-
-          handler.collect(std::move(hash), fileSize,
-                          std::move(fileLastWriteTime));
-        }
+        hashFile(path, handler);
       }
     } else if (fs::is_directory(path)) {
       for (const auto &entry : fs::recursive_directory_iterator(path)) {
         if (fs::is_regular_file(entry.path())) {
           if (pathsSeen.find(entry.path()) == pathsSeen.end()) {
             pathsSeen.insert(entry.path());
-
-            std::uintmax_t fileSize = getFileSize(entry.path());
-            std::string fileLastWriteTime =
-                toLocalTimestamp(getLastWriteTime(entry.path()));
-
-            if (handler.shouldHashFile(entry.path(), fileSize,
-                                       fileLastWriteTime)) {
-              FuzzyHash hash = fuzzyHash(entry.path(), &handler, fileSize);
-
-              handler.collect(std::move(hash), fileSize,
-                              std::move(fileLastWriteTime));
-            }
+            hashFile(entry.path(), handler);
           }
         }
       }
@@ -326,16 +316,7 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
       state.filePaths.pop();
       queueUniqueLock.unlock();
 
-      std::uintmax_t fileSize = getFileSize(filePath);
-      std::string fileLastWriteTime =
-          toLocalTimestamp(getLastWriteTime(filePath));
-
-      if (handler.shouldHashFile(filePath, fileSize, fileLastWriteTime)) {
-        FuzzyHash hash = fuzzyHash(filePath, &handler, fileSize);
-
-        handler.collect(std::move(hash), fileSize,
-                        std::move(fileLastWriteTime));
-      }
+      hashFile(filePath, handler);
     }
   } catch (...) {
     std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
