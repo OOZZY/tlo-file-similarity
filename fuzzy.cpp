@@ -13,6 +13,7 @@
 #include <string_view>
 #include <thread>
 #include <tuple>
+#include <unordered_set>
 #include <utility>
 
 #include "filesystem.hpp"
@@ -248,16 +249,26 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
     }
   }
 
+  std::unordered_set<fs::path, HashPath> pathsSeen;
+
   for (const auto &path : paths) {
     if (fs::is_regular_file(path)) {
-      if (handler.shouldHashFile(path)) {
-        handler.collect(fuzzyHash(path, &handler));
+      if (pathsSeen.find(path) == pathsSeen.end()) {
+        pathsSeen.insert(path);
+
+        if (handler.shouldHashFile(path)) {
+          handler.collect(fuzzyHash(path, &handler));
+        }
       }
     } else if (fs::is_directory(path)) {
       for (const auto &entry : fs::recursive_directory_iterator(path)) {
         if (fs::is_regular_file(entry.path())) {
-          if (handler.shouldHashFile(entry.path())) {
-            handler.collect(fuzzyHash(entry.path(), &handler));
+          if (pathsSeen.find(entry.path()) == pathsSeen.end()) {
+            pathsSeen.insert(entry.path());
+
+            if (handler.shouldHashFile(entry.path())) {
+              handler.collect(fuzzyHash(entry.path(), &handler));
+            }
           }
         }
       }
@@ -329,23 +340,35 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
                              std::ref(handler), std::ref(exceptions[i + 1]));
   }
 
+  std::unordered_set<fs::path, HashPath> pathsSeen;
+
   for (const auto &path : paths) {
     if (fs::is_regular_file(path)) {
-      const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+      if (pathsSeen.find(path) == pathsSeen.end()) {
+        pathsSeen.insert(path);
 
-      state.filePaths.push(path);
-      state.filesQueued.notify_one();
+        const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+
+        state.filePaths.push(path);
+        state.filesQueued.notify_one();
+      }
     } else if (fs::is_directory(path)) {
       for (const auto &entry : fs::recursive_directory_iterator(path)) {
         if (fs::is_regular_file(entry.path())) {
-          const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+          if (pathsSeen.find(entry.path()) == pathsSeen.end()) {
+            pathsSeen.insert(entry.path());
 
-          state.filePaths.push(entry.path());
-          state.filesQueued.notify_one();
+            const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+
+            state.filePaths.push(entry.path());
+            state.filesQueued.notify_one();
+          }
         }
       }
     }
   }
+
+  pathsSeen.clear();
 
   std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
 
