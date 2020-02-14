@@ -39,6 +39,8 @@ void Sqlite3Statement::prepare(const Sqlite3Connection &connection,
   throwIf(rc != SQLITE_OK, rc, "Error: Failed to prepare SQL statement: ");
 }
 
+bool Sqlite3Statement::isPrepared() const { return statement; }
+
 int Sqlite3Statement::step() {
   assert(statement);
 
@@ -290,4 +292,6 @@ void Sqlite3Connection::open(const std::filesystem::path &dbFilePath) {
 
   throwIf(rc != SQLITE_OK, rc, "Error: Failed to open database connection: ");
 }
+
+bool Sqlite3Connection::isOpen() const { return connection; }
 }  // namespace tlo

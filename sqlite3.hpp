@@ -23,6 +23,7 @@ class Sqlite3Statement {
   ~Sqlite3Statement();
 
   void prepare(const Sqlite3Connection &connection, std::string_view sql);
+  bool isPrepared() const;
 
   // Returns SQLITE_ROW if a new row of data is ready for processing. Returns
   // SQLITE_DONE when the statement has finished executing successfully.
@@ -84,6 +85,7 @@ class Sqlite3Connection {
   ~Sqlite3Connection();
 
   void open(const std::filesystem::path &dbFilePath);
+  bool isOpen() const;
 
   friend Sqlite3Statement::Sqlite3Statement(const Sqlite3Connection &,
                                             std::string_view);
