@@ -1,5 +1,5 @@
-#ifndef TLOFS_PRINT_HPP
-#define TLOFS_PRINT_HPP
+#ifndef TLOFS_CONTAINER_HPP
+#define TLOFS_CONTAINER_HPP
 
 #include <ostream>
 #include <unordered_map>
@@ -77,4 +77,4 @@ std::ostream &print(std::ostream &ostream,
 }
 }  // namespace tlo
 
-#endif  // TLOFS_PRINT_HPP
+#endif  // TLOFS_CONTAINER_HPP

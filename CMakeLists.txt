@@ -52,9 +52,9 @@ if (TLOFS_LINK_FS)
   endif()
 endif()
 
-set(core_headers chrono.hpp compare.hpp damerau-levenshtein.hpp filesystem.hpp
-  fuzzy.hpp hash.hpp lcs.hpp levenshtein.hpp options.hpp print.hpp sqlite3.hpp
-  string.hpp)
+set(core_headers chrono.hpp compare.hpp container.hpp damerau-levenshtein.hpp
+  filesystem.hpp fuzzy.hpp hash.hpp lcs.hpp levenshtein.hpp options.hpp
+  sqlite3.hpp string.hpp)
 set(core_sources chrono.cpp compare.cpp damerau-levenshtein.cpp filesystem.cpp
   fuzzy.cpp hash.cpp lcs.cpp levenshtein.cpp options.cpp sqlite3.cpp string.cpp)
 
