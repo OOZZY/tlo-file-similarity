@@ -2,6 +2,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <string>
 
 namespace fs = std::filesystem;
 
@@ -18,7 +19,7 @@ void throwIf(bool condition, int rc, const char *messagePrefix) {
 Sqlite3Statement::Sqlite3Statement() {}
 
 Sqlite3Statement::Sqlite3Statement(const Sqlite3Connection &connection,
-                                   const std::string &sql) {
+                                   std::string_view sql) {
   assert(connection.connection);
 
   prepare(connection, sql);
@@ -27,12 +28,12 @@ Sqlite3Statement::Sqlite3Statement(const Sqlite3Connection &connection,
 Sqlite3Statement::~Sqlite3Statement() { sqlite3_finalize(statement); }
 
 void Sqlite3Statement::prepare(const Sqlite3Connection &connection,
-                               const std::string &sql) {
+                               std::string_view sql) {
   assert(!statement);
   assert(connection.connection);
 
   int rc =
-      sqlite3_prepare_v2(connection.connection, sql.c_str(),
+      sqlite3_prepare_v2(connection.connection, sql.data(),
                          static_cast<int>(sql.size() + 1), &statement, nullptr);
 
   throwIf(rc != SQLITE_OK, rc, "Error: Failed to prepare SQL statement: ");
@@ -261,17 +262,17 @@ int Sqlite3Statement::numParameters() {
   return sqlite3_bind_parameter_count(statement);
 }
 
-const char *Sqlite3Statement::parameterName(int parameterIndex) {
+std::string_view Sqlite3Statement::parameterName(int parameterIndex) {
   assert(statement);
   assert(parameterIndex <= numParameters());
 
   return sqlite3_bind_parameter_name(statement, parameterIndex);
 }
 
-int Sqlite3Statement::parameterIndex(const std::string &parameterName) {
+int Sqlite3Statement::parameterIndex(std::string_view parameterName) {
   assert(statement);
 
-  return sqlite3_bind_parameter_index(statement, parameterName.c_str());
+  return sqlite3_bind_parameter_index(statement, parameterName.data());
 }
 
 Sqlite3Connection::Sqlite3Connection() {}

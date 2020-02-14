@@ -5,6 +5,7 @@
 
 #include <cstdlib>
 #include <filesystem>
+#include <string_view>
 
 namespace tlo {
 class Sqlite3Connection;
@@ -18,10 +19,10 @@ class Sqlite3Statement {
   // of the other functions.
   Sqlite3Statement();
 
-  Sqlite3Statement(const Sqlite3Connection &connection, const std::string &sql);
+  Sqlite3Statement(const Sqlite3Connection &connection, std::string_view sql);
   ~Sqlite3Statement();
 
-  void prepare(const Sqlite3Connection &connection, const std::string &sql);
+  void prepare(const Sqlite3Connection &connection, std::string_view sql);
 
   // Returns SQLITE_ROW if a new row of data is ready for processing. Returns
   // SQLITE_DONE when the statement has finished executing successfully.
@@ -63,8 +64,8 @@ class Sqlite3Statement {
 
   void clearBindings();
   int numParameters();
-  const char *parameterName(int parameterIndex);
-  int parameterIndex(const std::string &parameterName);
+  std::string_view parameterName(int parameterIndex);
+  int parameterIndex(std::string_view parameterName);
 };
 
 class Sqlite3Connection {
@@ -85,9 +86,9 @@ class Sqlite3Connection {
   void open(const std::filesystem::path &dbFilePath);
 
   friend Sqlite3Statement::Sqlite3Statement(const Sqlite3Connection &,
-                                            const std::string &);
+                                            std::string_view);
   friend void Sqlite3Statement::prepare(const Sqlite3Connection &,
-                                        const std::string &);
+                                        std::string_view);
 };
 }  // namespace tlo
 
