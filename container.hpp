@@ -6,20 +6,19 @@
 #include <vector>
 
 namespace tlo {
-template <class Type>
-std::ostream &print(std::ostream &ostream, const Type &value) {
+template <class Value>
+std::ostream &print(std::ostream &ostream, const Value &value) {
   return ostream << value;
 }
 
 namespace internal {
-template <class SequenceContainer>
-std::ostream &printSequenceContainer(std::ostream &ostream,
-                                     const SequenceContainer &container) {
+template <class NonMap>
+std::ostream &printNonMap(std::ostream &ostream, const NonMap &nonMap) {
   bool first = true;
 
   ostream << '{';
 
-  for (const auto &item : container) {
+  for (const auto &item : nonMap) {
     if (!first) {
       ostream << ", ";
     }
@@ -37,20 +36,19 @@ std::ostream &printSequenceContainer(std::ostream &ostream,
 }
 }  // namespace internal
 
-template <class Type>
-std::ostream &print(std::ostream &ostream, const std::vector<Type> &vector) {
-  return internal::printSequenceContainer(ostream, vector);
+template <class Value>
+std::ostream &print(std::ostream &ostream, const std::vector<Value> &vector) {
+  return internal::printNonMap(ostream, vector);
 }
 
 namespace internal {
-template <class AssociativeContainer>
-std::ostream &printAssociativeContainer(std::ostream &ostream,
-                                        const AssociativeContainer &container) {
+template <class Map>
+std::ostream &printMap(std::ostream &ostream, const Map &map) {
   bool first = true;
 
   ostream << '{';
 
-  for (const auto &pair : container) {
+  for (const auto &pair : map) {
     if (!first) {
       ostream << ", ";
     }
@@ -70,10 +68,10 @@ std::ostream &printAssociativeContainer(std::ostream &ostream,
 }
 }  // namespace internal
 
-template <class KeyType, class ValueType>
+template <class Key, class Value>
 std::ostream &print(std::ostream &ostream,
-                    const std::unordered_map<KeyType, ValueType> &map) {
-  return internal::printAssociativeContainer(ostream, map);
+                    const std::unordered_map<Key, Value> &map) {
+  return internal::printMap(ostream, map);
 }
 }  // namespace tlo
 
