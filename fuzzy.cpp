@@ -300,15 +300,23 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
       std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
 
       if (state.exceptionThrown) {
-        break;
+        return;
       }
 
       if (state.allFilesQueued && state.filePaths.empty()) {
-        break;
+        return;
       }
 
       while (state.filePaths.empty()) {
         state.filesQueued.wait(queueUniqueLock);
+
+        if (state.exceptionThrown) {
+          return;
+        }
+
+        if (state.allFilesQueued && state.filePaths.empty()) {
+          return;
+        }
       }
 
       fs::path filePath = std::move(state.filePaths.front());
@@ -323,6 +331,7 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
 
     state.exceptionThrown = true;
     exception = std::current_exception();
+    state.filesQueued.notify_all();
   }
 }
 
@@ -380,6 +389,7 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
   std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
 
   state.allFilesQueued = true;
+  state.filesQueued.notify_all();
   queueUniqueLock.unlock();
 
   hashFilesInQueue(state, handler, exceptions[0]);
