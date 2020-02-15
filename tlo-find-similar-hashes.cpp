@@ -1,5 +1,6 @@
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <stdexcept>
 
@@ -25,6 +26,29 @@ void printSimilarPair(const tlo::FuzzyHash &hash1, const tlo::FuzzyHash &hash2,
   }
 }
 
+class AbstractEventHandler : public tlo::HashComparisonEventHandler {
+ protected:
+  const bool printStatus;
+  const OutputFormat outputFormat;
+
+  std::size_t numHashesDone = 0;
+  std::size_t numSimilarPairs = 0;
+
+ public:
+  AbstractEventHandler(bool printStatus_, OutputFormat outputFormat_)
+      : printStatus(printStatus_), outputFormat(outputFormat_) {}
+
+  void onSimilarPairFound(const tlo::FuzzyHash &hash1,
+                          const tlo::FuzzyHash &hash2,
+                          double similarityScore) override {
+    if (printStatus) {
+      numSimilarPairs++;
+    }
+
+    printSimilarPair(hash1, hash2, similarityScore, outputFormat);
+  }
+};
+
 void printStatus(std::size_t numHashesDone, std::size_t numSimilarPairs) {
   std::cerr << "Done with " << numHashesDone;
 
@@ -45,26 +69,9 @@ void printStatus(std::size_t numHashesDone, std::size_t numSimilarPairs) {
   std::cerr << std::endl;
 }
 
-class EventHandler : public tlo::HashComparisonEventHandler {
- private:
-  const bool printStatus;
-  const OutputFormat outputFormat;
-  std::size_t numHashesDone = 0;
-  std::size_t numSimilarPairs = 0;
-
+class EventHandler : public AbstractEventHandler {
  public:
-  EventHandler(bool printStatus_, OutputFormat outputFormat_)
-      : printStatus(printStatus_), outputFormat(outputFormat_) {}
-
-  void onSimilarPairFound(const tlo::FuzzyHash &hash1,
-                          const tlo::FuzzyHash &hash2,
-                          double similarityScore) override {
-    if (printStatus) {
-      numSimilarPairs++;
-    }
-
-    printSimilarPair(hash1, hash2, similarityScore, outputFormat);
-  }
+  using AbstractEventHandler::AbstractEventHandler;
 
   void onHashDone() override {
     if (printStatus) {
@@ -74,28 +81,19 @@ class EventHandler : public tlo::HashComparisonEventHandler {
   }
 };
 
-class SynchronizingEventHandler : public tlo::HashComparisonEventHandler {
+class SynchronizingEventHandler : public AbstractEventHandler {
  private:
-  const bool printStatus;
-  const OutputFormat outputFormat;
   std::mutex outputMutex;
-  std::size_t numHashesDone = 0;
-  std::size_t numSimilarPairs = 0;
 
  public:
-  SynchronizingEventHandler(bool printStatus_, OutputFormat outputFormat_)
-      : printStatus(printStatus_), outputFormat(outputFormat_) {}
+  using AbstractEventHandler::AbstractEventHandler;
 
   void onSimilarPairFound(const tlo::FuzzyHash &hash1,
                           const tlo::FuzzyHash &hash2,
                           double similarityScore) override {
     const std::lock_guard<std::mutex> outputLockGuard(outputMutex);
 
-    if (printStatus) {
-      numSimilarPairs++;
-    }
-
-    printSimilarPair(hash1, hash2, similarityScore, outputFormat);
+    AbstractEventHandler::onSimilarPairFound(hash1, hash2, similarityScore);
   }
 
   void onHashDone() override {
@@ -195,22 +193,22 @@ int main(int argc, char **argv) {
     auto paths = tlo::stringsToPaths(commandLine.arguments());
     auto blockSizesToHashes = tlo::readHashes(paths);
 
+    std::unique_ptr<AbstractEventHandler> handler;
+
+    if (numThreads <= 1) {
+      handler = std::make_unique<EventHandler>(
+          printStatus, stringToOutputFormat(outputFormat));
+    } else {
+      handler = std::make_unique<SynchronizingEventHandler>(
+          printStatus, stringToOutputFormat(outputFormat));
+    }
+
     if (printStatus) {
       std::cerr << "Comparing hashes." << std::endl;
     }
 
-    if (numThreads <= 1) {
-      EventHandler handler(printStatus, stringToOutputFormat(outputFormat));
-
-      tlo::compareHashes(blockSizesToHashes, similarityThreshold, handler,
-                         numThreads);
-    } else {
-      SynchronizingEventHandler handler(printStatus,
-                                        stringToOutputFormat(outputFormat));
-
-      tlo::compareHashes(blockSizesToHashes, similarityThreshold, handler,
-                         numThreads);
-    }
+    tlo::compareHashes(blockSizesToHashes, similarityThreshold, *handler,
+                       numThreads);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
     return 1;

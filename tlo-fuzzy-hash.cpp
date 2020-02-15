@@ -18,6 +18,8 @@ class AbstractEventHandler : public tlo::FuzzyHashEventHandler {
   const bool printStatus;
   const tlo::FuzzyHashRowSet &knownHashes;
 
+  std::size_t numFilesHashed = 0;
+
   tlo::FuzzyHashRowSet newHashes;
   tlo::FuzzyHashRowSet modifiedHashes;
 
@@ -57,9 +59,6 @@ void printStatus(std::size_t numFilesHashed) {
 }
 
 class EventHandler : public AbstractEventHandler {
- private:
-  std::size_t numFilesHashed = 0;
-
  public:
   using AbstractEventHandler::AbstractEventHandler;
 
@@ -100,7 +99,6 @@ class EventHandler : public AbstractEventHandler {
 class SynchronizingEventHandler : public AbstractEventHandler {
  private:
   std::mutex outputMutex;
-  std::size_t numFilesHashed = 0;
   std::thread::id previousOutputtingThread;
   bool previousOutputEndsWithNewline = true;
 
