@@ -22,6 +22,10 @@ double compareWithLcsDistance(const std::string &string1,
   auto lcsDistance = lcsLength3(string1, string2).lcsDistance;
   auto maxLcsDistance = ::tlo::maxLcsDistance(string1.size(), string2.size());
 
+  if (maxLcsDistance == 0) {
+    return 100.0;
+  }
+
   return static_cast<double>(maxLcsDistance - lcsDistance) / maxLcsDistance *
          100.0;
 }
@@ -32,6 +36,10 @@ double compareWithLevenshteinDistance(const std::string &string1,
   auto maxLevenshteinDistance =
       ::tlo::maxLevenshteinDistance(string1.size(), string2.size());
 
+  if (maxLevenshteinDistance == 0) {
+    return 100.0;
+  }
+
   return static_cast<double>(maxLevenshteinDistance - levenshteinDistance) /
          maxLevenshteinDistance * 100.0;
 }
@@ -41,6 +49,10 @@ double compareWithDamerLevenDistance(const std::string &string1,
   auto damerLevenDistance = damerLevenDistance2(string1, string2);
   auto maxDamerLevenDistance =
       ::tlo::maxDamerLevenDistance(string1.size(), string2.size());
+
+  if (maxDamerLevenDistance == 0) {
+    return 100.0;
+  }
 
   return static_cast<double>(maxDamerLevenDistance - damerLevenDistance) /
          maxDamerLevenDistance * 100.0;
