@@ -42,8 +42,11 @@ class AbstractEventHandler : public tlo::FuzzyHashEventHandler {
     return true;
   }
 
-  const tlo::FuzzyHashRowSet &getNewHashes() { return newHashes; }
-  const tlo::FuzzyHashRowSet &getModifiedHashes() { return modifiedHashes; }
+  const tlo::FuzzyHashRowSet &getNewHashes() const { return newHashes; }
+
+  const tlo::FuzzyHashRowSet &getModifiedHashes() const {
+    return modifiedHashes;
+  }
 };
 
 void printStatus(std::size_t numFilesHashed) {
@@ -161,7 +164,6 @@ class SynchronizingEventHandler : public AbstractEventHandler {
     }
   }
 };
-}  // namespace
 
 constexpr std::size_t DEFAULT_NUM_THREADS = 1;
 constexpr std::size_t MIN_NUM_THREADS = 1;
@@ -179,6 +181,85 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
       "Store hashes in and get hashes from the database at the specified path "
       "(default: no database used)."}}};
 
+struct Config {
+  std::size_t numThreads = DEFAULT_NUM_THREADS;
+  bool printStatus = false;
+  std::string database;
+
+  Config(const tlo::CommandLine &commandLine) {
+    if (commandLine.specifiedOption("--num-threads")) {
+      numThreads = commandLine.getOptionValueAsULong(
+          "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
+    }
+
+    if (commandLine.specifiedOption("--print-status")) {
+      printStatus = true;
+    }
+
+    if (commandLine.specifiedOption("--database")) {
+      database = commandLine.getOptionValue("--database");
+    }
+  }
+};
+
+tlo::FuzzyHashDatabase openDatabase(const Config &config) {
+  tlo::FuzzyHashDatabase hashDatabase;
+
+  if (!config.database.empty()) {
+    if (config.printStatus) {
+      std::cerr << "Opening database." << std::endl;
+    }
+
+    hashDatabase.open(config.database);
+  }
+
+  return hashDatabase;
+}
+
+tlo::FuzzyHashRowSet getKnownHashes(const Config &config,
+                                    tlo::FuzzyHashDatabase &hashDatabase,
+                                    const std::vector<fs::path> &paths) {
+  tlo::FuzzyHashRowSet knownHashes;
+
+  if (hashDatabase.isOpen()) {
+    if (config.printStatus) {
+      std::cerr << "Getting known hashes from database." << std::endl;
+    }
+
+    hashDatabase.getHashesForPaths(knownHashes, paths);
+  }
+
+  return knownHashes;
+}
+
+std::unique_ptr<AbstractEventHandler> makeEventHandler(
+    const Config &config, const tlo::FuzzyHashRowSet &knownHashes) {
+  if (config.numThreads <= 1) {
+    return std::make_unique<EventHandler>(config.printStatus, knownHashes);
+  } else {
+    return std::make_unique<SynchronizingEventHandler>(config.printStatus,
+                                                       knownHashes);
+  }
+}
+
+void updateDatabase(const Config &config, tlo::FuzzyHashDatabase &hashDatabase,
+                    const AbstractEventHandler &handler) {
+  if (hashDatabase.isOpen()) {
+    if (config.printStatus) {
+      std::cerr << "Adding new hashes to database." << std::endl;
+    }
+
+    hashDatabase.insertHashes(handler.getNewHashes());
+
+    if (config.printStatus) {
+      std::cerr << "Updating existing hashes in database." << std::endl;
+    }
+
+    hashDatabase.updateHashes(handler.getModifiedHashes());
+  }
+}
+}  // namespace
+
 int main(int argc, char **argv) {
   try {
     const tlo::CommandLine commandLine(argc, argv, VALID_OPTIONS);
@@ -192,69 +273,20 @@ int main(int argc, char **argv) {
       return 1;
     }
 
-    std::size_t numThreads = DEFAULT_NUM_THREADS;
-    bool printStatus = false;
-    std::string database;
-
-    if (commandLine.specifiedOption("--num-threads")) {
-      numThreads = commandLine.getOptionValueAsULong(
-          "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
-    }
-
-    if (commandLine.specifiedOption("--print-status")) {
-      printStatus = true;
-    }
-
-    if (commandLine.specifiedOption("--database")) {
-      database = commandLine.getOptionValue("--database");
-    }
-
+    Config config(commandLine);
     auto paths = tlo::stringsToPaths(commandLine.arguments());
-    tlo::FuzzyHashDatabase hashDatabase;
-    tlo::FuzzyHashRowSet knownHashes;
+    tlo::FuzzyHashDatabase hashDatabase = openDatabase(config);
+    tlo::FuzzyHashRowSet knownHashes =
+        getKnownHashes(config, hashDatabase, paths);
+    std::unique_ptr<AbstractEventHandler> handler =
+        makeEventHandler(config, knownHashes);
 
-    if (!database.empty()) {
-      if (printStatus) {
-        std::cerr << "Opening database." << std::endl;
-      }
-
-      hashDatabase.open(database);
-
-      if (printStatus) {
-        std::cerr << "Getting known hashes from database." << std::endl;
-      }
-
-      hashDatabase.getHashesForPaths(knownHashes, paths);
-    }
-
-    std::unique_ptr<AbstractEventHandler> handler;
-
-    if (numThreads <= 1) {
-      handler = std::make_unique<EventHandler>(printStatus, knownHashes);
-    } else {
-      handler =
-          std::make_unique<SynchronizingEventHandler>(printStatus, knownHashes);
-    }
-
-    if (printStatus) {
+    if (config.printStatus) {
       std::cerr << "Hashing files." << std::endl;
     }
 
-    tlo::fuzzyHash(paths, *handler, numThreads);
-
-    if (hashDatabase.isOpen()) {
-      if (printStatus) {
-        std::cerr << "Adding new hashes to database." << std::endl;
-      }
-
-      hashDatabase.insertHashes(handler->getNewHashes());
-
-      if (printStatus) {
-        std::cerr << "Updating existing hashes in database." << std::endl;
-      }
-
-      hashDatabase.updateHashes(handler->getModifiedHashes());
-    }
+    tlo::fuzzyHash(paths, *handler, config.numThreads);
+    updateDatabase(config, hashDatabase, *handler);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
 

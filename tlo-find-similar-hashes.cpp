@@ -119,7 +119,6 @@ OutputFormat stringToOutputFormat(const std::string &string) {
                              "\" is not a recognized output format.");
   }
 }
-}  // namespace
 
 constexpr int DEFAULT_SIMILARITY_THRESHOLD = 50;
 constexpr int MIN_SIMILARITY_THRESHOLD = 0;
@@ -149,24 +148,13 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
       "(tab-separated values) (default: " +
           DEFAULT_OUTPUT_FORMAT + ")."}}};
 
-int main(int argc, char **argv) {
-  try {
-    const tlo::CommandLine commandLine(argc, argv, VALID_OPTIONS);
+struct Config {
+  int similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD;
+  std::size_t numThreads = DEFAULT_NUM_THREADS;
+  bool printStatus = false;
+  std::string outputFormat = DEFAULT_OUTPUT_FORMAT;
 
-    if (commandLine.arguments().empty()) {
-      std::cerr << "Usage: " << commandLine.program()
-                << " [options] <text file with hashes>...\n"
-                << std::endl;
-      commandLine.printValidOptions(std::cerr);
-
-      return 1;
-    }
-
-    int similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD;
-    std::size_t numThreads = DEFAULT_NUM_THREADS;
-    bool printStatus = false;
-    std::string outputFormat = DEFAULT_OUTPUT_FORMAT;
-
+  Config(const tlo::CommandLine &commandLine) {
     if (commandLine.specifiedOption("--similarity-threshold")) {
       similarityThreshold = commandLine.getOptionValueAsInt(
           "--similarity-threshold", MIN_SIMILARITY_THRESHOLD,
@@ -185,32 +173,52 @@ int main(int argc, char **argv) {
     if (commandLine.specifiedOption("--output-format")) {
       outputFormat = commandLine.getOptionValue("--output-format");
     }
+  }
+};
 
-    if (printStatus) {
+std::unique_ptr<AbstractEventHandler> makeEventHandler(const Config &config) {
+  if (config.numThreads <= 1) {
+    return std::make_unique<EventHandler>(
+        config.printStatus, stringToOutputFormat(config.outputFormat));
+  } else {
+    return std::make_unique<SynchronizingEventHandler>(
+        config.printStatus, stringToOutputFormat(config.outputFormat));
+  }
+}
+}  // namespace
+
+int main(int argc, char **argv) {
+  try {
+    const tlo::CommandLine commandLine(argc, argv, VALID_OPTIONS);
+
+    if (commandLine.arguments().empty()) {
+      std::cerr << "Usage: " << commandLine.program()
+                << " [options] <text file with hashes>...\n"
+                << std::endl;
+      commandLine.printValidOptions(std::cerr);
+
+      return 1;
+    }
+
+    Config config(commandLine);
+    auto paths = tlo::stringsToPaths(commandLine.arguments());
+
+    if (config.printStatus) {
       std::cerr << "Reading hashes." << std::endl;
     }
 
-    auto paths = tlo::stringsToPaths(commandLine.arguments());
     auto blockSizesToHashes = tlo::readHashes(paths);
+    std::unique_ptr<AbstractEventHandler> handler = makeEventHandler(config);
 
-    std::unique_ptr<AbstractEventHandler> handler;
-
-    if (numThreads <= 1) {
-      handler = std::make_unique<EventHandler>(
-          printStatus, stringToOutputFormat(outputFormat));
-    } else {
-      handler = std::make_unique<SynchronizingEventHandler>(
-          printStatus, stringToOutputFormat(outputFormat));
-    }
-
-    if (printStatus) {
+    if (config.printStatus) {
       std::cerr << "Comparing hashes." << std::endl;
     }
 
-    tlo::compareHashes(blockSizesToHashes, similarityThreshold, *handler,
-                       numThreads);
+    tlo::compareHashes(blockSizesToHashes, config.similarityThreshold, *handler,
+                       config.numThreads);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
+
     return 1;
   }
 }
