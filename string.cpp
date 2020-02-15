@@ -37,4 +37,19 @@ std::vector<std::string> split(const std::string &string, char delimiter) {
 
   return strings;
 }
+
+std::string join(std::size_t numOccurrences, const std::string &string,
+                 const std::string &separator) {
+  std::string newString;
+
+  for (std::size_t i = 0; i < numOccurrences; ++i) {
+    if (i > 0) {
+      newString += separator;
+    }
+
+    newString += string;
+  }
+
+  return newString;
+}
 }  // namespace tlo

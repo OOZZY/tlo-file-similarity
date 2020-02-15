@@ -110,6 +110,9 @@ $ ./tlo-fuzzy-hash
 Usage: tlo-fuzzy-hash [options] <file or directory>...
 
 Options:
+  --database=value
+    Store hashes in and get hashes from the database at the specified path (default: no database used).
+
   --num-threads=value
     Number of threads the program will use (default: 1).
 

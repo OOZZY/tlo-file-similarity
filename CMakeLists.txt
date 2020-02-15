@@ -53,10 +53,11 @@ if (TLOFS_LINK_FS)
 endif()
 
 set(core_headers chrono.hpp compare.hpp container.hpp damerau-levenshtein.hpp
-  filesystem.hpp fuzzy.hpp hash.hpp lcs.hpp levenshtein.hpp options.hpp
-  sqlite3.hpp string.hpp)
-set(core_sources chrono.cpp compare.cpp damerau-levenshtein.cpp filesystem.cpp
-  fuzzy.cpp hash.cpp lcs.cpp levenshtein.cpp options.cpp sqlite3.cpp string.cpp)
+  database.hpp filesystem.hpp fuzzy.hpp hash.hpp lcs.hpp levenshtein.hpp
+  options.hpp sqlite3.hpp string.hpp)
+set(core_sources chrono.cpp compare.cpp damerau-levenshtein.cpp database.cpp
+  filesystem.cpp fuzzy.cpp hash.cpp lcs.cpp levenshtein.cpp options.cpp
+  sqlite3.cpp string.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)

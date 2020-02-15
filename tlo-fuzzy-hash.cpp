@@ -1,9 +1,11 @@
 #include <exception>
 #include <iostream>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <unordered_set>
 
+#include "database.hpp"
 #include "filesystem.hpp"
 #include "fuzzy.hpp"
 #include "options.hpp"
@@ -11,8 +13,36 @@
 namespace fs = std::filesystem;
 
 namespace {
-using FuzzyHashSet = std::unordered_set<tlo::FuzzyHash, tlo::HashFuzzyHashPath,
-                                        tlo::EqualFuzzyHashPath>;
+class AbstractEventHandler : public tlo::FuzzyHashEventHandler {
+ protected:
+  const bool printStatus;
+  const tlo::FuzzyHashRowSet &knownHashes;
+
+  tlo::FuzzyHashRowSet newHashes;
+  tlo::FuzzyHashRowSet modifiedHashes;
+
+ public:
+  AbstractEventHandler(bool printStatus_,
+                       const tlo::FuzzyHashRowSet &knownHashes_)
+      : printStatus(printStatus_), knownHashes(knownHashes_) {}
+
+  bool shouldHashFile(const fs::path &filePath, std::uintmax_t fileSize,
+                      const std::string &fileLastWriteTime) override {
+    auto iterator = knownHashes.find(filePath.string());
+
+    if (iterator != knownHashes.end() && iterator->fileSize == fileSize &&
+        iterator->fileLastWriteTime == fileLastWriteTime) {
+      onBlockHash();
+      onFileHash(*iterator);
+      return false;
+    }
+
+    return true;
+  }
+
+  const tlo::FuzzyHashRowSet &getNewHashes() { return newHashes; }
+  const tlo::FuzzyHashRowSet &getModifiedHashes() { return modifiedHashes; }
+};
 
 void printStatus(std::size_t numFilesHashed) {
   std::cerr << "Hashed " << numFilesHashed;
@@ -26,14 +56,12 @@ void printStatus(std::size_t numFilesHashed) {
   std::cerr << std::endl;
 }
 
-class EventHandler : public tlo::FuzzyHashEventHandler {
+class EventHandler : public AbstractEventHandler {
  private:
-  const bool printStatus;
   std::size_t numFilesHashed = 0;
-  FuzzyHashSet newHashes;
 
  public:
-  EventHandler(bool printStatus_) : printStatus(printStatus_) {}
+  using AbstractEventHandler::AbstractEventHandler;
 
   void onBlockHash() override {
     if (printStatus) {
@@ -54,37 +82,32 @@ class EventHandler : public tlo::FuzzyHashEventHandler {
     }
   }
 
-  bool shouldHashFile(const fs::path &filePath, std::uintmax_t fileSize,
-                      const std::string &fileLastWriteTime) {
-    static_cast<void>(filePath);
-    static_cast<void>(fileSize);
-    static_cast<void>(fileLastWriteTime);
-    return true;
-  }
-
   void collect(tlo::FuzzyHash &&hash, std::uintmax_t fileSize,
                std::string &&fileLastWriteTime) override {
-    static_cast<void>(fileSize);
-    static_cast<void>(fileLastWriteTime);
+    tlo::FuzzyHashRow row(std::move(hash));
 
-    newHashes.insert(std::move(hash));
+    row.fileSize = fileSize;
+    row.fileLastWriteTime = std::move(fileLastWriteTime);
+
+    if (knownHashes.find(row) == knownHashes.end()) {
+      newHashes.insert(std::move(row));
+    } else {
+      modifiedHashes.insert(std::move(row));
+    }
   }
 };
 
-class SynchronizingEventHandler : public tlo::FuzzyHashEventHandler {
+class SynchronizingEventHandler : public AbstractEventHandler {
  private:
-  const bool printStatus;
-
   std::mutex outputMutex;
   std::size_t numFilesHashed = 0;
   std::thread::id previousOutputtingThread;
   bool previousOutputEndsWithNewline = true;
 
   std::mutex newHashesMutex;
-  FuzzyHashSet newHashes;
 
  public:
-  SynchronizingEventHandler(bool printStatus_) : printStatus(printStatus_) {}
+  using AbstractEventHandler::AbstractEventHandler;
 
   void onBlockHash() override {
     if (printStatus) {
@@ -124,22 +147,20 @@ class SynchronizingEventHandler : public tlo::FuzzyHashEventHandler {
     previousOutputEndsWithNewline = true;
   }
 
-  bool shouldHashFile(const fs::path &filePath, std::uintmax_t fileSize,
-                      const std::string &fileLastWriteTime) {
-    static_cast<void>(filePath);
-    static_cast<void>(fileSize);
-    static_cast<void>(fileLastWriteTime);
-    return true;
-  }
-
   void collect(tlo::FuzzyHash &&hash, std::uintmax_t fileSize,
                std::string &&fileLastWriteTime) override {
-    static_cast<void>(fileSize);
-    static_cast<void>(fileLastWriteTime);
+    tlo::FuzzyHashRow row(std::move(hash));
+
+    row.fileSize = fileSize;
+    row.fileLastWriteTime = std::move(fileLastWriteTime);
 
     const std::lock_guard<std::mutex> newHashesLockGuard(newHashesMutex);
 
-    newHashes.insert(std::move(hash));
+    if (knownHashes.find(row) == knownHashes.end()) {
+      newHashes.insert(std::move(row));
+    } else {
+      modifiedHashes.insert(std::move(row));
+    }
   }
 };
 }  // namespace
@@ -154,7 +175,11 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
                 std::to_string(DEFAULT_NUM_THREADS) + ")."}},
     {"--print-status",
      {false,
-      "Allow program to print status updates to stderr (default: off)."}}};
+      "Allow program to print status updates to stderr (default: off)."}},
+    {"--database",
+     {true,
+      "Store hashes in and get hashes from the database at the specified path "
+      "(default: no database used)."}}};
 
 int main(int argc, char **argv) {
   try {
@@ -171,6 +196,7 @@ int main(int argc, char **argv) {
 
     std::size_t numThreads = DEFAULT_NUM_THREADS;
     bool printStatus = false;
+    std::string database;
 
     if (commandLine.specifiedOption("--num-threads")) {
       numThreads = commandLine.getOptionValueAsULong(
@@ -181,23 +207,59 @@ int main(int argc, char **argv) {
       printStatus = true;
     }
 
+    if (commandLine.specifiedOption("--database")) {
+      database = commandLine.getOptionValue("--database");
+    }
+
+    auto paths = tlo::stringsToPaths(commandLine.arguments());
+    tlo::FuzzyHashDatabase hashDatabase;
+    tlo::FuzzyHashRowSet knownHashes;
+
+    if (!database.empty()) {
+      if (printStatus) {
+        std::cerr << "Opening database." << std::endl;
+      }
+
+      hashDatabase.open(database);
+
+      if (printStatus) {
+        std::cerr << "Getting known hashes from database." << std::endl;
+      }
+
+      hashDatabase.getHashesForPaths(knownHashes, paths);
+    }
+
+    std::unique_ptr<AbstractEventHandler> handler;
+
+    if (numThreads <= 1) {
+      handler = std::make_unique<EventHandler>(printStatus, knownHashes);
+    } else {
+      handler =
+          std::make_unique<SynchronizingEventHandler>(printStatus, knownHashes);
+    }
+
     if (printStatus) {
       std::cerr << "Hashing files." << std::endl;
     }
 
-    auto paths = tlo::stringsToPaths(commandLine.arguments());
+    tlo::fuzzyHash(paths, *handler, numThreads);
 
-    if (numThreads <= 1) {
-      EventHandler handler(printStatus);
+    if (hashDatabase.isOpen()) {
+      if (printStatus) {
+        std::cerr << "Adding new hashes to database." << std::endl;
+      }
 
-      tlo::fuzzyHash(paths, handler, numThreads);
-    } else {
-      SynchronizingEventHandler handler(printStatus);
+      hashDatabase.insertHashes(handler->getNewHashes());
 
-      tlo::fuzzyHash(paths, handler, numThreads);
+      if (printStatus) {
+        std::cerr << "Updating existing hashes in database." << std::endl;
+      }
+
+      hashDatabase.updateHashes(handler->getModifiedHashes());
     }
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
+
     return 1;
   }
 }
