@@ -79,18 +79,23 @@ sqlite3_int64 Sqlite3Statement::columnAsInt64(int columnIndex) {
   return sqlite3_column_int64(statement, columnIndex);
 }
 
-const unsigned char *Sqlite3Statement::columnAsUtf8Text(int columnIndex) {
+std::string_view Sqlite3Statement::columnAsUtf8Text(int columnIndex) {
   assert(statement);
   assert(columnIndex < numColumnsInCurrentRow());
 
-  return sqlite3_column_text(statement, columnIndex);
+  return {reinterpret_cast<const char *>(
+              sqlite3_column_text(statement, columnIndex)),
+          static_cast<std::size_t>(numBytesInBlobOrUtf8Text(columnIndex))};
 }
 
-const void *Sqlite3Statement::columnAsUtf16Text(int columnIndex) {
+std::u16string_view Sqlite3Statement::columnAsUtf16Text(int columnIndex) {
   assert(statement);
   assert(columnIndex < numColumnsInCurrentRow());
 
-  return sqlite3_column_text16(statement, columnIndex);
+  return {reinterpret_cast<const char16_t *>(
+              sqlite3_column_text16(statement, columnIndex)),
+          static_cast<std::size_t>(numBytesInUtf16Text(columnIndex)) /
+              sizeof(char16_t)};
 }
 
 int Sqlite3Statement::numBytesInBlobOrUtf8Text(int columnIndex) {
@@ -193,25 +198,26 @@ void Sqlite3Statement::bindNull(int parameterIndex) {
   throwIf(rc != SQLITE_OK, rc, "Error: Failed to bind null to parameter: ");
 }
 
-void Sqlite3Statement::bindUtf8Text(int parameterIndex, const char *value,
-                                    int numBytes, void (*destructor)(void *)) {
+void Sqlite3Statement::bindUtf8Text(int parameterIndex, std::string_view value,
+                                    void (*destructor)(void *)) {
   assert(statement);
   assert(parameterIndex <= numParameters());
 
-  int rc =
-      sqlite3_bind_text(statement, parameterIndex, value, numBytes, destructor);
+  int rc = sqlite3_bind_text(statement, parameterIndex, value.data(),
+                             value.size(), destructor);
 
   throwIf(rc != SQLITE_OK, rc,
           "Error: Failed to bind UTF-8 text to parameter: ");
 }
 
-void Sqlite3Statement::bindUtf16Text(int parameterIndex, const void *value,
-                                     int numBytes, void (*destructor)(void *)) {
+void Sqlite3Statement::bindUtf16Text(int parameterIndex,
+                                     std::u16string_view value,
+                                     void (*destructor)(void *)) {
   assert(statement);
   assert(parameterIndex <= numParameters());
 
-  int rc = sqlite3_bind_text16(statement, parameterIndex, value, numBytes,
-                               destructor);
+  int rc = sqlite3_bind_text16(statement, parameterIndex, value.data(),
+                               value.size() * sizeof(char16_t), destructor);
 
   throwIf(rc != SQLITE_OK, rc,
           "Error: Failed to bind UTF-16 text to parameter: ");
