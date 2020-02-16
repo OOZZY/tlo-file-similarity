@@ -66,7 +66,7 @@ std::string toLocalTimestamp(std::time_t localTime);
 
 // Returns a std::time_t in local system time. Assumes localTimestamp is a
 // local timestamp in the format returned by toLocalTimestamp().
-std::time_t fromLocalTimestamp(const std::string &localTimestamp);
+std::time_t toTimeT(const std::string &localTimestamp);
 }  // namespace tlo
 
 #endif  // TLOFS_CHRONO_HPP
