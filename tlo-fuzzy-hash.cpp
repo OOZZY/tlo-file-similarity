@@ -122,7 +122,7 @@ class SynchronizingEventHandler : public AbstractEventHandler {
           std::cerr << ' ';
         }
 
-        std::cerr << 'T' << std::this_thread::get_id() << '.';
+        std::cerr << 't' << std::this_thread::get_id() << '.';
       }
 
       previousOutputtingThread = std::this_thread::get_id();
