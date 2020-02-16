@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <climits>
+#include <vector>
 
 #ifdef TLOFS_DEBUG_DAMERAU_LEVENSHTEIN
 #include <iostream>

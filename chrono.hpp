@@ -52,7 +52,7 @@ DstTimePoint convertTimePoint(
     }
   }
 
-  return dstNow + (timePoint - srcNow);
+  return dstNow + std::chrono::duration_cast<DstDuration>(timePoint - srcNow);
 }
 
 // Calls std::localtime(&localTime) then converts the resulting std::tm object

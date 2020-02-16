@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <vector>
 
 #ifdef TLOFS_DEBUG_LEVENSHTEIN
 #include <iostream>

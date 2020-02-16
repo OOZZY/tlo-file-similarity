@@ -16,7 +16,10 @@ class Sqlite3Statement {
  public:
   // If default constructed, make sure prepare() is called before calling any
   // of the other functions.
-  Sqlite3Statement();
+  Sqlite3Statement() = default;
+
+  // Will just copy the underlying sqlite3_stmt pointer.
+  Sqlite3Statement(const Sqlite3Statement &statement) = default;
 
   Sqlite3Statement(const Sqlite3Connection &connection, std::string_view sql);
   ~Sqlite3Statement();
@@ -98,7 +101,10 @@ class Sqlite3Connection {
  public:
   // If default constructed, make sure open() is called before associating any
   // prepared statements with this database connection.
-  Sqlite3Connection();
+  Sqlite3Connection() = default;
+
+  // Will just copy the underlying sqlite3 pointer.
+  Sqlite3Connection(const Sqlite3Connection &connection) = default;
 
   Sqlite3Connection(const std::filesystem::path &dbFilePath);
 

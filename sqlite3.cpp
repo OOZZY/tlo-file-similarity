@@ -16,8 +16,6 @@ void throwIf(bool condition, int rc, const char *messagePrefix) {
 }
 }  // namespace
 
-Sqlite3Statement::Sqlite3Statement() {}
-
 Sqlite3Statement::Sqlite3Statement(const Sqlite3Connection &connection,
                                    std::string_view sql) {
   assert(connection.connection);
@@ -204,7 +202,7 @@ void Sqlite3Statement::bindUtf8Text(int parameterIndex, std::string_view value,
   assert(parameterIndex <= numParameters());
 
   int rc = sqlite3_bind_text(statement, parameterIndex, value.data(),
-                             value.size(), destructor);
+                             static_cast<int>(value.size()), destructor);
 
   throwIf(rc != SQLITE_OK, rc,
           "Error: Failed to bind UTF-8 text to parameter: ");
@@ -216,8 +214,9 @@ void Sqlite3Statement::bindUtf16Text(int parameterIndex,
   assert(statement);
   assert(parameterIndex <= numParameters());
 
-  int rc = sqlite3_bind_text16(statement, parameterIndex, value.data(),
-                               value.size() * sizeof(char16_t), destructor);
+  int rc = sqlite3_bind_text16(
+      statement, parameterIndex, value.data(),
+      static_cast<int>(value.size() * sizeof(char16_t)), destructor);
 
   throwIf(rc != SQLITE_OK, rc,
           "Error: Failed to bind UTF-16 text to parameter: ");
@@ -282,8 +281,6 @@ int Sqlite3Statement::parameterIndex(std::string_view parameterName) {
 
   return sqlite3_bind_parameter_index(statement, parameterName.data());
 }
-
-Sqlite3Connection::Sqlite3Connection() {}
 
 Sqlite3Connection::Sqlite3Connection(const fs::path &dbFilePath) {
   open(dbFilePath);
