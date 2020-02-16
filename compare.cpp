@@ -130,7 +130,7 @@ std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashes(
   return blockSizesToHashes;
 }
 
-HashComparisonEventHandler::~HashComparisonEventHandler() {}
+HashComparisonEventHandler::~HashComparisonEventHandler() = default;
 
 namespace {
 // Compare hash with hashes[startIndex .. end].

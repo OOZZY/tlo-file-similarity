@@ -53,7 +53,7 @@ bool EqualFuzzyHashPath::operator()(const FuzzyHash &hash1,
   return hash1.filePath == hash2.filePath;
 }
 
-FuzzyHashEventHandler::~FuzzyHashEventHandler() {}
+FuzzyHashEventHandler::~FuzzyHashEventHandler() = default;
 
 /*
  * Algorithms from:
