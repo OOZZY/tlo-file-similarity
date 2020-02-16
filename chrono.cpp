@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <iomanip>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
@@ -21,17 +22,29 @@ std::string toLocalTimestamp(std::time_t localTime) {
   std::memcpy(&localTimeObjectCopy, localTimeObject, sizeof(*localTimeObject));
   timeUniqueLock.unlock();
 
+  localTimeObjectCopy.tm_year += BASE_YEAR;
+  localTimeObjectCopy.tm_mon++;
+
   std::ostringstream oss;
 
-  oss << localTimeObjectCopy.tm_year + BASE_YEAR;
-  oss << ' ' << localTimeObjectCopy.tm_mon + 1;
-  oss << ' ' << localTimeObjectCopy.tm_mday;
-  oss << ' ' << localTimeObjectCopy.tm_hour;
-  oss << ' ' << localTimeObjectCopy.tm_min;
-  oss << ' ' << localTimeObjectCopy.tm_sec;
-  oss << ' ' << localTimeObjectCopy.tm_yday;
-  oss << ' ' << localTimeObjectCopy.tm_wday;
-  oss << ' ' << localTimeObjectCopy.tm_isdst;
+  oss.fill('0');
+  oss << std::setw(4) << localTimeObjectCopy.tm_year;
+  oss << std::setw(1) << '-';
+  oss << std::setw(2) << localTimeObjectCopy.tm_mon;
+  oss << std::setw(1) << '-';
+  oss << std::setw(2) << localTimeObjectCopy.tm_mday;
+  oss << std::setw(1) << ' ';
+  oss << std::setw(2) << localTimeObjectCopy.tm_hour;
+  oss << std::setw(1) << ':';
+  oss << std::setw(2) << localTimeObjectCopy.tm_min;
+  oss << std::setw(1) << ':';
+  oss << std::setw(2) << localTimeObjectCopy.tm_sec;
+  oss << std::setw(1) << ' ';
+  oss << std::setw(3) << localTimeObjectCopy.tm_yday;
+  oss << std::setw(1) << ' ';
+  oss << std::setw(1) << localTimeObjectCopy.tm_wday;
+  oss << std::setw(1) << ' ';
+  oss << std::setw(1) << localTimeObjectCopy.tm_isdst;
   return oss.str();
 }
 
@@ -39,13 +52,21 @@ void toTm(std::tm &localTimeObject, const std::string &localTimestamp) {
   std::istringstream iss(localTimestamp);
 
   iss >> localTimeObject.tm_year;
+  iss.ignore(1);
   iss >> localTimeObject.tm_mon;
+  iss.ignore(1);
   iss >> localTimeObject.tm_mday;
+  iss.ignore(1);
   iss >> localTimeObject.tm_hour;
+  iss.ignore(1);
   iss >> localTimeObject.tm_min;
+  iss.ignore(1);
   iss >> localTimeObject.tm_sec;
+  iss.ignore(1);
   iss >> localTimeObject.tm_yday;
+  iss.ignore(1);
   iss >> localTimeObject.tm_wday;
+  iss.ignore(1);
   iss >> localTimeObject.tm_isdst;
 
   if (iss.fail()) {
