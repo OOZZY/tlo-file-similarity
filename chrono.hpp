@@ -56,23 +56,30 @@ DstTimePoint convertTimePoint(
 }
 
 // Calls std::localtime(&localTime) then converts the resulting std::tm object
-// into a timestamp in "%Y-%m-%d %H:%M:%S %j,%w <tm_isdst>" format where
-// <tm_isdst> is the value of the the tm_isdst field of the std::tm object.
+// into a timestamp that preserves all the fields of the std::tm object.
 // Returns the timestamp. Assumes localTime is in local system time.
 // Thread-safe when called in multiple threads concurrently. Not thread-safe
 // when called concurrently with other functions that also call
 // std::localTime(), std::gmtime(), or std::ctime().
 std::string toLocalTimestamp(std::time_t localTime);
 
-// Fills the tm according to the given timestamp. Assumes localTimestamp is a
-// local timestamp in the format returned by toLocalTimestamp(). Throws
-// std::runtime_error if localTimestamp fails parsing.
+// Fills the tm according to the given timestamp. Assumes localTimestamp is in
+// the format returned by toLocalTimestamp(). Throws std::runtime_error if
+// localTimestamp fails parsing.
 void toTm(std::tm &localTimeObject, const std::string &localTimestamp);
 
-// Returns a std::time_t in local system time. Assumes localTimestamp is a
-// local timestamp in the format returned by toLocalTimestamp(). Throws
-// std::runtime_error if localTimestamp fails parsing.
+// Returns a std::time_t in local system time. Assumes localTimestamp is in the
+// format returned by toLocalTimestamp(). Throws std::runtime_error if
+// localTimestamp fails parsing.
 std::time_t toTimeT(const std::string &localTimestamp);
+
+// Returns whether the given timestamps differ by at most maxSecondDifference
+// seconds. Assumes the timestamps are in the format returned by
+// toLocalTimestamp(). Throws std::runtime_error if any of the timestamps fail
+// parsing.
+bool equalTimestamps(const std::string &localTimestamp1,
+                     const std::string &localTimestamp2,
+                     int maxSecondDifference);
 }  // namespace tlo
 
 #endif  // TLOFS_CHRONO_HPP

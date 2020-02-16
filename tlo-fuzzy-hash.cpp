@@ -5,6 +5,7 @@
 #include <thread>
 #include <unordered_set>
 
+#include "chrono.hpp"
 #include "database.hpp"
 #include "filesystem.hpp"
 #include "fuzzy.hpp"
@@ -13,6 +14,8 @@
 namespace fs = std::filesystem;
 
 namespace {
+constexpr int MAX_SECOND_DIFFERENCE = 1;
+
 class AbstractEventHandler : public tlo::FuzzyHashEventHandler {
  protected:
   const bool printStatus;
@@ -33,7 +36,8 @@ class AbstractEventHandler : public tlo::FuzzyHashEventHandler {
     auto iterator = knownHashes.find(filePath.string());
 
     if (iterator != knownHashes.end() && iterator->fileSize == fileSize &&
-        iterator->fileLastWriteTime == fileLastWriteTime) {
+        tlo::equalTimestamps(iterator->fileLastWriteTime, fileLastWriteTime,
+                             MAX_SECOND_DIFFERENCE)) {
       onBlockHash();
       onFileHash(*iterator);
       return false;
