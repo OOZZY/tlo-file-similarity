@@ -5,11 +5,12 @@
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
+#include <string_view>
 
 namespace tlo {
 namespace {
 std::mutex timeMutex;
-const char *TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S";
+constexpr std::string_view TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M:%S %j,%w";
 }  // namespace
 
 std::string toLocalTimestamp(std::time_t localTime) {
@@ -23,7 +24,7 @@ std::string toLocalTimestamp(std::time_t localTime) {
 
   std::ostringstream oss;
 
-  oss << std::put_time(&localTimeObjectCopy, TIMESTAMP_FORMAT);
+  oss << std::put_time(&localTimeObjectCopy, TIMESTAMP_FORMAT.data());
   oss << ' ' << localTimeObjectCopy.tm_isdst;
   return oss.str();
 }
@@ -31,7 +32,7 @@ std::string toLocalTimestamp(std::time_t localTime) {
 void toTm(std::tm &localTimeObject, const std::string &localTimestamp) {
   std::istringstream iss(localTimestamp);
 
-  iss >> std::get_time(&localTimeObject, TIMESTAMP_FORMAT);
+  iss >> std::get_time(&localTimeObject, TIMESTAMP_FORMAT.data());
   iss >> localTimeObject.tm_isdst;
 
   if (iss.fail()) {

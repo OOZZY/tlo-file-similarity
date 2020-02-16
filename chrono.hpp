@@ -56,12 +56,12 @@ DstTimePoint convertTimePoint(
 }
 
 // Calls std::localtime(&localTime) then converts the resulting std::tm object
-// into a timestamp in "%Y-%m-%d %H:%M:%S <tm_isdst>" format where <tm_isdst>
-// is the value of the the tm_isdst field of the std::tm object. Returns the
-// timestamp. Assumes localTime is in local system time. Thread-safe when
-// called in multiple threads concurrently. Not thread-safe when called
-// concurrently with other functions that also call std::localTime(),
-// std::gmtime(), or std::ctime().
+// into a timestamp in "%Y-%m-%d %H:%M:%S %j,%w <tm_isdst>" format where
+// <tm_isdst> is the value of the the tm_isdst field of the std::tm object.
+// Returns the timestamp. Assumes localTime is in local system time.
+// Thread-safe when called in multiple threads concurrently. Not thread-safe
+// when called concurrently with other functions that also call
+// std::localTime(), std::gmtime(), or std::ctime().
 std::string toLocalTimestamp(std::time_t localTime);
 
 // Fills the tm according to the given timestamp. Assumes localTimestamp is a
