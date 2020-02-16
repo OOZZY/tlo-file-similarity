@@ -286,15 +286,18 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
 }
 
 struct SharedState {
+  FuzzyHashEventHandler &handler;
+
   std::mutex queueMutex;
   bool exceptionThrown = false;
   bool allFilesQueued = false;
   std::queue<fs::path> filePaths;
   std::condition_variable filesQueued;
+
+  SharedState(FuzzyHashEventHandler &handler_) : handler(handler_) {}
 };
 
-void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
-                      std::exception_ptr &exception) {
+void hashFilesInQueue(SharedState &state, std::exception_ptr &exception) {
   try {
     for (;;) {
       std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
@@ -324,7 +327,7 @@ void hashFilesInQueue(SharedState &state, FuzzyHashEventHandler &handler,
       state.filePaths.pop();
       queueUniqueLock.unlock();
 
-      hashFile(filePath, handler);
+      hashFile(filePath, state.handler);
     }
   } catch (...) {
     std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
@@ -347,13 +350,13 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
     }
   }
 
-  SharedState state;
+  SharedState state(handler);
   std::vector<std::exception_ptr> exceptions(numThreads);
   std::vector<std::thread> threads(numThreads - 1);
 
   for (std::size_t i = 0; i < threads.size(); ++i) {
     threads[i] = std::thread(hashFilesInQueue, std::ref(state),
-                             std::ref(handler), std::ref(exceptions[i + 1]));
+                             std::ref(exceptions[i + 1]));
   }
 
   std::unordered_set<fs::path, HashPath> pathsSeen;
@@ -392,7 +395,7 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
   state.filesQueued.notify_all();
   queueUniqueLock.unlock();
 
-  hashFilesInQueue(state, handler, exceptions[0]);
+  hashFilesInQueue(state, exceptions[0]);
 
   for (auto &thread : threads) {
     thread.join();

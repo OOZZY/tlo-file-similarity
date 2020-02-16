@@ -189,6 +189,7 @@ struct SharedState {
   const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
       &blockSizesToHashes;
   const int similarityThreshold;
+  HashComparisonEventHandler &handler;
 
   std::mutex indexMutex;
   bool exceptionThrown = false;
@@ -198,14 +199,14 @@ struct SharedState {
   SharedState(const std::vector<std::size_t> &blockSizes_,
               const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
                   &blockSizesToHashes_,
-              int similarityThreshold_)
+              int similarityThreshold_, HashComparisonEventHandler &handler_)
       : blockSizes(blockSizes_),
         blockSizesToHashes(blockSizesToHashes_),
-        similarityThreshold(similarityThreshold_) {}
+        similarityThreshold(similarityThreshold_),
+        handler(handler_) {}
 };
 
 void compareHashAtIndexWithComparableHashes(SharedState &state,
-                                            HashComparisonEventHandler &handler,
                                             std::exception_ptr &exception) {
   try {
     for (;;) {
@@ -241,14 +242,14 @@ void compareHashAtIndexWithComparableHashes(SharedState &state,
       }
 
       compareHashWithOthers(hashes[i], hashes, i + 1, state.similarityThreshold,
-                            handler);
+                            state.handler);
 
       if (moreHashes) {
         compareHashWithOthers(hashes[i], *moreHashes, 0,
-                              state.similarityThreshold, handler);
+                              state.similarityThreshold, state.handler);
       }
 
-      handler.onHashDone();
+      state.handler.onHashDone();
     }
   } catch (...) {
     std::lock_guard<std::mutex> indexLockGuard(state.indexMutex);
@@ -271,17 +272,17 @@ void compareHashesWithMultipleThreads(
 
   std::sort(blockSizes.begin(), blockSizes.end());
 
-  SharedState state(blockSizes, blockSizesToHashes, similarityThreshold);
+  SharedState state(blockSizes, blockSizesToHashes, similarityThreshold,
+                    handler);
   std::vector<std::exception_ptr> exceptions(numThreads);
   std::vector<std::thread> threads(numThreads - 1);
 
   for (std::size_t i = 0; i < threads.size(); ++i) {
-    threads[i] =
-        std::thread(compareHashAtIndexWithComparableHashes, std::ref(state),
-                    std::ref(handler), std::ref(exceptions[i + 1]));
+    threads[i] = std::thread(compareHashAtIndexWithComparableHashes,
+                             std::ref(state), std::ref(exceptions[i + 1]));
   }
 
-  compareHashAtIndexWithComparableHashes(state, handler, exceptions[0]);
+  compareHashAtIndexWithComparableHashes(state, exceptions[0]);
 
   for (auto &thread : threads) {
     thread.join();
