@@ -64,8 +64,14 @@ DstTimePoint convertTimePoint(
 // std::gmtime(), or std::ctime().
 std::string toLocalTimestamp(std::time_t localTime);
 
+// Fills the tm according to the given timestamp. Assumes localTimestamp is a
+// local timestamp in the format returned by toLocalTimestamp(). Throws
+// std::runtime_error if localTimestamp fails parsing.
+void toTm(std::tm &localTimeObject, const std::string &localTimestamp);
+
 // Returns a std::time_t in local system time. Assumes localTimestamp is a
-// local timestamp in the format returned by toLocalTimestamp().
+// local timestamp in the format returned by toLocalTimestamp(). Throws
+// std::runtime_error if localTimestamp fails parsing.
 std::time_t toTimeT(const std::string &localTimestamp);
 }  // namespace tlo
 

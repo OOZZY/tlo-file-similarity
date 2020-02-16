@@ -28,9 +28,8 @@ std::string toLocalTimestamp(std::time_t localTime) {
   return oss.str();
 }
 
-std::time_t toTimeT(const std::string &localTimestamp) {
+void toTm(std::tm &localTimeObject, const std::string &localTimestamp) {
   std::istringstream iss(localTimestamp);
-  std::tm localTimeObject;
 
   iss >> std::get_time(&localTimeObject, TIMESTAMP_FORMAT);
   iss >> localTimeObject.tm_isdst;
@@ -39,7 +38,12 @@ std::time_t toTimeT(const std::string &localTimestamp) {
     throw std::runtime_error("Error: Failed to parse timestamp \"" +
                              localTimestamp + "\".");
   }
+}
 
+std::time_t toTimeT(const std::string &localTimestamp) {
+  std::tm localTimeObject;
+
+  toTm(localTimeObject, localTimestamp);
   return std::mktime(&localTimeObject);
 }
 }  // namespace tlo
