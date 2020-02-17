@@ -22,21 +22,59 @@ void printStatus(std::size_t numFilesHashed) {
 
 constexpr int MAX_SECOND_DIFFERENCE = 1;
 
+class DatabaseEventHandler : public tlo::FuzzyHashDatabase::EventHandler {
+ private:
+  std::size_t numHashesInserted = 0;
+  std::size_t numHashesUpdated = 0;
+
+ public:
+  void onRowInsert() override {
+    numHashesInserted++;
+
+    std::cerr << "Inserted " << numHashesInserted << ' '
+              << (numHashesInserted == 1 ? "hash" : "hashes") << '.'
+              << std::endl;
+  }
+
+  void onRowUpdate() override {
+    numHashesUpdated++;
+
+    std::cerr << "Updated " << numHashesUpdated << ' '
+              << (numHashesUpdated == 1 ? "hash" : "hashes") << '.'
+              << std::endl;
+  }
+};
+
 class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
  protected:
   const bool printStatus;
-  const tlo::FuzzyHashRowSet &knownHashes;
+
+  tlo::FuzzyHashDatabase hashDatabase;
+  tlo::FuzzyHashRowSet knownHashes;
+  tlo::FuzzyHashRowSet newHashes;
+  tlo::FuzzyHashRowSet modifiedHashes;
 
   std::size_t numFilesHashed = 0;
   bool previousOutputEndsWithNewline = true;
 
-  tlo::FuzzyHashRowSet newHashes;
-  tlo::FuzzyHashRowSet modifiedHashes;
-
  public:
-  AbstractHashEventHandler(bool printStatus_,
-                           const tlo::FuzzyHashRowSet &knownHashes_)
-      : printStatus(printStatus_), knownHashes(knownHashes_) {}
+  AbstractHashEventHandler(bool printStatus_, const std::string &database,
+                           const std::vector<fs::path> &paths)
+      : printStatus(printStatus_) {
+    if (!database.empty()) {
+      if (printStatus) {
+        std::cerr << "Opening database." << std::endl;
+      }
+
+      hashDatabase.open(database);
+
+      if (printStatus) {
+        std::cerr << "Getting known hashes from database." << std::endl;
+      }
+
+      hashDatabase.getHashesForPaths(knownHashes, paths);
+    }
+  }
 
   void onFileHash(const tlo::FuzzyHash &hash) override {
     if (!previousOutputEndsWithNewline) {
@@ -68,15 +106,29 @@ class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
     return true;
   }
 
-  const tlo::FuzzyHashRowSet &getNewHashes() const { return newHashes; }
-
-  const tlo::FuzzyHashRowSet &getModifiedHashes() const {
-    return modifiedHashes;
-  }
-
   void finishOutput() const {
     if (!previousOutputEndsWithNewline) {
       std::cerr << std::endl;
+    }
+  }
+
+  void updateDatabase() {
+    if (hashDatabase.isOpen()) {
+      DatabaseEventHandler databaseEventHandler;
+
+      if (printStatus) {
+        std::cerr << "Adding new hashes to database." << std::endl;
+      }
+
+      hashDatabase.insertHashes(newHashes,
+                                printStatus ? &databaseEventHandler : nullptr);
+
+      if (printStatus) {
+        std::cerr << "Updating existing hashes in database." << std::endl;
+      }
+
+      hashDatabase.updateHashes(modifiedHashes,
+                                printStatus ? &databaseEventHandler : nullptr);
     }
   }
 };
@@ -161,29 +213,6 @@ class SynchronizingHashEventHandler : public AbstractHashEventHandler {
   }
 };
 
-class DatabaseEventHandler : public tlo::FuzzyHashDatabase::EventHandler {
- private:
-  std::size_t numHashesInserted = 0;
-  std::size_t numHashesUpdated = 0;
-
- public:
-  void onRowInsert() override {
-    numHashesInserted++;
-
-    std::cerr << "Inserted " << numHashesInserted << ' '
-              << (numHashesInserted == 1 ? "hash" : "hashes") << '.'
-              << std::endl;
-  }
-
-  void onRowUpdate() override {
-    numHashesUpdated++;
-
-    std::cerr << "Updated " << numHashesUpdated << ' '
-              << (numHashesUpdated == 1 ? "hash" : "hashes") << '.'
-              << std::endl;
-  }
-};
-
 constexpr std::size_t DEFAULT_NUM_THREADS = 1;
 constexpr std::size_t MIN_NUM_THREADS = 1;
 constexpr std::size_t MAX_NUM_THREADS = 256;
@@ -221,63 +250,14 @@ struct Config {
   }
 };
 
-tlo::FuzzyHashDatabase openDatabase(const Config &config) {
-  tlo::FuzzyHashDatabase hashDatabase;
-
-  if (!config.database.empty()) {
-    if (config.printStatus) {
-      std::cerr << "Opening database." << std::endl;
-    }
-
-    hashDatabase.open(config.database);
-  }
-
-  return hashDatabase;
-}
-
-tlo::FuzzyHashRowSet getKnownHashes(const Config &config,
-                                    tlo::FuzzyHashDatabase &hashDatabase,
-                                    const std::vector<fs::path> &paths) {
-  tlo::FuzzyHashRowSet knownHashes;
-
-  if (hashDatabase.isOpen()) {
-    if (config.printStatus) {
-      std::cerr << "Getting known hashes from database." << std::endl;
-    }
-
-    hashDatabase.getHashesForPaths(knownHashes, paths);
-  }
-
-  return knownHashes;
-}
-
 std::unique_ptr<AbstractHashEventHandler> makeHashEventHandler(
-    const Config &config, const tlo::FuzzyHashRowSet &knownHashes) {
+    const Config &config, const std::vector<fs::path> &paths) {
   if (config.numThreads <= 1) {
-    return std::make_unique<HashEventHandler>(config.printStatus, knownHashes);
+    return std::make_unique<HashEventHandler>(config.printStatus,
+                                              config.database, paths);
   } else {
-    return std::make_unique<SynchronizingHashEventHandler>(config.printStatus,
-                                                           knownHashes);
-  }
-}
-
-void updateDatabase(const Config &config, tlo::FuzzyHashDatabase &hashDatabase,
-                    const AbstractHashEventHandler &hashEventHandler,
-                    DatabaseEventHandler *databaseEventHandler) {
-  if (hashDatabase.isOpen()) {
-    if (config.printStatus) {
-      std::cerr << "Adding new hashes to database." << std::endl;
-    }
-
-    hashDatabase.insertHashes(hashEventHandler.getNewHashes(),
-                              databaseEventHandler);
-
-    if (config.printStatus) {
-      std::cerr << "Updating existing hashes in database." << std::endl;
-    }
-
-    hashDatabase.updateHashes(hashEventHandler.getModifiedHashes(),
-                              databaseEventHandler);
+    return std::make_unique<SynchronizingHashEventHandler>(
+        config.printStatus, config.database, paths);
   }
 }
 }  // namespace
@@ -299,11 +279,8 @@ int main(int argc, char **argv) {
 
     Config config(commandLine);
     auto paths = tlo::stringsToPaths(commandLine.arguments());
-    tlo::FuzzyHashDatabase hashDatabase = openDatabase(config);
-    tlo::FuzzyHashRowSet knownHashes =
-        getKnownHashes(config, hashDatabase, paths);
     std::unique_ptr<AbstractHashEventHandler> hashEventHandler =
-        makeHashEventHandler(config, knownHashes);
+        makeHashEventHandler(config, paths);
 
     if (config.printStatus) {
       std::cerr << "Hashing files." << std::endl;
@@ -311,11 +288,7 @@ int main(int argc, char **argv) {
 
     tlo::fuzzyHash(paths, *hashEventHandler, config.numThreads);
     hashEventHandler->finishOutput();
-
-    DatabaseEventHandler databaseEventHandler;
-
-    updateDatabase(config, hashDatabase, *hashEventHandler,
-                   config.printStatus ? &databaseEventHandler : nullptr);
+    hashEventHandler->updateDatabase();
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
 
