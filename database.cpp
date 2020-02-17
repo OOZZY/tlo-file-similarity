@@ -1,5 +1,6 @@
 #include "database.hpp"
 
+#include "stop.hpp"
 #include "string.hpp"
 
 namespace fs = std::filesystem;
@@ -99,6 +100,10 @@ void FuzzyHashDatabase::insertHash(const FuzzyHashRow &newHash,
 void FuzzyHashDatabase::insertHashes(const FuzzyHashRowSet &newHashes,
                                      EventHandler *handler) {
   for (const auto &newHash : newHashes) {
+    if (stopRequested.load()) {
+      return;
+    }
+
     insertHash(newHash, handler);
   }
 }
@@ -192,6 +197,10 @@ void FuzzyHashDatabase::updateHash(const FuzzyHashRow &modifiedHash,
 void FuzzyHashDatabase::updateHashes(const FuzzyHashRowSet &modifiedHashes,
                                      EventHandler *handler) {
   for (const auto &modifiedHash : modifiedHashes) {
+    if (stopRequested.load()) {
+      return;
+    }
+
     updateHash(modifiedHash, handler);
   }
 }

@@ -19,6 +19,7 @@
 #include "chrono.hpp"
 #include "filesystem.hpp"
 #include "hash.hpp"
+#include "stop.hpp"
 #include "string.hpp"
 
 namespace fs = std::filesystem;
@@ -154,6 +155,10 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &filePath,
         if (handler) {
           handler->onBlockHash();
         }
+
+        if (stopRequested.load()) {
+          return std::pair(part1, part2);
+        }
       }
 
       if (rollingHasher.getHash() % (blockSize * 2) == blockSize * 2 - 1) {
@@ -163,6 +168,10 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &filePath,
 
         if (handler) {
           handler->onBlockHash();
+        }
+
+        if (stopRequested.load()) {
+          return std::pair(part1, part2);
         }
       }
     }
@@ -217,6 +226,12 @@ FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler,
   for (;;) {
     std::tie(part1, part2) = fuzzyHash(filePath, blockSize, handler);
 
+    if (stopRequested.load()) {
+      part1 += BAD_FUZZY_HASH_CHAR;
+      part2 += BAD_FUZZY_HASH_CHAR;
+      return {blockSize, part1, part2, filePath.string()};
+    }
+
     if (part1.size() < SPAMSUM_LENGTH / 2 && blockSize / 2 >= MIN_BLOCK_SIZE) {
       blockSize /= 2;
     } else {
@@ -251,6 +266,10 @@ void hashFile(const fs::path &filePath, FuzzyHashEventHandler &handler) {
   if (handler.shouldHashFile(filePath, fileSize, fileLastWriteTime)) {
     FuzzyHash hash = fuzzyHash(filePath, &handler, fileSize);
 
+    if (stopRequested.load()) {
+      return;
+    }
+
     handler.collect(std::move(hash), fileSize, std::move(fileLastWriteTime));
   }
 }
@@ -271,6 +290,10 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
       if (pathsSeen.find(path) == pathsSeen.end()) {
         pathsSeen.insert(path);
         hashFile(path, handler);
+
+        if (stopRequested.load()) {
+          return;
+        }
       }
     } else if (fs::is_directory(path)) {
       for (const auto &entry : fs::recursive_directory_iterator(path)) {
@@ -278,6 +301,10 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
           if (pathsSeen.find(entry.path()) == pathsSeen.end()) {
             pathsSeen.insert(entry.path());
             hashFile(entry.path(), handler);
+
+            if (stopRequested.load()) {
+              return;
+            }
           }
         }
       }
@@ -328,6 +355,10 @@ void hashFilesInQueue(SharedState &state, std::exception_ptr &exception) {
       queueUniqueLock.unlock();
 
       hashFile(filePath, state.handler);
+
+      if (stopRequested.load()) {
+        return;
+      }
     }
   } catch (...) {
     std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);

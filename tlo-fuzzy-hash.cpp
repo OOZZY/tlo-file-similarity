@@ -15,6 +15,11 @@
 namespace fs = std::filesystem;
 
 namespace {
+void printStatus(std::size_t numFilesHashed) {
+  std::cerr << "Hashed " << numFilesHashed << ' '
+            << (numFilesHashed == 1 ? "file" : "files") << '.' << std::endl;
+}
+
 constexpr int MAX_SECOND_DIFFERENCE = 1;
 
 class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
@@ -23,6 +28,7 @@ class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
   const tlo::FuzzyHashRowSet &knownHashes;
 
   std::size_t numFilesHashed = 0;
+  bool previousOutputEndsWithNewline = true;
 
   tlo::FuzzyHashRowSet newHashes;
   tlo::FuzzyHashRowSet modifiedHashes;
@@ -31,6 +37,21 @@ class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
   AbstractHashEventHandler(bool printStatus_,
                            const tlo::FuzzyHashRowSet &knownHashes_)
       : printStatus(printStatus_), knownHashes(knownHashes_) {}
+
+  void onFileHash(const tlo::FuzzyHash &hash) override {
+    if (!previousOutputEndsWithNewline) {
+      std::cerr << std::endl;
+    }
+
+    std::cout << hash << std::endl;
+
+    if (printStatus) {
+      numFilesHashed++;
+      ::printStatus(numFilesHashed);
+    }
+
+    previousOutputEndsWithNewline = true;
+  }
 
   bool shouldHashFile(const fs::path &filePath, std::uintmax_t fileSize,
                       const std::string &fileLastWriteTime) override {
@@ -52,12 +73,13 @@ class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
   const tlo::FuzzyHashRowSet &getModifiedHashes() const {
     return modifiedHashes;
   }
-};
 
-void printStatus(std::size_t numFilesHashed) {
-  std::cerr << "Hashed " << numFilesHashed << ' '
-            << (numFilesHashed == 1 ? "file" : "files") << '.' << std::endl;
-}
+  void finishOutput() const {
+    if (!previousOutputEndsWithNewline) {
+      std::cerr << std::endl;
+    }
+  }
+};
 
 class HashEventHandler : public AbstractHashEventHandler {
  public:
@@ -66,19 +88,7 @@ class HashEventHandler : public AbstractHashEventHandler {
   void onBlockHash() override {
     if (printStatus) {
       std::cerr << '.';
-    }
-  }
-
-  void onFileHash(const tlo::FuzzyHash &hash) override {
-    if (printStatus) {
-      std::cerr << std::endl;
-    }
-
-    std::cout << hash << std::endl;
-
-    if (printStatus) {
-      numFilesHashed++;
-      ::printStatus(numFilesHashed);
+      previousOutputEndsWithNewline = false;
     }
   }
 
@@ -101,7 +111,6 @@ class SynchronizingHashEventHandler : public AbstractHashEventHandler {
  private:
   std::mutex outputMutex;
   std::thread::id previousOutputtingThread;
-  bool previousOutputEndsWithNewline = true;
 
   std::mutex newHashesMutex;
 
@@ -131,19 +140,8 @@ class SynchronizingHashEventHandler : public AbstractHashEventHandler {
   void onFileHash(const tlo::FuzzyHash &hash) override {
     const std::lock_guard<std::mutex> outputLockGuard(outputMutex);
 
-    if (!previousOutputEndsWithNewline) {
-      std::cerr << std::endl;
-    }
-
-    std::cout << hash << std::endl;
-
-    if (printStatus) {
-      numFilesHashed++;
-      ::printStatus(numFilesHashed);
-    }
-
+    AbstractHashEventHandler::onFileHash(hash);
     previousOutputtingThread = std::this_thread::get_id();
-    previousOutputEndsWithNewline = true;
   }
 
   void collect(tlo::FuzzyHash &&hash, std::uintmax_t fileSize,
@@ -312,6 +310,7 @@ int main(int argc, char **argv) {
     }
 
     tlo::fuzzyHash(paths, *hashEventHandler, config.numThreads);
+    hashEventHandler->finishOutput();
 
     DatabaseEventHandler databaseEventHandler;
 

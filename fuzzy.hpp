@@ -54,10 +54,15 @@ class FuzzyHashEventHandler {
   virtual ~FuzzyHashEventHandler() = 0;
 };
 
+constexpr char BAD_FUZZY_HASH_CHAR = '!';
+
 // Based on spamsum and ssdeep. Throws std::runtime_error on error. If handler
 // is not nullptr, will call handler->onBlockHash() whenever a file block has
 // just been hashed. Also, will call handler->onFileHash() whenever a file has
-// just been hashed. Expects path to be a path to a file.
+// just been hashed. Expects path to be a path to a file. Regularly checks
+// tlo::stopRequested to see if fuzzy hashing should stop. If fuzzy hashing
+// stops before reaching the end of the file, BAD_FUZZY_HASH_CHAR will be
+// appended to the part1 and part2 fields of the returned FuzzyHash.
 FuzzyHash fuzzyHash(const std::filesystem::path &filePath,
                     FuzzyHashEventHandler *handler = nullptr);
 
