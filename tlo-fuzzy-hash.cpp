@@ -16,7 +16,7 @@ namespace fs = std::filesystem;
 namespace {
 constexpr int MAX_SECOND_DIFFERENCE = 1;
 
-class AbstractEventHandler : public tlo::FuzzyHashEventHandler {
+class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
  protected:
   const bool printStatus;
   const tlo::FuzzyHashRowSet &knownHashes;
@@ -27,8 +27,8 @@ class AbstractEventHandler : public tlo::FuzzyHashEventHandler {
   tlo::FuzzyHashRowSet modifiedHashes;
 
  public:
-  AbstractEventHandler(bool printStatus_,
-                       const tlo::FuzzyHashRowSet &knownHashes_)
+  AbstractHashEventHandler(bool printStatus_,
+                           const tlo::FuzzyHashRowSet &knownHashes_)
       : printStatus(printStatus_), knownHashes(knownHashes_) {}
 
   bool shouldHashFile(const fs::path &filePath, std::uintmax_t fileSize,
@@ -65,9 +65,9 @@ void printStatus(std::size_t numFilesHashed) {
   std::cerr << std::endl;
 }
 
-class EventHandler : public AbstractEventHandler {
+class HashEventHandler : public AbstractHashEventHandler {
  public:
-  using AbstractEventHandler::AbstractEventHandler;
+  using AbstractHashEventHandler::AbstractHashEventHandler;
 
   void onBlockHash() override {
     if (printStatus) {
@@ -103,7 +103,7 @@ class EventHandler : public AbstractEventHandler {
   }
 };
 
-class SynchronizingEventHandler : public AbstractEventHandler {
+class SynchronizingHashEventHandler : public AbstractHashEventHandler {
  private:
   std::mutex outputMutex;
   std::thread::id previousOutputtingThread;
@@ -112,7 +112,7 @@ class SynchronizingEventHandler : public AbstractEventHandler {
   std::mutex newHashesMutex;
 
  public:
-  using AbstractEventHandler::AbstractEventHandler;
+  using AbstractHashEventHandler::AbstractHashEventHandler;
 
   void onBlockHash() override {
     if (printStatus) {
@@ -166,6 +166,41 @@ class SynchronizingEventHandler : public AbstractEventHandler {
     } else {
       modifiedHashes.insert(std::move(row));
     }
+  }
+};
+
+class DatabaseEventHandler : public tlo::FuzzyHashDatabase::EventHandler {
+ private:
+  std::size_t numHashesInserted = 0;
+  std::size_t numHashesUpdated = 0;
+
+ public:
+  void onRowInsert() override {
+    numHashesInserted++;
+
+    std::cerr << "Inserted " << numHashesInserted;
+
+    if (numHashesInserted == 1) {
+      std::cerr << " hash.";
+    } else {
+      std::cerr << " hashes.";
+    }
+
+    std::cerr << std::endl;
+  }
+
+  void onRowUpdate() override {
+    numHashesUpdated++;
+
+    std::cerr << "Updated " << numHashesUpdated;
+
+    if (numHashesUpdated == 1) {
+      std::cerr << " hash.";
+    } else {
+      std::cerr << " hashes.";
+    }
+
+    std::cerr << std::endl;
   }
 };
 
@@ -236,30 +271,33 @@ tlo::FuzzyHashRowSet getKnownHashes(const Config &config,
   return knownHashes;
 }
 
-std::unique_ptr<AbstractEventHandler> makeEventHandler(
+std::unique_ptr<AbstractHashEventHandler> makeHashEventHandler(
     const Config &config, const tlo::FuzzyHashRowSet &knownHashes) {
   if (config.numThreads <= 1) {
-    return std::make_unique<EventHandler>(config.printStatus, knownHashes);
+    return std::make_unique<HashEventHandler>(config.printStatus, knownHashes);
   } else {
-    return std::make_unique<SynchronizingEventHandler>(config.printStatus,
-                                                       knownHashes);
+    return std::make_unique<SynchronizingHashEventHandler>(config.printStatus,
+                                                           knownHashes);
   }
 }
 
 void updateDatabase(const Config &config, tlo::FuzzyHashDatabase &hashDatabase,
-                    const AbstractEventHandler &handler) {
+                    const AbstractHashEventHandler &hashEventHandler,
+                    DatabaseEventHandler *databaseEventHandler) {
   if (hashDatabase.isOpen()) {
     if (config.printStatus) {
       std::cerr << "Adding new hashes to database." << std::endl;
     }
 
-    hashDatabase.insertHashes(handler.getNewHashes());
+    hashDatabase.insertHashes(hashEventHandler.getNewHashes(),
+                              databaseEventHandler);
 
     if (config.printStatus) {
       std::cerr << "Updating existing hashes in database." << std::endl;
     }
 
-    hashDatabase.updateHashes(handler.getModifiedHashes());
+    hashDatabase.updateHashes(hashEventHandler.getModifiedHashes(),
+                              databaseEventHandler);
   }
 }
 }  // namespace
@@ -282,15 +320,19 @@ int main(int argc, char **argv) {
     tlo::FuzzyHashDatabase hashDatabase = openDatabase(config);
     tlo::FuzzyHashRowSet knownHashes =
         getKnownHashes(config, hashDatabase, paths);
-    std::unique_ptr<AbstractEventHandler> handler =
-        makeEventHandler(config, knownHashes);
+    std::unique_ptr<AbstractHashEventHandler> hashEventHandler =
+        makeHashEventHandler(config, knownHashes);
 
     if (config.printStatus) {
       std::cerr << "Hashing files." << std::endl;
     }
 
-    tlo::fuzzyHash(paths, *handler, config.numThreads);
-    updateDatabase(config, hashDatabase, *handler);
+    tlo::fuzzyHash(paths, *hashEventHandler, config.numThreads);
+
+    DatabaseEventHandler databaseEventHandler;
+
+    updateDatabase(config, hashDatabase, *hashEventHandler,
+                   config.printStatus ? &databaseEventHandler : nullptr);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
 

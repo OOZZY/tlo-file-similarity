@@ -13,6 +13,8 @@ FuzzyHashRow::FuzzyHashRow(std::string &&filePath_) {
   filePath = std::move(filePath_);
 }
 
+FuzzyHashDatabase::EventHandler::~EventHandler() = default;
+
 namespace {
 constexpr std::string_view CREATE_TABLE_FUZZY_HASH =
     R"sql(CREATE TABLE IF NOT EXISTS FuzzyHash (
@@ -84,14 +86,20 @@ void resetClearBindingsAndBindHash(Sqlite3Statement &statement,
 }
 }  // namespace
 
-void FuzzyHashDatabase::insertHash(const FuzzyHashRow &newHash) {
+void FuzzyHashDatabase::insertHash(const FuzzyHashRow &newHash,
+                                   EventHandler *handler) {
   resetClearBindingsAndBindHash(insertFuzzyHash, newHash);
   insertFuzzyHash.step();
+
+  if (handler) {
+    handler->onRowInsert();
+  }
 }
 
-void FuzzyHashDatabase::insertHashes(const FuzzyHashRowSet &newHashes) {
+void FuzzyHashDatabase::insertHashes(const FuzzyHashRowSet &newHashes,
+                                     EventHandler *handler) {
   for (const auto &newHash : newHashes) {
-    insertHash(newHash);
+    insertHash(newHash, handler);
   }
 }
 
@@ -171,14 +179,20 @@ void FuzzyHashDatabase::getHashesForPaths(FuzzyHashRowSet &results,
   }
 }
 
-void FuzzyHashDatabase::updateHash(const FuzzyHashRow &modifiedHash) {
+void FuzzyHashDatabase::updateHash(const FuzzyHashRow &modifiedHash,
+                                   EventHandler *handler) {
   resetClearBindingsAndBindHash(updateFuzzyHash, modifiedHash);
   updateFuzzyHash.step();
+
+  if (handler) {
+    handler->onRowUpdate();
+  }
 }
 
-void FuzzyHashDatabase::updateHashes(const FuzzyHashRowSet &modifiedHashes) {
+void FuzzyHashDatabase::updateHashes(const FuzzyHashRowSet &modifiedHashes,
+                                     EventHandler *handler) {
   for (const auto &modifiedHash : modifiedHashes) {
-    updateHash(modifiedHash);
+    updateHash(modifiedHash, handler);
   }
 }
 
