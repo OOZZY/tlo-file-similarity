@@ -118,9 +118,9 @@ constexpr std::string_view BASE64_ALPHABET =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 namespace {
-std::pair<std::string, std::string> fuzzyHash(const fs::path &filePath,
-                                              std::size_t blockSize,
-                                              FuzzyHashEventHandler *handler) {
+std::pair<std::string, std::string> hashUsingBlockSize(
+    const fs::path &filePath, std::size_t blockSize,
+    FuzzyHashEventHandler *handler) {
   std::ifstream ifstream(filePath, std::ifstream::in | std::ifstream::binary);
 
   if (!ifstream.is_open()) {
@@ -198,8 +198,8 @@ std::pair<std::string, std::string> fuzzyHash(const fs::path &filePath,
   return std::pair(part1, part2);
 }
 
-FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler,
-                    std::uintmax_t fileSize) {
+FuzzyHash hashFile(const fs::path &filePath, FuzzyHashEventHandler *handler,
+                   std::uintmax_t fileSize) {
   if (fileSize == 0) {
     FuzzyHash hash{MIN_BLOCK_SIZE, "", "", filePath.string()};
 
@@ -224,7 +224,7 @@ FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler,
   std::string part2;
 
   for (;;) {
-    std::tie(part1, part2) = fuzzyHash(filePath, blockSize, handler);
+    std::tie(part1, part2) = hashUsingBlockSize(filePath, blockSize, handler);
 
     if (stopRequested.load()) {
       part1 += BAD_FUZZY_HASH_CHAR;
@@ -255,16 +255,16 @@ FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
                              "\" is not a file.");
   }
 
-  return fuzzyHash(filePath, handler, getFileSize(filePath));
+  return hashFile(filePath, handler, getFileSize(filePath));
 }
 
 namespace {
-void hashFile(const fs::path &filePath, FuzzyHashEventHandler &handler) {
+void hashAndCollect(const fs::path &filePath, FuzzyHashEventHandler &handler) {
   std::uintmax_t fileSize = getFileSize(filePath);
   std::string fileLastWriteTime = toLocalTimestamp(getLastWriteTime(filePath));
 
   if (handler.shouldHashFile(filePath, fileSize, fileLastWriteTime)) {
-    FuzzyHash hash = fuzzyHash(filePath, &handler, fileSize);
+    FuzzyHash hash = hashFile(filePath, &handler, fileSize);
 
     if (stopRequested.load()) {
       return;
@@ -289,7 +289,7 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
     if (fs::is_regular_file(path)) {
       if (pathsSeen.find(path) == pathsSeen.end()) {
         pathsSeen.insert(path);
-        hashFile(path, handler);
+        hashAndCollect(path, handler);
 
         if (stopRequested.load()) {
           return;
@@ -300,7 +300,7 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
         if (fs::is_regular_file(entry.path())) {
           if (pathsSeen.find(entry.path()) == pathsSeen.end()) {
             pathsSeen.insert(entry.path());
-            hashFile(entry.path(), handler);
+            hashAndCollect(entry.path(), handler);
 
             if (stopRequested.load()) {
               return;
@@ -354,7 +354,7 @@ void hashFilesInQueue(SharedState &state, std::exception_ptr &exception) {
       state.filePaths.pop();
       queueUniqueLock.unlock();
 
-      hashFile(filePath, state.handler);
+      hashAndCollect(filePath, state.handler);
 
       if (stopRequested.load()) {
         return;
