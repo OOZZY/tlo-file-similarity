@@ -12,6 +12,7 @@
 #include "damerau-levenshtein.hpp"
 #include "lcs.hpp"
 #include "levenshtein.hpp"
+#include "stop.hpp"
 #include "string.hpp"
 
 namespace fs = std::filesystem;
@@ -171,6 +172,10 @@ void compareHashesWithSingleThread(
     }
 
     for (std::size_t i = 0; i < hashes.size(); ++i) {
+      if (stopRequested.load()) {
+        break;
+      }
+
       compareHashWithOthers(hashes[i], hashes, i + 1, similarityThreshold,
                             handler);
 
@@ -217,6 +222,10 @@ void compareHashAtIndexWithComparableHashes(SharedState &state,
       }
 
       if (state.blockSizeIndex >= state.blockSizes.size()) {
+        break;
+      }
+
+      if (stopRequested.load()) {
         break;
       }
 
