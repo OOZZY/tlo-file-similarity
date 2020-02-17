@@ -5,6 +5,14 @@
 namespace fs = std::filesystem;
 
 namespace tlo {
+FuzzyHashRow::FuzzyHashRow(const FuzzyHash &hash) : FuzzyHash(hash) {}
+
+FuzzyHashRow::FuzzyHashRow(FuzzyHash &&hash) : FuzzyHash(std::move(hash)) {}
+
+FuzzyHashRow::FuzzyHashRow(std::string &&filePath_) {
+  filePath = std::move(filePath_);
+}
+
 namespace {
 constexpr std::string_view CREATE_TABLE_FUZZY_HASH =
     R"sql(CREATE TABLE IF NOT EXISTS FuzzyHash (

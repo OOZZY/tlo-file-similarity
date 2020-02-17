@@ -12,11 +12,9 @@ struct FuzzyHashRow : public FuzzyHash {
   std::string fileLastWriteTime;
 
   FuzzyHashRow() = default;
-
-  FuzzyHashRow(const FuzzyHash &hash) : FuzzyHash(hash) {}
-  FuzzyHashRow(FuzzyHash &&hash) : FuzzyHash(std::move(hash)) {}
-
-  FuzzyHashRow(std::string &&filePath_) { filePath = std::move(filePath_); }
+  FuzzyHashRow(const FuzzyHash &hash);
+  FuzzyHashRow(FuzzyHash &&hash);
+  FuzzyHashRow(std::string &&filePath_);
 };
 
 using FuzzyHashRowSet =
