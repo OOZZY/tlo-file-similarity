@@ -50,23 +50,10 @@ class AbstractEventHandler : public tlo::HashComparisonEventHandler {
 };
 
 void printStatus(std::size_t numHashesDone, std::size_t numSimilarPairs) {
-  std::cerr << "Done with " << numHashesDone;
-
-  if (numHashesDone == 1) {
-    std::cerr << " hash.";
-  } else {
-    std::cerr << " hashes.";
-  }
-
-  std::cerr << " Found " << numSimilarPairs << " similar ";
-
-  if (numSimilarPairs == 1) {
-    std::cerr << "pair.";
-  } else {
-    std::cerr << "pairs.";
-  }
-
-  std::cerr << std::endl;
+  std::cerr << "Done with " << numHashesDone << ' '
+            << (numHashesDone == 1 ? "hash" : "hashes") << ". ";
+  std::cerr << "Found " << numSimilarPairs << " similar "
+            << (numSimilarPairs == 1 ? "pair" : "pairs") << '.' << std::endl;
 }
 
 class EventHandler : public AbstractEventHandler {

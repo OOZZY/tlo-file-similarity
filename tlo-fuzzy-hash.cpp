@@ -54,15 +54,8 @@ class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
 };
 
 void printStatus(std::size_t numFilesHashed) {
-  std::cerr << "Hashed " << numFilesHashed;
-
-  if (numFilesHashed == 1) {
-    std::cerr << " file.";
-  } else {
-    std::cerr << " files.";
-  }
-
-  std::cerr << std::endl;
+  std::cerr << "Hashed " << numFilesHashed << ' '
+            << (numFilesHashed == 1 ? "file" : "files") << '.' << std::endl;
 }
 
 class HashEventHandler : public AbstractHashEventHandler {
@@ -178,29 +171,17 @@ class DatabaseEventHandler : public tlo::FuzzyHashDatabase::EventHandler {
   void onRowInsert() override {
     numHashesInserted++;
 
-    std::cerr << "Inserted " << numHashesInserted;
-
-    if (numHashesInserted == 1) {
-      std::cerr << " hash.";
-    } else {
-      std::cerr << " hashes.";
-    }
-
-    std::cerr << std::endl;
+    std::cerr << "Inserted " << numHashesInserted << ' '
+              << (numHashesInserted == 1 ? "hash" : "hashes") << '.'
+              << std::endl;
   }
 
   void onRowUpdate() override {
     numHashesUpdated++;
 
-    std::cerr << "Updated " << numHashesUpdated;
-
-    if (numHashesUpdated == 1) {
-      std::cerr << " hash.";
-    } else {
-      std::cerr << " hashes.";
-    }
-
-    std::cerr << std::endl;
+    std::cerr << "Updated " << numHashesUpdated << ' '
+              << (numHashesUpdated == 1 ? "hash" : "hashes") << '.'
+              << std::endl;
   }
 };
 
