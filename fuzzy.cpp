@@ -361,10 +361,11 @@ void hashFilesInQueue(SharedState &state, std::exception_ptr &exception) {
       }
     }
   } catch (...) {
-    std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+    std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
 
     state.exceptionThrown = true;
     exception = std::current_exception();
+    queueUniqueLock.unlock();
     state.filesQueued.notify_all();
   }
 }
@@ -397,9 +398,10 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
       if (pathsSeen.find(path) == pathsSeen.end()) {
         pathsSeen.insert(path);
 
-        const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+        std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
 
         state.filePaths.push(path);
+        queueUniqueLock.unlock();
         state.filesQueued.notify_one();
       }
     } else if (fs::is_directory(path)) {
@@ -408,9 +410,10 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
           if (pathsSeen.find(entry.path()) == pathsSeen.end()) {
             pathsSeen.insert(entry.path());
 
-            const std::lock_guard<std::mutex> queueLockGuard(state.queueMutex);
+            std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
 
             state.filePaths.push(entry.path());
+            queueUniqueLock.unlock();
             state.filesQueued.notify_one();
           }
         }
@@ -423,8 +426,8 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
   std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
 
   state.allFilesQueued = true;
-  state.filesQueued.notify_all();
   queueUniqueLock.unlock();
+  state.filesQueued.notify_all();
 
   hashFilesInQueue(state, exceptions[0]);
 
