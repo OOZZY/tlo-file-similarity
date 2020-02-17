@@ -54,10 +54,10 @@ endif()
 
 set(core_headers chrono.hpp compare.hpp container.hpp damerau-levenshtein.hpp
   database.hpp filesystem.hpp fuzzy.hpp hash.hpp lcs.hpp levenshtein.hpp
-  options.hpp sqlite3.hpp string.hpp)
+  options.hpp sqlite3.hpp stop.hpp string.hpp)
 set(core_sources chrono.cpp compare.cpp container.cpp damerau-levenshtein.cpp
   database.cpp filesystem.cpp fuzzy.cpp hash.cpp lcs.cpp levenshtein.cpp
-  options.cpp sqlite3.cpp string.cpp)
+  options.cpp sqlite3.cpp stop.cpp string.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)

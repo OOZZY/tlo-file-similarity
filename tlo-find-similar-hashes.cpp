@@ -7,6 +7,7 @@
 #include "compare.hpp"
 #include "filesystem.hpp"
 #include "options.hpp"
+#include "stop.hpp"
 
 namespace {
 enum class OutputFormat { REGULAR, CSV, TSV };
@@ -186,6 +187,8 @@ int main(int argc, char **argv) {
 
       return 1;
     }
+
+    tlo::registerInterruptSignalHandler(tloRequestStop);
 
     Config config(commandLine);
     auto paths = tlo::stringsToPaths(commandLine.arguments());

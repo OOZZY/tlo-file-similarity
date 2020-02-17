@@ -10,6 +10,7 @@
 #include "filesystem.hpp"
 #include "fuzzy.hpp"
 #include "options.hpp"
+#include "stop.hpp"
 
 namespace fs = std::filesystem;
 
@@ -295,6 +296,8 @@ int main(int argc, char **argv) {
 
       return 1;
     }
+
+    tlo::registerInterruptSignalHandler(tloRequestStop);
 
     Config config(commandLine);
     auto paths = tlo::stringsToPaths(commandLine.arguments());
