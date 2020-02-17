@@ -34,7 +34,7 @@ double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2);
 // Collects the fuzzy hashes into a map where the keys are block sizes and the
 // corresponding value for a key is a vector of fuzzy hashes with that key
 // block size.
-std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashes(
+std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashesForComparison(
     const std::vector<std::filesystem::path> &textFilePaths);
 
 class HashComparisonEventHandler {

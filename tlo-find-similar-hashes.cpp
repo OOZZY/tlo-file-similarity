@@ -207,7 +207,7 @@ int main(int argc, char **argv) {
       std::cerr << "Reading hashes." << std::endl;
     }
 
-    auto blockSizesToHashes = tlo::readHashes(paths);
+    auto blockSizesToHashes = tlo::readHashesForComparison(paths);
     std::unique_ptr<AbstractEventHandler> handler = makeEventHandler(config);
 
     if (config.printStatus) {

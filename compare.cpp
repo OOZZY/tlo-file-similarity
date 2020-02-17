@@ -111,7 +111,7 @@ void readHashesFromFile(
 }
 }  // namespace
 
-std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashes(
+std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashesForComparison(
     const std::vector<fs::path> &textFilePaths) {
   for (const auto &textFilePath : textFilePaths) {
     if (!fs::is_regular_file(textFilePath)) {
