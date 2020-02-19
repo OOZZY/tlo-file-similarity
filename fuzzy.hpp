@@ -51,7 +51,7 @@ class FuzzyHashEventHandler {
                               const std::string &fileLastWriteTime) = 0;
   virtual void collect(FuzzyHash &&hash, std::uintmax_t fileSize,
                        std::string &&fileLastWriteTime) = 0;
-  virtual ~FuzzyHashEventHandler() = 0;
+  virtual ~FuzzyHashEventHandler();
 };
 
 constexpr char BAD_FUZZY_HASH_CHAR = '!';

@@ -43,7 +43,7 @@ class HashComparisonEventHandler {
                                   const FuzzyHash &hash2,
                                   double similarityScore) = 0;
   virtual void onHashDone() = 0;
-  virtual ~HashComparisonEventHandler() = 0;
+  virtual ~HashComparisonEventHandler();
 };
 
 // Compares hashes in the the map. Calls handler.onSimilarPairFound() whenever

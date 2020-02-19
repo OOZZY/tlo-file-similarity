@@ -32,7 +32,7 @@ class FuzzyHashDatabase {
    public:
     virtual void onRowInsert() = 0;
     virtual void onRowUpdate() = 0;
-    virtual ~EventHandler() = 0;
+    virtual ~EventHandler();
   };
 
   void open(const std::filesystem::path &dbFilePath);

@@ -23,9 +23,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  list(APPEND private_compile_options -Weverything -Wno-c++98-compat
-    -Wno-weak-vtables -Wno-padded -Wno-exit-time-destructors
-    -Wno-global-constructors)
+  list(APPEND private_compile_options -Weverything -Wno-c++98-compat -Wno-padded
+    -Wno-exit-time-destructors -Wno-global-constructors)
 endif()
 
 if (TLO_FS_COLORED_DIAGNOSTICS)
