@@ -1,16 +1,16 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project("tlo-file-similarity")
 
-option(TLOFS_COLORED_DIAGNOSTICS
+option(TLO_FS_COLORED_DIAGNOSTICS
   "Tell the compiler to use colors in diagnostics (GNU/Clang only)." ON)
-set(TLO_CPP_COLORED_DIAGNOSTICS ${TLOFS_COLORED_DIAGNOSTICS})
+set(TLO_CPP_COLORED_DIAGNOSTICS ${TLO_FS_COLORED_DIAGNOSTICS})
 
-option(TLOFS_USE_LIBCPP "Use libc++ (Clang only)." OFF)
-set(TLO_CPP_USE_LIBCPP ${TLOFS_USE_LIBCPP})
+option(TLO_FS_USE_LIBCPP "Use libc++ (Clang only)." OFF)
+set(TLO_CPP_USE_LIBCPP ${TLO_FS_USE_LIBCPP})
 
-option(TLOFS_LINK_FS
+option(TLO_FS_LINK_FS
   "Link to filesystem library of older GNU and Clang (GNU/Clang only)." OFF)
-set(TLO_CPP_LINK_FS ${TLOFS_LINK_FS})
+set(TLO_CPP_LINK_FS ${TLO_FS_LINK_FS})
 
 add_subdirectory(tlo-cpp)
 
@@ -28,7 +28,7 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     -Wno-global-constructors)
 endif()
 
-if (TLOFS_COLORED_DIAGNOSTICS)
+if (TLO_FS_COLORED_DIAGNOSTICS)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     list(APPEND private_compile_options -fdiagnostics-color)
   elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
