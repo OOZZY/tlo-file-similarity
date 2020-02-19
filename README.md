@@ -13,7 +13,7 @@ Command-line programs that use fuzzy hashing to compare files for similarity and
 Clone into tlo-file-similarity directory.
 
 ```
-$ git clone --branch develop git@github.com:OOZZY/tlo-file-similarity.git
+$ git clone --branch develop --recursive git@github.com:OOZZY/tlo-file-similarity.git
 ```
 
 Build.
