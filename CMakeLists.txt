@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project("tlo-file-similarity")
 
+option(TLOFS_COLORED_DIAGNOSTICS
+  "Tell the compiler to use colors in diagnostics (GNU/Clang only)." ON)
+set(TLO_CPP_COLORED_DIAGNOSTICS ${TLOFS_COLORED_DIAGNOSTICS})
+
 option(TLOFS_USE_LIBCPP "Use libc++ (Clang only)." OFF)
 set(TLO_CPP_USE_LIBCPP ${TLOFS_USE_LIBCPP})
 
@@ -24,8 +28,6 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     -Wno-global-constructors)
 endif()
 
-option(TLOFS_COLORED_DIAGNOSTICS
-  "Tell the compiler to use colors in diagnostics (GNU/Clang only)." ON)
 if (TLOFS_COLORED_DIAGNOSTICS)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
     list(APPEND global_compile_options -fdiagnostics-color)
