@@ -1,5 +1,6 @@
 #include "hash.hpp"
 
+namespace tlo {
 JavaStyleHashCombiner &JavaStyleHashCombiner::combineWith(
     std::size_t nextHash) {
   hash = 31 * hash + nextHash;
@@ -15,3 +16,4 @@ BoostStyleHashCombiner &BoostStyleHashCombiner::combineWith(
 }
 
 std::size_t BoostStyleHashCombiner::getHash() { return hash; }
+}  // namespace tlo

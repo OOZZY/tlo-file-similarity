@@ -3,6 +3,7 @@
 
 #include <cstddef>
 
+namespace tlo {
 // Uses the generic hash combining algorithm used in Java.
 class JavaStyleHashCombiner {
  private:
@@ -26,5 +27,6 @@ class BoostStyleHashCombiner {
 
   std::size_t getHash();
 };
+}  // namespace tlo
 
 #endif  // TLOFS_HASH_HPP
