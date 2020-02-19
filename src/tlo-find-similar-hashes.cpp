@@ -6,8 +6,7 @@
 #include <tlo-cpp/filesystem.hpp>
 #include <tlo-cpp/options.hpp>
 #include <tlo-cpp/stop.hpp>
-
-#include "compare.hpp"
+#include <tlo-file-similarity/compare.hpp>
 
 namespace {
 enum class OutputFormat { REGULAR, CSV, TSV };

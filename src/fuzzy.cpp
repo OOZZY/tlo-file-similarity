@@ -1,4 +1,4 @@
-#include "fuzzy.hpp"
+#include "tlo-file-similarity/fuzzy.hpp"
 
 #include <cassert>
 #include <cmath>

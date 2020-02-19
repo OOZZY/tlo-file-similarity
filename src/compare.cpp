@@ -1,4 +1,4 @@
-#include "compare.hpp"
+#include "tlo-file-similarity/compare.hpp"
 
 #include <algorithm>
 #include <exception>

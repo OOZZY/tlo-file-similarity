@@ -7,10 +7,9 @@
 #include <tlo-cpp/filesystem.hpp>
 #include <tlo-cpp/options.hpp>
 #include <tlo-cpp/stop.hpp>
+#include <tlo-file-similarity/database.hpp>
+#include <tlo-file-similarity/fuzzy.hpp>
 #include <unordered_set>
-
-#include "database.hpp"
-#include "fuzzy.hpp"
 
 namespace fs = std::filesystem;
 
