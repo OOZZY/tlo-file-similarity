@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project("tlo-file-similarity")
-enable_testing()
 
-# Threads required. See CMake documentation on FindThreads module.
-set(CMAKE_THREAD_PREFER_PTHREAD ON)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
+option(TLOFS_USE_LIBCPP "Use libc++ (Clang only)." OFF)
+set(TLO_CPP_USE_LIBCPP ${TLOFS_USE_LIBCPP})
 
-find_package(SQLite3 REQUIRED)
+option(TLOFS_LINK_FS
+  "Link to filesystem library of older GNU and Clang (GNU/Clang only)." OFF)
+set(TLO_CPP_LINK_FS ${TLOFS_LINK_FS})
+
+add_subdirectory(tlo-cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
     "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -16,11 +17,11 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   set(global_compile_options ${global_compile_options} -Weverything
-    -Wno-c++98-compat -Wno-padded -Wno-exit-time-destructors
-    -Wno-global-constructors -Wno-weak-vtables)
+    -Wno-c++98-compat -Wno-weak-vtables -Wno-padded -Wno-exit-time-destructors
+    -Wno-global-constructors)
 endif()
 
-set(global_link_libraries Threads::Threads SQLite::SQLite3)
+set(global_link_libraries tlo-cpp)
 
 option(TLOFS_COLORED_DIAGNOSTICS
   "Tell the compiler to use colors in diagnostics (GNU/Clang only)." ON)
@@ -32,58 +33,14 @@ if (TLOFS_COLORED_DIAGNOSTICS)
   endif()
 endif()
 
-option(TLOFS_USE_LIBCPP "Use libc++ (Clang only)." OFF)
-if (TLOFS_USE_LIBCPP)
-  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(global_compile_options ${global_compile_options} -stdlib=libc++)
-    set(global_link_libraries ${global_link_libraries} c++)
-  endif()
-endif()
-
-option(TLOFS_LINK_FS
-  "Link to filesystem library of older GNU and Clang (GNU/Clang only)." OFF)
-if (TLOFS_LINK_FS)
-  if (TLOFS_USE_LIBCPP)
-    # Prior to LLVM 9, using std::filesystem required linker option -lc++fs.
-    set(global_link_libraries ${global_link_libraries} c++fs)
-  else()
-    # Prior to GCC 9, using std::filesystem required linker option -lstdc++fs.
-    set(global_link_libraries ${global_link_libraries} stdc++fs)
-  endif()
-endif()
-
-set(core_headers chrono.hpp compare.hpp container.hpp damerau-levenshtein.hpp
-  database.hpp filesystem.hpp fuzzy.hpp hash.hpp lcs.hpp levenshtein.hpp
-  options.hpp sqlite3.hpp stop.hpp string.hpp)
-set(core_sources chrono.cpp compare.cpp container.cpp damerau-levenshtein.cpp
-  database.cpp filesystem.cpp fuzzy.cpp hash.cpp lcs.cpp levenshtein.cpp
-  options.cpp sqlite3.cpp stop.cpp string.cpp)
+set(core_headers compare.hpp database.hpp fuzzy.hpp)
+set(core_sources compare.cpp database.cpp fuzzy.cpp)
 
 add_library(tlofs-core STATIC ${core_headers} ${core_sources})
 set_target_properties(tlofs-core PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_features(tlofs-core PUBLIC cxx_std_17)
 target_compile_options(tlofs-core PRIVATE ${global_compile_options})
 target_link_libraries(tlofs-core PUBLIC ${global_link_libraries})
-
-add_executable(lcs-test lcs-test.cpp)
-set_target_properties(lcs-test PROPERTIES CXX_EXTENSIONS OFF)
-target_compile_options(lcs-test PRIVATE ${global_compile_options})
-target_link_libraries(lcs-test PRIVATE tlofs-core)
-
-add_executable(levenshtein-test levenshtein-test.cpp)
-set_target_properties(levenshtein-test PROPERTIES CXX_EXTENSIONS OFF)
-target_compile_options(levenshtein-test PRIVATE ${global_compile_options})
-target_link_libraries(levenshtein-test PRIVATE tlofs-core)
-
-add_executable(damerau-levenshtein-test damerau-levenshtein-test.cpp)
-set_target_properties(damerau-levenshtein-test PROPERTIES CXX_EXTENSIONS OFF)
-target_compile_options(damerau-levenshtein-test PRIVATE
-  ${global_compile_options})
-target_link_libraries(damerau-levenshtein-test PRIVATE tlofs-core)
-
-add_test(NAME lcs-test COMMAND lcs-test)
-add_test(NAME levenshtein-test COMMAND levenshtein-test)
-add_test(NAME damerau-levenshtein-test COMMAND damerau-levenshtein-test)
 
 add_executable(tlo-fuzzy-hash tlo-fuzzy-hash.cpp)
 set_target_properties(tlo-fuzzy-hash PROPERTIES CXX_EXTENSIONS OFF)

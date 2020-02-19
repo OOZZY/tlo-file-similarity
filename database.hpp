@@ -1,10 +1,10 @@
 #ifndef TLOFS_DATABASE_HPP
 #define TLOFS_DATABASE_HPP
 
+#include <tlo-cpp/sqlite3.hpp>
 #include <unordered_set>
 
 #include "fuzzy.hpp"
-#include "sqlite3.hpp"
 
 namespace tlo {
 struct FuzzyHashRow : public FuzzyHash {

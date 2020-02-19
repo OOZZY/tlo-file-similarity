@@ -6,14 +6,13 @@
 #include <functional>
 #include <mutex>
 #include <thread>
+#include <tlo-cpp/damerau-levenshtein.hpp>
+#include <tlo-cpp/lcs.hpp>
+#include <tlo-cpp/levenshtein.hpp>
+#include <tlo-cpp/stop.hpp>
+#include <tlo-cpp/string.hpp>
 #include <unordered_set>
 #include <utility>
-
-#include "damerau-levenshtein.hpp"
-#include "lcs.hpp"
-#include "levenshtein.hpp"
-#include "stop.hpp"
-#include "string.hpp"
 
 namespace fs = std::filesystem;
 

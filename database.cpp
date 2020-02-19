@@ -1,7 +1,7 @@
 #include "database.hpp"
 
-#include "stop.hpp"
-#include "string.hpp"
+#include <tlo-cpp/stop.hpp>
+#include <tlo-cpp/string.hpp>
 
 namespace fs = std::filesystem;
 

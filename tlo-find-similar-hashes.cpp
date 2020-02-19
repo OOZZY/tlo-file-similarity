@@ -3,11 +3,11 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <tlo-cpp/filesystem.hpp>
+#include <tlo-cpp/options.hpp>
+#include <tlo-cpp/stop.hpp>
 
 #include "compare.hpp"
-#include "filesystem.hpp"
-#include "options.hpp"
-#include "stop.hpp"
 
 namespace {
 enum class OutputFormat { REGULAR, CSV, TSV };
