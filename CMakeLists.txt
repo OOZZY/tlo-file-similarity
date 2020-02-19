@@ -10,26 +10,27 @@ set(TLO_CPP_LINK_FS ${TLOFS_LINK_FS})
 
 add_subdirectory(tlo-cpp)
 
+set(global_compile_options "")
+set(global_link_libraries tlo-cpp)
+
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
     "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(global_compile_options -pedantic -Wall -Wextra -Werror)
+  list(APPEND global_compile_options -pedantic -Wall -Wextra -Werror)
 endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-  set(global_compile_options ${global_compile_options} -Weverything
-    -Wno-c++98-compat -Wno-weak-vtables -Wno-padded -Wno-exit-time-destructors
+  list(APPEND global_compile_options -Weverything -Wno-c++98-compat
+    -Wno-weak-vtables -Wno-padded -Wno-exit-time-destructors
     -Wno-global-constructors)
 endif()
-
-set(global_link_libraries tlo-cpp)
 
 option(TLOFS_COLORED_DIAGNOSTICS
   "Tell the compiler to use colors in diagnostics (GNU/Clang only)." ON)
 if (TLOFS_COLORED_DIAGNOSTICS)
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    set(global_compile_options ${global_compile_options} -fdiagnostics-color)
+    list(APPEND global_compile_options -fdiagnostics-color)
   elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    set(global_compile_options ${global_compile_options} -fcolor-diagnostics)
+    list(APPEND global_compile_options -fcolor-diagnostics)
   endif()
 endif()
 
