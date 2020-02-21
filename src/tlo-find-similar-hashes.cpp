@@ -3,8 +3,8 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <tlo-cpp/command-line.hpp>
 #include <tlo-cpp/filesystem.hpp>
-#include <tlo-cpp/options.hpp>
 #include <tlo-cpp/stop.hpp>
 #include <tlo-file-similarity/compare.hpp>
 

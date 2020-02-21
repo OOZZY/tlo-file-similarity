@@ -4,8 +4,8 @@
 #include <mutex>
 #include <thread>
 #include <tlo-cpp/chrono.hpp>
+#include <tlo-cpp/command-line.hpp>
 #include <tlo-cpp/filesystem.hpp>
-#include <tlo-cpp/options.hpp>
 #include <tlo-cpp/stop.hpp>
 #include <tlo-file-similarity/database.hpp>
 #include <tlo-file-similarity/fuzzy.hpp>
@@ -95,8 +95,8 @@ class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
     auto iterator = knownHashes.find(filePath.string());
 
     if (iterator != knownHashes.end() && iterator->fileSize == fileSize &&
-        tlo::equalTimestamps(iterator->fileLastWriteTime, fileLastWriteTime,
-                             MAX_SECOND_DIFFERENCE)) {
+        tlo::equalLocalTimestamps(iterator->fileLastWriteTime,
+                                  fileLastWriteTime, MAX_SECOND_DIFFERENCE)) {
       onBlockHash();
       onFileHash(*iterator);
       return false;

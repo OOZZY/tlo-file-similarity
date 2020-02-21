@@ -260,7 +260,8 @@ FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
 namespace {
 void hashAndCollect(const fs::path &filePath, FuzzyHashEventHandler &handler) {
   std::uintmax_t fileSize = getFileSize(filePath);
-  std::string fileLastWriteTime = toLocalTimestamp(getLastWriteTime(filePath));
+  std::string fileLastWriteTime =
+      timeToLocalTimestamp(getLastWriteTime(filePath));
 
   if (handler.shouldHashFile(filePath, fileSize, fileLastWriteTime)) {
     FuzzyHash hash = hashFile(filePath, &handler, fileSize);
