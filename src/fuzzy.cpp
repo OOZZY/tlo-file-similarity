@@ -56,10 +56,20 @@ bool EqualFuzzyHashPath::operator()(const FuzzyHash &hash1,
 FuzzyHashEventHandler::~FuzzyHashEventHandler() = default;
 
 /*
- * Algorithms from:
+ * Fuzzy hash algorithm, rolling hash algorithm, and SPAMSUM_LENGTH constant
+ * from the paper "Identifying Almost Identical Files Using Context Triggered
+ * Piecewise Hashing" by Jesse Kornblum (2006). The paper is available at any
+ * of the following links:
  * https://www.dfrws.org/sites/default/files/session-files/paper-identifying_almost_identical_files_using_context_triggered_piecewise_hashing.pdf
+ * https://doi.org/10.1016/j.diin.2006.06.015
+ *
+ * Constants WINDOW_SIZE and MIN_BLOCK_SIZE from:
  * https://github.com/ssdeep-project/ssdeep/blob/master/fuzzy.c
- * http://www.isthe.com/chongo/tech/comp/fnv/
+ * (Retrieved January 20, 2020)
+ *
+ * FNV-1 hash algorithm and constants OFFSET_BASIS and FNV_PRIME from web page
+ * by Landon Curt Noll available at:
+ * http://www.isthe.com/chongo/tech/comp/fnv/ (Retrieved January 20, 2020)
  */
 
 constexpr std::size_t WINDOW_SIZE = 7;
