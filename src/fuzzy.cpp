@@ -63,12 +63,12 @@ FuzzyHashEventHandler::~FuzzyHashEventHandler() = default;
  * https://www.dfrws.org/sites/default/files/session-files/paper-identifying_almost_identical_files_using_context_triggered_piecewise_hashing.pdf
  * https://doi.org/10.1016/j.diin.2006.06.015
  *
- * Constants WINDOW_SIZE and MIN_BLOCK_SIZE from:
- * https://github.com/ssdeep-project/ssdeep/blob/master/fuzzy.c
+ * Constants WINDOW_SIZE and MIN_BLOCK_SIZE from source file "ssdeep/fuzzy.c"
+ * available at: https://github.com/ssdeep-project/ssdeep/blob/master/fuzzy.c
  * (Retrieved January 20, 2020)
  *
  * FNV-1 hash algorithm and constants OFFSET_BASIS and FNV_PRIME from web page
- * by Landon Curt Noll available at:
+ * "FNV Hash" by Landon Curt Noll available at:
  * http://www.isthe.com/chongo/tech/comp/fnv/ (Retrieved January 20, 2020)
  */
 
