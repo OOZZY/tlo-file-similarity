@@ -1,18 +1,35 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project("tlo-file-similarity")
 
-option(TLO_FS_COLORED_DIAGNOSTICS
-  "Tell the compiler to use colors in diagnostics (GNU/Clang only)." ON
+set(docstring
+  "Tell the compiler to use colors in diagnostics (GNU/Clang only)."
 )
-set(TLO_CPP_COLORED_DIAGNOSTICS ${TLO_FS_COLORED_DIAGNOSTICS})
-
-option(TLO_FS_USE_LIBCPP "Use libc++ (Clang only)." OFF)
-set(TLO_CPP_USE_LIBCPP ${TLO_FS_USE_LIBCPP})
-
-option(TLO_FS_LINK_FS
-  "Link to filesystem library of older GNU and Clang (GNU/Clang only)." OFF
+option(TLO_FS_COLORED_DIAGNOSTICS ${docstring} ON)
+set(TLO_CPP_COLORED_DIAGNOSTICS ${TLO_FS_COLORED_DIAGNOSTICS}
+  CACHE BOOL ${docstring}
 )
-set(TLO_CPP_LINK_FS ${TLO_FS_LINK_FS})
+
+set(docstring "Use libc++ (Clang only).")
+option(TLO_FS_USE_LIBCPP ${docstring} OFF)
+set(TLO_CPP_USE_LIBCPP ${TLO_FS_USE_LIBCPP} CACHE BOOL ${docstring})
+
+set(docstring
+  "Link to filesystem library of older GNU and Clang (GNU/Clang only)."
+)
+option(TLO_FS_LINK_FS ${docstring} OFF)
+set(TLO_CPP_LINK_FS ${TLO_FS_LINK_FS} CACHE BOOL ${docstring})
+
+set(docstring "Include directories containing SQLite 3 headers.")
+set(TLO_FS_SQLITE3_INCLUDE_DIRS "" CACHE STRING ${docstring})
+set(TLO_CPP_SQLITE3_INCLUDE_DIRS ${TLO_FS_SQLITE3_INCLUDE_DIRS}
+  CACHE STRING ${docstring}
+)
+
+set(docstring "Libraries to link against to use SQLite 3.")
+set(TLO_FS_SQLITE3_LIBRARIES "" CACHE STRING ${docstring})
+set(TLO_CPP_SQLITE3_LIBRARIES ${TLO_FS_SQLITE3_LIBRARIES}
+  CACHE STRING ${docstring}
+)
 
 add_subdirectory(tlo-cpp)
 
@@ -36,6 +53,24 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     -Wno-exit-time-destructors
     -Wno-global-constructors
     -Wno-padded
+  )
+endif()
+
+if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+  list(APPEND private_compile_options
+    /Wall
+    /wd4514
+    /wd4571
+    /wd4623
+    /wd4625
+    /wd4626
+    /wd4710
+    /wd4711
+    /wd4820
+    /wd5026
+    /wd5027
+    /wd5045
+    /WX
   )
 endif()
 

@@ -8,7 +8,7 @@
 
 namespace tlo {
 struct FuzzyHashRow : public FuzzyHash {
-  std::size_t fileSize;
+  std::size_t fileSize = 0;
   std::string fileLastWriteTime;
 
   FuzzyHashRow() = default;

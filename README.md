@@ -1,6 +1,7 @@
 # tlo-file-similarity
 
-Command-line programs that use fuzzy hashing to compare files for similarity and find files that are similar to each other.
+Command-line programs that use fuzzy hashing to compare files for similarity and
+find files that are similar to each other.
 
 ## Build Requirements
 
@@ -25,7 +26,8 @@ $ cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug ../tlo-file-similarity
 $ make
 ```
 
-Fuzzy hash all files in the current directory and all its subdirectories. In this example, the current directory is the CMake build directory.
+Fuzzy hash all files in the current directory and all its subdirectories. In
+this example, the current directory is the CMake build directory.
 
 ```
 $ ./tlo-fuzzy-hash . > hashes.txt
@@ -98,8 +100,15 @@ $ ./tlo-find-similar-hashes hashes.txt
 * TLO\_FS\_LINK\_FS
     * Link to filesystem library of older GNU and Clang (GNU/Clang only)
     * Prior to LLVM 9, using `std::filesystem` required linker option `-lc++fs`
-    * Prior to GCC 9, using `std::filesystem` required linker option `-lstdc++fs`
+    * Prior to GCC 9, using `std::filesystem` required linker option
+      `-lstdc++fs`
     * Off by default
+* TLO\_FS\_SQLITE3\_INCLUDE\_DIRS and TLO\_FS\_SQLITE3\_LIBRARIES
+    * If both are specified (non-empty strings), will search for SQLite 3
+      headers in the directories specified by TLO\_FS\_SQLITE3\_INCLUDE\_DIRS
+      and will link to the libraries specified by TLO\_FS\_SQLITE3\_LIBRARIES
+    * Otherwise, `find_package(SQLite3 REQUIRED)` will be used instead
+    * Empty strings by default
 
 ## Program Options
 
