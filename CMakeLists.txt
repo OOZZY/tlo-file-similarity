@@ -24,8 +24,8 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
   list(APPEND private_compile_options
     -pedantic
     -Wall
-    -Wextra
     -Werror
+    -Wextra
   )
 endif()
 
@@ -33,9 +33,9 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
   list(APPEND private_compile_options
     -Weverything
     -Wno-c++98-compat
-    -Wno-padded
     -Wno-exit-time-destructors
     -Wno-global-constructors
+    -Wno-padded
   )
 endif()
 
