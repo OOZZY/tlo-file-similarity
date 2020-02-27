@@ -148,3 +148,11 @@ Options:
   --similarity-threshold=value
     Display only the file pairs with a similarity score greater than or equal to this threshold (default: 50).
 ```
+
+### Relevant Papers and Projects
+* ["Identifying Almost Identical Files Using Context Triggered Piecewise
+  Hashing"](https://www.dfrws.org/sites/default/files/session-files/paper-identifying_almost_identical_files_using_context_triggered_piecewise_hashing.pdf)
+  by Jesse Kornblum (2006)
+* [ssdeep - Fuzzy hashing program](https://ssdeep-project.github.io/ssdeep/index.html)
+* [spamsum - A tool for generating and testing signatures on
+  files](https://www.samba.org/ftp/unpacked/junkcode/spamsum/)
