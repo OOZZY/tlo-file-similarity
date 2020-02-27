@@ -17,7 +17,7 @@ Clone into tlo-file-similarity directory.
 $ git clone --branch develop --recursive git@github.com:OOZZY/tlo-file-similarity.git
 ```
 
-Build.
+Build (out of source).
 
 ```
 $ mkdir build
@@ -26,67 +26,36 @@ $ cmake -G 'Unix Makefiles' -DCMAKE_BUILD_TYPE=Debug ../tlo-file-similarity
 $ make
 ```
 
-Fuzzy hash all files in the current directory and all its subdirectories. In
-this example, the current directory is the CMake build directory.
+Fuzzy hash all files in the samples directory and all its subdirectories.
 
 ```
-$ ./tlo-fuzzy-hash . > hashes.txt
+$ ./tlo-fuzzy-hash ../tlo-file-similarity/samples > hashes.txt
 ```
 
 Compare hashes to find similar files.
 
 ```
 $ ./tlo-find-similar-hashes hashes.txt
-"./CMakeFiles/tlo-find-similar-hashes.dir/flags.make" and "./CMakeFiles/tlo-fuzzy-hash.dir/flags.make" are about 100% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/flags.make" and "./CMakeFiles/lcs-test.dir/flags.make" are about 100% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/flags.make" and "./CMakeFiles/lcs-test.dir/depend.internal" are about 50.3226% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/flags.make" and "./CMakeFiles/tlofs-core.dir/flags.make" are about 100% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/cmake_clean.cmake" and "./CMakeFiles/tlo-fuzzy-hash.dir/cmake_clean.cmake" are about 70.5357% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/cmake_clean.cmake" and "./CMakeFiles/lcs-test.dir/cmake_clean.cmake" are about 63.1111% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/cmake_clean.cmake" and "./CMakeFiles/tlofs-core.dir/cmake_clean.cmake" are about 52.1739% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/depend.internal" and "./CMakeFiles/tlo-find-similar-hashes.dir/link.txt" are about 55.2632% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/depend.internal" and "./CMakeFiles/tlo-fuzzy-hash.dir/depend.internal" are about 78.6517% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/depend.internal" and "./CMakeFiles/lcs-test.dir/depend.internal" are about 60.8187% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/depend.internal" and "./CMakeFiles/lcs-test.dir/depend.make" are about 54.0816% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/depend.internal" and "./CMakeFiles/tlo-find-similar-hashes.dir/depend.make" are about 62.9921% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/link.txt" and "./CMakeFiles/tlo-fuzzy-hash.dir/link.txt" are about 50% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/progress.make" and "./CMakeFiles/tlo-fuzzy-hash.dir/progress.make" are about 74.0741% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/progress.make" and "./CMakeFiles/lcs-test.dir/progress.make" are about 76.1905% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/flags.make" and "./CMakeFiles/lcs-test.dir/flags.make" are about 100% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/flags.make" and "./CMakeFiles/lcs-test.dir/depend.internal" are about 50.3226% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/flags.make" and "./CMakeFiles/tlofs-core.dir/flags.make" are about 100% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/cmake_clean.cmake" and "./CMakeFiles/lcs-test.dir/cmake_clean.cmake" are about 80.4598% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/cmake_clean.cmake" and "./CMakeFiles/tlofs-core.dir/cmake_clean.cmake" are about 62.963% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/depend.internal" and "./CMakeFiles/lcs-test.dir/depend.internal" are about 64.5161% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/depend.internal" and "./CMakeFiles/lcs-test.dir/depend.make" are about 55.5556% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/depend.internal" and "./CMakeFiles/tlo-fuzzy-hash.dir/depend.make" are about 72.7273% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/link.txt" and "./CMakeFiles/lcs-test.dir/link.txt" are about 60.8696% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/progress.make" and "./CMakeFiles/lcs-test.dir/progress.make" are about 76.1905% similar.
-"./CMakeFiles/lcs-test.dir/flags.make" and "./CMakeFiles/lcs-test.dir/depend.internal" are about 50.3226% similar.
-"./CMakeFiles/lcs-test.dir/flags.make" and "./CMakeFiles/tlofs-core.dir/flags.make" are about 100% similar.
-"./CMakeFiles/lcs-test.dir/cmake_clean.cmake" and "./CMakeFiles/tlofs-core.dir/cmake_clean.cmake" are about 59.4595% similar.
-"./CMakeFiles/lcs-test.dir/CXX.includecache" and "./CMakeFiles/tlo-find-similar-hashes.dir/CXX.includecache" are about 53.8012% similar.
-"./CMakeFiles/lcs-test.dir/CXX.includecache" and "./CMakeFiles/tlo-fuzzy-hash.dir/CXX.includecache" are about 56.4417% similar.
-"./CMakeFiles/lcs-test.dir/depend.internal" and "./CMakeFiles/lcs-test.dir/depend.make" are about 82.0809% similar.
-"./CMakeFiles/lcs-test.dir/depend.internal" and "./CMakeFiles/tlofs-core.dir/flags.make" are about 50.3226% similar.
-"./CMakeFiles/lcs-test.dir/depend.internal" and "./CMakeFiles/tlo-fuzzy-hash.dir/depend.make" are about 57.5758% similar.
-"./CMakeFiles/lcs-test.dir/depend.make" and "./CMakeFiles/tlo-fuzzy-hash.dir/depend.make" are about 63.0137% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/CXX.includecache" and "./CMakeFiles/tlo-fuzzy-hash.dir/CXX.includecache" are about 82.5243% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/DependInfo.cmake" and "./CMakeFiles/tlo-fuzzy-hash.dir/DependInfo.cmake" are about 87.931% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/DependInfo.cmake" and "./CMakeFiles/lcs-test.dir/DependInfo.cmake" are about 86.0759% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/DependInfo.cmake" and "./CMakeFiles/tlofs-core.dir/DependInfo.cmake" are about 68.7898% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/DependInfo.cmake" and "./CMakeFiles/lcs-test.dir/DependInfo.cmake" are about 94.0639% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/DependInfo.cmake" and "./CMakeFiles/tlofs-core.dir/DependInfo.cmake" are about 76.0563% similar.
-"./CMakeFiles/lcs-test.dir/DependInfo.cmake" and "./CMakeFiles/tlofs-core.dir/DependInfo.cmake" are about 74.8299% similar.
-"./CMakeFiles/tlofs-core.dir/depend.internal" and "./CMakeFiles/tlofs-core.dir/depend.make" are about 50% similar.
-"./CMakeFiles/tlo-find-similar-hashes.dir/build.make" and "./CMakeFiles/tlo-fuzzy-hash.dir/build.make" are about 52.2822% similar.
-"./CMakeFiles/tlo-fuzzy-hash.dir/build.make" and "./CMakeFiles/lcs-test.dir/build.make" are about 60.5714% similar.
-"./CMakeFiles/3.13.4/CMakeDetermineCompilerABI_C.bin" and "./CMakeFiles/3.13.4/CMakeDetermineCompilerABI_CXX.bin" are about 76.7677% similar.
-"./CMakeFiles/3.13.4/CMakeDetermineCompilerABI_C.bin" and "./CMakeFiles/3.13.4/CompilerIdC/a.out" are about 50% similar.
-"./CMakeFiles/3.13.4/CompilerIdCXX/a.out" and "./CMakeFiles/3.13.4/CMakeDetermineCompilerABI_CXX.bin" are about 54% similar.
-"./CMakeFiles/3.13.4/CompilerIdCXX/a.out" and "./CMakeFiles/3.13.4/CompilerIdC/a.out" are about 63.3663% similar.
-"./CMakeFiles/3.13.4/CMakeDetermineCompilerABI_CXX.bin" and "./CMakeFiles/3.13.4/CompilerIdC/a.out" are about 55.6701% similar.
-"./CMakeFiles/3.13.4/CompilerIdCXX/CMakeCXXCompilerId.cpp" and "./CMakeFiles/3.13.4/CompilerIdC/CMakeCCompilerId.c" are about 86.2534% similar.
+"../tlo-file-similarity/samples/Removed-1st-Half.txt" and "../tlo-file-similarity/samples/Moved-Some-Lines.txt" are about 52.4064% similar.
+"../tlo-file-similarity/samples/Removed-1st-Half.txt" and "../tlo-file-similarity/samples/Moved-Some-Words.txt" are about 59.2593% similar.
+"../tlo-file-similarity/samples/Removed-1st-Half.txt" and "../tlo-file-similarity/samples/Original.txt" are about 65.5914% similar.
+"../tlo-file-similarity/samples/Removed-1st-Half.txt" and "../tlo-file-similarity/samples/Removed-Some-Lines.txt" are about 55.6962% similar.
+"../tlo-file-similarity/samples/Removed-1st-Half.txt" and "../tlo-file-similarity/samples/Swapped-3rd-And-4th-Paragraphs.txt" are about 65.5914% similar.
+"../tlo-file-similarity/samples/Removed-2nd-Half.txt" and "../tlo-file-similarity/samples/Moved-Some-Lines.txt" are about 54.2553% similar.
+"../tlo-file-similarity/samples/Removed-2nd-Half.txt" and "../tlo-file-similarity/samples/Moved-Some-Words.txt" are about 60% similar.
+"../tlo-file-similarity/samples/Removed-2nd-Half.txt" and "../tlo-file-similarity/samples/Original.txt" are about 67.3797% similar.
+"../tlo-file-similarity/samples/Removed-2nd-Half.txt" and "../tlo-file-similarity/samples/Swapped-3rd-And-4th-Paragraphs.txt" are about 66.3102% similar.
+"../tlo-file-similarity/samples/Moved-Some-Lines.txt" and "../tlo-file-similarity/samples/Moved-Some-Words.txt" are about 73.0159% similar.
+"../tlo-file-similarity/samples/Moved-Some-Lines.txt" and "../tlo-file-similarity/samples/Original.txt" are about 80.3213% similar.
+"../tlo-file-similarity/samples/Moved-Some-Lines.txt" and "../tlo-file-similarity/samples/Removed-Some-Lines.txt" are about 61.5385% similar.
+"../tlo-file-similarity/samples/Moved-Some-Lines.txt" and "../tlo-file-similarity/samples/Swapped-3rd-And-4th-Paragraphs.txt" are about 69.0763% similar.
+"../tlo-file-similarity/samples/Moved-Some-Words.txt" and "../tlo-file-similarity/samples/Original.txt" are about 89.243% similar.
+"../tlo-file-similarity/samples/Moved-Some-Words.txt" and "../tlo-file-similarity/samples/Removed-Some-Lines.txt" are about 65.4709% similar.
+"../tlo-file-similarity/samples/Moved-Some-Words.txt" and "../tlo-file-similarity/samples/Swapped-3rd-And-4th-Paragraphs.txt" are about 75.6972% similar.
+"../tlo-file-similarity/samples/Original.txt" and "../tlo-file-similarity/samples/Removed-Some-Lines.txt" are about 74.5455% similar.
+"../tlo-file-similarity/samples/Original.txt" and "../tlo-file-similarity/samples/Removed-Some-Words.txt" are about 50.4202% similar.
+"../tlo-file-similarity/samples/Original.txt" and "../tlo-file-similarity/samples/Swapped-3rd-And-4th-Paragraphs.txt" are about 85.4839% similar.
+"../tlo-file-similarity/samples/Removed-Some-Lines.txt" and "../tlo-file-similarity/samples/Swapped-3rd-And-4th-Paragraphs.txt" are about 63.6364% similar.
 ```
 
 ## CMake Options
