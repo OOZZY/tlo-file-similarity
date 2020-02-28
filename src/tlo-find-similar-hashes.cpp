@@ -11,6 +11,74 @@
 namespace {
 enum class OutputFormat { REGULAR, CSV, TSV };
 
+constexpr int DEFAULT_SIMILARITY_THRESHOLD = 50;
+constexpr int MIN_SIMILARITY_THRESHOLD = 0;
+constexpr int MAX_SIMILARITY_THRESHOLD = 99;
+
+constexpr std::size_t DEFAULT_NUM_THREADS = 1;
+constexpr std::size_t MIN_NUM_THREADS = 1;
+constexpr std::size_t MAX_NUM_THREADS = 256;
+
+constexpr OutputFormat DEFAULT_OUTPUT_FORMAT = OutputFormat::REGULAR;
+const std::string DEFAULT_OUTPUT_FORMAT_STRING = "regular";
+
+const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
+    {"--similarity-threshold",
+     {true,
+      "Display only the file pairs with a similarity score greater than or "
+      "equal to this threshold (default: " +
+          std::to_string(DEFAULT_SIMILARITY_THRESHOLD) + ")."}},
+    {"--num-threads",
+     {true, "Number of threads the program will use (default: " +
+                std::to_string(DEFAULT_NUM_THREADS) + ")."}},
+    {"--print-status",
+     {false,
+      "Allow program to print status updates to stderr (default: off)."}},
+    {"--output-format",
+     {true,
+      "Set output format to regular, csv (comma-separated values), or tsv "
+      "(tab-separated values) (default: " +
+          DEFAULT_OUTPUT_FORMAT_STRING + ")."}}};
+
+struct Config {
+  int similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD;
+  std::size_t numThreads = DEFAULT_NUM_THREADS;
+  bool printStatus = false;
+  OutputFormat outputFormat = DEFAULT_OUTPUT_FORMAT;
+
+  Config(const tlo::CommandLine &commandLine) {
+    if (commandLine.specifiedOption("--similarity-threshold")) {
+      similarityThreshold = commandLine.getOptionValueAsInt(
+          "--similarity-threshold", MIN_SIMILARITY_THRESHOLD,
+          MAX_SIMILARITY_THRESHOLD);
+    }
+
+    if (commandLine.specifiedOption("--num-threads")) {
+      numThreads = commandLine.getOptionValueAsULong(
+          "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
+    }
+
+    if (commandLine.specifiedOption("--print-status")) {
+      printStatus = true;
+    }
+
+    if (commandLine.specifiedOption("--output-format")) {
+      std::string string = commandLine.getOptionValue("--output-format");
+
+      if (string == "regular") {
+        outputFormat = OutputFormat::REGULAR;
+      } else if (string == "csv") {
+        outputFormat = OutputFormat::CSV;
+      } else if (string == "tsv") {
+        outputFormat = OutputFormat::TSV;
+      } else {
+        throw std::runtime_error("Error: \"" + string +
+                                 "\" is not a recognized output format.");
+      }
+    }
+  }
+};
+
 void printSimilarPair(const tlo::FuzzyHash &hash1, const tlo::FuzzyHash &hash2,
                       double similarityScore, OutputFormat outputFormat) {
   if (outputFormat == OutputFormat::REGULAR) {
@@ -35,8 +103,8 @@ class AbstractEventHandler : public tlo::HashComparisonEventHandler {
   std::size_t numSimilarPairs = 0;
 
  public:
-  AbstractEventHandler(bool printStatus_, OutputFormat outputFormat_)
-      : printStatus(printStatus_), outputFormat(outputFormat_) {}
+  AbstractEventHandler(const Config &config)
+      : printStatus(config.printStatus), outputFormat(config.outputFormat) {}
 
   void onSimilarPairFound(const tlo::FuzzyHash &hash1,
                           const tlo::FuzzyHash &hash2,
@@ -93,83 +161,11 @@ class SynchronizingEventHandler : public AbstractEventHandler {
   }
 };
 
-// Throws on error.
-OutputFormat stringToOutputFormat(const std::string &string) {
-  if (string == "regular") {
-    return OutputFormat::REGULAR;
-  } else if (string == "csv") {
-    return OutputFormat::CSV;
-  } else if (string == "tsv") {
-    return OutputFormat::TSV;
-  } else {
-    throw std::runtime_error("Error: \"" + string +
-                             "\" is not a recognized output format.");
-  }
-}
-
-constexpr int DEFAULT_SIMILARITY_THRESHOLD = 50;
-constexpr int MIN_SIMILARITY_THRESHOLD = 0;
-constexpr int MAX_SIMILARITY_THRESHOLD = 99;
-
-constexpr std::size_t DEFAULT_NUM_THREADS = 1;
-constexpr std::size_t MIN_NUM_THREADS = 1;
-constexpr std::size_t MAX_NUM_THREADS = 256;
-
-const std::string DEFAULT_OUTPUT_FORMAT = "regular";
-
-const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
-    {"--similarity-threshold",
-     {true,
-      "Display only the file pairs with a similarity score greater than or "
-      "equal to this threshold (default: " +
-          std::to_string(DEFAULT_SIMILARITY_THRESHOLD) + ")."}},
-    {"--num-threads",
-     {true, "Number of threads the program will use (default: " +
-                std::to_string(DEFAULT_NUM_THREADS) + ")."}},
-    {"--print-status",
-     {false,
-      "Allow program to print status updates to stderr (default: off)."}},
-    {"--output-format",
-     {true,
-      "Set output format to regular, csv (comma-separated values), or tsv "
-      "(tab-separated values) (default: " +
-          DEFAULT_OUTPUT_FORMAT + ")."}}};
-
-struct Config {
-  int similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD;
-  std::size_t numThreads = DEFAULT_NUM_THREADS;
-  bool printStatus = false;
-  std::string outputFormat = DEFAULT_OUTPUT_FORMAT;
-
-  Config(const tlo::CommandLine &commandLine) {
-    if (commandLine.specifiedOption("--similarity-threshold")) {
-      similarityThreshold = commandLine.getOptionValueAsInt(
-          "--similarity-threshold", MIN_SIMILARITY_THRESHOLD,
-          MAX_SIMILARITY_THRESHOLD);
-    }
-
-    if (commandLine.specifiedOption("--num-threads")) {
-      numThreads = commandLine.getOptionValueAsULong(
-          "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
-    }
-
-    if (commandLine.specifiedOption("--print-status")) {
-      printStatus = true;
-    }
-
-    if (commandLine.specifiedOption("--output-format")) {
-      outputFormat = commandLine.getOptionValue("--output-format");
-    }
-  }
-};
-
 std::unique_ptr<AbstractEventHandler> makeEventHandler(const Config &config) {
   if (config.numThreads <= 1) {
-    return std::make_unique<EventHandler>(
-        config.printStatus, stringToOutputFormat(config.outputFormat));
+    return std::make_unique<EventHandler>(config);
   } else {
-    return std::make_unique<SynchronizingEventHandler>(
-        config.printStatus, stringToOutputFormat(config.outputFormat));
+    return std::make_unique<SynchronizingEventHandler>(config);
   }
 }
 }  // namespace
@@ -189,7 +185,7 @@ int main(int argc, char **argv) {
 
     tlo::registerInterruptSignalHandler(tloRequestStop);
 
-    Config config(commandLine);
+    const Config config(commandLine);
     auto paths = tlo::stringsToPaths(commandLine.arguments());
 
     if (config.printStatus) {

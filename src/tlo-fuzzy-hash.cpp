@@ -14,6 +14,43 @@
 namespace fs = std::filesystem;
 
 namespace {
+constexpr std::size_t DEFAULT_NUM_THREADS = 1;
+constexpr std::size_t MIN_NUM_THREADS = 1;
+constexpr std::size_t MAX_NUM_THREADS = 256;
+
+const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
+    {"--num-threads",
+     {true, "Number of threads the program will use (default: " +
+                std::to_string(DEFAULT_NUM_THREADS) + ")."}},
+    {"--print-status",
+     {false,
+      "Allow program to print status updates to stderr (default: off)."}},
+    {"--database",
+     {true,
+      "Store hashes in and get hashes from the database at the specified path "
+      "(default: no database used)."}}};
+
+struct Config {
+  std::size_t numThreads = DEFAULT_NUM_THREADS;
+  bool printStatus = false;
+  std::string database;
+
+  Config(const tlo::CommandLine &commandLine) {
+    if (commandLine.specifiedOption("--num-threads")) {
+      numThreads = commandLine.getOptionValueAsULong(
+          "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
+    }
+
+    if (commandLine.specifiedOption("--print-status")) {
+      printStatus = true;
+    }
+
+    if (commandLine.specifiedOption("--database")) {
+      database = commandLine.getOptionValue("--database");
+    }
+  }
+};
+
 void printStatus(std::size_t numFilesHashed) {
   std::cerr << "Hashed " << numFilesHashed << ' '
             << (numFilesHashed == 1 ? "file" : "files") << '.' << std::endl;
@@ -57,15 +94,15 @@ class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
   bool previousOutputEndsWithNewline = true;
 
  public:
-  AbstractHashEventHandler(bool printStatus_, const std::string &database,
+  AbstractHashEventHandler(const Config &config,
                            const std::vector<fs::path> &paths)
-      : printStatus(printStatus_) {
-    if (!database.empty()) {
+      : printStatus(config.printStatus) {
+    if (!config.database.empty()) {
       if (printStatus) {
         std::cerr << "Opening database." << std::endl;
       }
 
-      hashDatabase.open(database);
+      hashDatabase.open(config.database);
 
       if (printStatus) {
         std::cerr << "Getting known hashes from database." << std::endl;
@@ -212,51 +249,12 @@ class SynchronizingHashEventHandler : public AbstractHashEventHandler {
   }
 };
 
-constexpr std::size_t DEFAULT_NUM_THREADS = 1;
-constexpr std::size_t MIN_NUM_THREADS = 1;
-constexpr std::size_t MAX_NUM_THREADS = 256;
-
-const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
-    {"--num-threads",
-     {true, "Number of threads the program will use (default: " +
-                std::to_string(DEFAULT_NUM_THREADS) + ")."}},
-    {"--print-status",
-     {false,
-      "Allow program to print status updates to stderr (default: off)."}},
-    {"--database",
-     {true,
-      "Store hashes in and get hashes from the database at the specified path "
-      "(default: no database used)."}}};
-
-struct Config {
-  std::size_t numThreads = DEFAULT_NUM_THREADS;
-  bool printStatus = false;
-  std::string database;
-
-  Config(const tlo::CommandLine &commandLine) {
-    if (commandLine.specifiedOption("--num-threads")) {
-      numThreads = commandLine.getOptionValueAsULong(
-          "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
-    }
-
-    if (commandLine.specifiedOption("--print-status")) {
-      printStatus = true;
-    }
-
-    if (commandLine.specifiedOption("--database")) {
-      database = commandLine.getOptionValue("--database");
-    }
-  }
-};
-
 std::unique_ptr<AbstractHashEventHandler> makeHashEventHandler(
     const Config &config, const std::vector<fs::path> &paths) {
   if (config.numThreads <= 1) {
-    return std::make_unique<HashEventHandler>(config.printStatus,
-                                              config.database, paths);
+    return std::make_unique<HashEventHandler>(config, paths);
   } else {
-    return std::make_unique<SynchronizingHashEventHandler>(
-        config.printStatus, config.database, paths);
+    return std::make_unique<SynchronizingHashEventHandler>(config, paths);
   }
 }
 }  // namespace
@@ -276,7 +274,7 @@ int main(int argc, char **argv) {
 
     tlo::registerInterruptSignalHandler(tloRequestStop);
 
-    Config config(commandLine);
+    const Config config(commandLine);
     auto paths = tlo::stringsToPaths(commandLine.arguments());
     std::unique_ptr<AbstractHashEventHandler> hashEventHandler =
         makeHashEventHandler(config, paths);
