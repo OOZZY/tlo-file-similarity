@@ -36,7 +36,7 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
       "Allow program to print status updates to stderr (default: off)."}},
     {"--output-format",
      {true,
-      "Set output format to regular, csv (comma-separated values), or tsv "
+      "Output format can be regular, csv (comma-separated values), or tsv "
       "(tab-separated values) (default: " +
           DEFAULT_OUTPUT_FORMAT_STRING + ")."}}};
 

@@ -113,7 +113,7 @@ Options:
     Number of threads the program will use (default: 1).
 
   --output-format=value
-    Set output format to regular, csv (comma-separated values), or tsv (tab-separated values) (default: regular).
+    Output format can be regular, csv (comma-separated values), or tsv (tab-separated values) (default: regular).
 
   --print-status
     Allow program to print status updates to stderr (default: off).
