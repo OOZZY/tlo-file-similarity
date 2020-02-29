@@ -96,7 +96,7 @@ void readHashesFromFile(
 
   if (!ifstream.is_open()) {
     throw std::runtime_error("Error: Failed to open \"" +
-                             textFilePath.string() + "\".");
+                             textFilePath.u8string() + "\".");
   }
 
   std::string line;

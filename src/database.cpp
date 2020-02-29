@@ -96,7 +96,7 @@ namespace {
 void bindPaths(Sqlite3Statement &statement,
                const std::vector<fs::path> &filePaths) {
   for (std::size_t i = 0; i < filePaths.size(); ++i) {
-    std::string filePath = filePaths[i].string();
+    std::string filePath = filePaths[i].u8string();
 
     statement.bindUtf8Text(static_cast<int>(i + 1), filePath, SQLITE_TRANSIENT);
   }
@@ -143,7 +143,7 @@ void FuzzyHashDatabase::getHashesForDirectory(FuzzyHashRowSet &results,
   selectFuzzyHashesGlob.reset();
   selectFuzzyHashesGlob.clearBindings();
 
-  std::string filePathPattern = directoryPath.string();
+  std::string filePathPattern = directoryPath.u8string();
 
   filePathPattern += '*';
   selectFuzzyHashesGlob.bindUtf8Text(":filePathPattern", filePathPattern);

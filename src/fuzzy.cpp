@@ -130,7 +130,7 @@ std::pair<std::string, std::string> hashUsingBlockSize(
   std::ifstream ifstream(filePath, std::ifstream::in | std::ifstream::binary);
 
   if (!ifstream.is_open()) {
-    throw std::runtime_error("Error: Failed to open \"" + filePath.string() +
+    throw std::runtime_error("Error: Failed to open \"" + filePath.u8string() +
                              "\".");
   }
 
@@ -207,7 +207,7 @@ std::pair<std::string, std::string> hashUsingBlockSize(
 FuzzyHash hashFile(const fs::path &filePath, FuzzyHashEventHandler *handler,
                    std::uintmax_t fileSize) {
   if (fileSize == 0) {
-    FuzzyHash hash{MIN_BLOCK_SIZE, "", "", filePath.string()};
+    FuzzyHash hash{MIN_BLOCK_SIZE, "", "", filePath.u8string()};
 
     if (handler) {
       handler->onBlockHash();
@@ -235,7 +235,7 @@ FuzzyHash hashFile(const fs::path &filePath, FuzzyHashEventHandler *handler,
     if (stopRequested.load()) {
       part1 += BAD_FUZZY_HASH_CHAR;
       part2 += BAD_FUZZY_HASH_CHAR;
-      return {blockSize, part1, part2, filePath.string()};
+      return {blockSize, part1, part2, filePath.u8string()};
     }
 
     if (part1.size() < SPAMSUM_LENGTH / 2 && blockSize / 2 >= MIN_BLOCK_SIZE) {
@@ -245,7 +245,7 @@ FuzzyHash hashFile(const fs::path &filePath, FuzzyHashEventHandler *handler,
     }
   }
 
-  FuzzyHash hash{blockSize, part1, part2, filePath.string()};
+  FuzzyHash hash{blockSize, part1, part2, filePath.u8string()};
 
   if (handler) {
     handler->onFileHash(hash);
@@ -257,7 +257,7 @@ FuzzyHash hashFile(const fs::path &filePath, FuzzyHashEventHandler *handler,
 
 FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
   if (!fs::is_regular_file(filePath)) {
-    throw std::runtime_error("Error: \"" + filePath.string() +
+    throw std::runtime_error("Error: \"" + filePath.u8string() +
                              "\" is not a file.");
   }
 

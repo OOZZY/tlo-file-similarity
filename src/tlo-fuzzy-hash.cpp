@@ -129,7 +129,7 @@ class AbstractHashEventHandler : public tlo::FuzzyHashEventHandler {
 
   bool shouldHashFile(const fs::path &filePath, std::uintmax_t fileSize,
                       const std::string &fileLastWriteTime) override {
-    auto iterator = knownHashes.find(filePath.string());
+    auto iterator = knownHashes.find(filePath.u8string());
 
     if (iterator != knownHashes.end() && iterator->fileSize == fileSize &&
         tlo::equalLocalTimestamps(iterator->fileLastWriteTime,
