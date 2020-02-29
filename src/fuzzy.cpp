@@ -2,13 +2,11 @@
 
 #include <cassert>
 #include <cmath>
-#include <condition_variable>
 #include <cstdint>
 #include <exception>
 #include <fstream>
 #include <functional>
 #include <mutex>
-#include <queue>
 #include <stdexcept>
 #include <string_view>
 #include <thread>
@@ -18,7 +16,6 @@
 #include <tlo-cpp/stop.hpp>
 #include <tlo-cpp/string.hpp>
 #include <tuple>
-#include <unordered_set>
 #include <utility>
 
 namespace fs = std::filesystem;
@@ -292,90 +289,67 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
                              "\" is not a file or directory.");
   }
 
-  std::unordered_set<fs::path, HashPath> pathsSeen;
+  const std::vector<fs::path> filePaths = buildFileList(paths);
 
-  for (const auto &path : paths) {
-    if (fs::is_regular_file(path)) {
-      if (pathsSeen.find(path) == pathsSeen.end()) {
-        pathsSeen.insert(path);
-        hashAndCollect(path, handler);
+  for (const auto &filePath : filePaths) {
+    if (stopRequested.load()) {
+      break;
+    }
 
-        if (stopRequested.load()) {
-          return;
-        }
-      }
-    } else if (fs::is_directory(path)) {
-      for (const auto &entry : fs::recursive_directory_iterator(path)) {
-        if (fs::is_regular_file(entry.path())) {
-          if (pathsSeen.find(entry.path()) == pathsSeen.end()) {
-            pathsSeen.insert(entry.path());
-            hashAndCollect(entry.path(), handler);
+    hashAndCollect(filePath, handler);
 
-            if (stopRequested.load()) {
-              return;
-            }
-          }
-        }
-      }
+    if (stopRequested.load()) {
+      break;
     }
   }
 }
 
 struct SharedState {
+  const std::vector<fs::path> &filePaths;
   FuzzyHashEventHandler &handler;
 
-  std::mutex queueMutex;
+  std::mutex indexMutex;
   bool exceptionThrown = false;
-  bool allFilesQueued = false;
-  std::queue<fs::path> filePaths;
-  std::condition_variable filesQueued;
+  std::size_t filePathIndex = 0;
 
-  SharedState(FuzzyHashEventHandler &handler_) : handler(handler_) {}
+  SharedState(const std::vector<fs::path> &filePaths_,
+              FuzzyHashEventHandler &handler_)
+      : filePaths(filePaths_), handler(handler_) {}
 };
 
-void hashFilesInQueue(SharedState &state, std::exception_ptr &exception) {
+void hashFileAtIndex(SharedState &state, std::exception_ptr &exception) {
   try {
     for (;;) {
-      std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
+      std::unique_lock<std::mutex> indexUniqueLock(state.indexMutex);
 
       if (state.exceptionThrown) {
-        return;
+        break;
       }
 
-      if (state.allFilesQueued && state.filePaths.empty()) {
-        return;
+      if (state.filePathIndex >= state.filePaths.size()) {
+        break;
       }
 
-      while (state.filePaths.empty()) {
-        state.filesQueued.wait(queueUniqueLock);
-
-        if (state.exceptionThrown) {
-          return;
-        }
-
-        if (state.allFilesQueued && state.filePaths.empty()) {
-          return;
-        }
+      if (stopRequested.load()) {
+        break;
       }
 
-      fs::path filePath = std::move(state.filePaths.front());
+      const fs::path &filePath = state.filePaths[state.filePathIndex];
 
-      state.filePaths.pop();
-      queueUniqueLock.unlock();
+      state.filePathIndex++;
+      indexUniqueLock.unlock();
 
       hashAndCollect(filePath, state.handler);
 
       if (stopRequested.load()) {
-        return;
+        break;
       }
     }
   } catch (...) {
-    std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
+    std::lock_guard<std::mutex> indexLockGuard(state.indexMutex);
 
     state.exceptionThrown = true;
     exception = std::current_exception();
-    queueUniqueLock.unlock();
-    state.filesQueued.notify_all();
   }
 }
 
@@ -390,54 +364,17 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
                              "\" is not a file or directory.");
   }
 
-  SharedState state(handler);
+  const std::vector<fs::path> filePaths = buildFileList(paths);
+  SharedState state(filePaths, handler);
   std::vector<std::exception_ptr> exceptions(numThreads);
   std::vector<std::thread> threads(numThreads - 1);
 
   for (std::size_t i = 0; i < threads.size(); ++i) {
-    threads[i] = std::thread(hashFilesInQueue, std::ref(state),
+    threads[i] = std::thread(hashFileAtIndex, std::ref(state),
                              std::ref(exceptions[i + 1]));
   }
 
-  std::unordered_set<fs::path, HashPath> pathsSeen;
-
-  for (const auto &path : paths) {
-    if (fs::is_regular_file(path)) {
-      if (pathsSeen.find(path) == pathsSeen.end()) {
-        pathsSeen.insert(path);
-
-        std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
-
-        state.filePaths.push(path);
-        queueUniqueLock.unlock();
-        state.filesQueued.notify_one();
-      }
-    } else if (fs::is_directory(path)) {
-      for (const auto &entry : fs::recursive_directory_iterator(path)) {
-        if (fs::is_regular_file(entry.path())) {
-          if (pathsSeen.find(entry.path()) == pathsSeen.end()) {
-            pathsSeen.insert(entry.path());
-
-            std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
-
-            state.filePaths.push(entry.path());
-            queueUniqueLock.unlock();
-            state.filesQueued.notify_one();
-          }
-        }
-      }
-    }
-  }
-
-  pathsSeen.clear();
-
-  std::unique_lock<std::mutex> queueUniqueLock(state.queueMutex);
-
-  state.allFilesQueued = true;
-  queueUniqueLock.unlock();
-  state.filesQueued.notify_all();
-
-  hashFilesInQueue(state, exceptions[0]);
+  hashFileAtIndex(state, exceptions[0]);
 
   for (auto &thread : threads) {
     thread.join();
