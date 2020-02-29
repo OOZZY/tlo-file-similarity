@@ -7,6 +7,7 @@
 #include <mutex>
 #include <thread>
 #include <tlo-cpp/damerau-levenshtein.hpp>
+#include <tlo-cpp/filesystem.hpp>
 #include <tlo-cpp/lcs.hpp>
 #include <tlo-cpp/levenshtein.hpp>
 #include <tlo-cpp/stop.hpp>
@@ -113,11 +114,10 @@ void readHashesFromFile(
 
 std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashesForComparison(
     const std::vector<fs::path> &textFilePaths) {
-  for (const auto &textFilePath : textFilePaths) {
-    if (!fs::is_regular_file(textFilePath)) {
-      throw std::runtime_error("Error: \"" + textFilePath.string() +
-                               "\" is not a file.");
-    }
+  const auto [allFiles, iterator] = tlo::allFiles(textFilePaths);
+  if (!allFiles) {
+    throw std::runtime_error("Error: \"" + iterator->string() +
+                             "\" is not a file.");
   }
 
   std::unordered_map<std::size_t, std::vector<FuzzyHash>> blockSizesToHashes;

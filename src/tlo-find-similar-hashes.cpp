@@ -186,7 +186,8 @@ int main(int argc, char **argv) {
     tlo::registerInterruptSignalHandler(tloRequestStop);
 
     const Config config(commandLine);
-    auto paths = tlo::stringsToPaths(commandLine.arguments());
+    const auto paths =
+        tlo::stringsToPaths(commandLine.arguments(), tlo::PathType::CANONICAL);
 
     if (config.printStatus) {
       std::cerr << "Reading hashes." << std::endl;

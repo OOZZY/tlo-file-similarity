@@ -62,28 +62,12 @@ void resetClearBindingsAndBindHash(Sqlite3Statement &statement,
                                    const FuzzyHashRow &hash) {
   statement.reset();
   statement.clearBindings();
-
-  int parameterIndex;
-
-  parameterIndex = statement.parameterIndex(":blockSize");
-  statement.bindInt64(parameterIndex,
-                      static_cast<sqlite3_int64>(hash.blockSize));
-
-  parameterIndex = statement.parameterIndex(":part1");
-  statement.bindUtf8Text(parameterIndex, hash.part1);
-
-  parameterIndex = statement.parameterIndex(":part2");
-  statement.bindUtf8Text(parameterIndex, hash.part2);
-
-  parameterIndex = statement.parameterIndex(":filePath");
-  statement.bindUtf8Text(parameterIndex, hash.filePath);
-
-  parameterIndex = statement.parameterIndex(":fileSize");
-  statement.bindInt64(parameterIndex,
-                      static_cast<sqlite3_int64>(hash.fileSize));
-
-  parameterIndex = statement.parameterIndex(":fileLastWriteTime");
-  statement.bindUtf8Text(parameterIndex, hash.fileLastWriteTime);
+  statement.bindInt64(":blockSize", static_cast<sqlite3_int64>(hash.blockSize));
+  statement.bindUtf8Text(":part1", hash.part1);
+  statement.bindUtf8Text(":part2", hash.part2);
+  statement.bindUtf8Text(":filePath", hash.filePath);
+  statement.bindInt64(":fileSize", static_cast<sqlite3_int64>(hash.fileSize));
+  statement.bindUtf8Text(":fileLastWriteTime", hash.fileLastWriteTime);
 }
 }  // namespace
 
@@ -159,11 +143,10 @@ void FuzzyHashDatabase::getHashesForDirectory(FuzzyHashRowSet &results,
   selectFuzzyHashesGlob.reset();
   selectFuzzyHashesGlob.clearBindings();
 
-  int parameterIndex = selectFuzzyHashesGlob.parameterIndex(":filePathPattern");
   std::string filePathPattern = directoryPath.string();
 
   filePathPattern += '*';
-  selectFuzzyHashesGlob.bindUtf8Text(parameterIndex, filePathPattern);
+  selectFuzzyHashesGlob.bindUtf8Text(":filePathPattern", filePathPattern);
   getHashes(results, selectFuzzyHashesGlob);
 }
 

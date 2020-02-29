@@ -275,7 +275,8 @@ int main(int argc, char **argv) {
     tlo::registerInterruptSignalHandler(tloRequestStop);
 
     const Config config(commandLine);
-    auto paths = tlo::stringsToPaths(commandLine.arguments());
+    const auto paths =
+        tlo::stringsToPaths(commandLine.arguments(), tlo::PathType::CANONICAL);
     std::unique_ptr<AbstractHashEventHandler> hashEventHandler =
         makeHashEventHandler(config, paths);
 

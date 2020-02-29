@@ -286,11 +286,10 @@ void hashAndCollect(const fs::path &filePath, FuzzyHashEventHandler &handler) {
 
 void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
                                FuzzyHashEventHandler &handler) {
-  for (const auto &path : paths) {
-    if (!fs::is_regular_file(path) && !fs::is_directory(path)) {
-      throw std::runtime_error("Error: \"" + path.string() +
-                               "\" is not a file or directory.");
-    }
+  const auto [allFilesOrDirs, iterator] = tlo::allFilesOrDirectories(paths);
+  if (!allFilesOrDirs) {
+    throw std::runtime_error("Error: \"" + iterator->string() +
+                             "\" is not a file or directory.");
   }
 
   std::unordered_set<fs::path, HashPath> pathsSeen;
@@ -385,11 +384,10 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
                                   std::size_t numThreads) {
   assert(numThreads > 1);
 
-  for (const auto &path : paths) {
-    if (!fs::is_regular_file(path) && !fs::is_directory(path)) {
-      throw std::runtime_error("Error: \"" + path.string() +
-                               "\" is not a file or directory.");
-    }
+  const auto [allFilesOrDirs, iterator] = tlo::allFilesOrDirectories(paths);
+  if (!allFilesOrDirs) {
+    throw std::runtime_error("Error: \"" + iterator->string() +
+                             "\" is not a file or directory.");
   }
 
   SharedState state(handler);
