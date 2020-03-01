@@ -19,14 +19,20 @@ set(docstring
 option(TLO_FS_LINK_FS ${docstring} OFF)
 set(TLO_CPP_LINK_FS ${TLO_FS_LINK_FS} CACHE BOOL ${docstring})
 
+macro(string_option name docstring default_value)
+  if (NOT DEFINED ${name} OR DEFINED CACHE{${name}})
+    set(${name} "${default_value}" CACHE STRING "${docstring}")
+  endif()
+endmacro(string_option)
+
 set(docstring "Include directories containing SQLite 3 headers.")
-set(TLO_FS_SQLITE3_INCLUDE_DIRS "" CACHE STRING ${docstring})
+string_option(TLO_FS_SQLITE3_INCLUDE_DIRS ${docstring} "")
 set(TLO_CPP_SQLITE3_INCLUDE_DIRS ${TLO_FS_SQLITE3_INCLUDE_DIRS}
   CACHE STRING ${docstring}
 )
 
 set(docstring "Libraries to link against to use SQLite 3.")
-set(TLO_FS_SQLITE3_LIBRARIES "" CACHE STRING ${docstring})
+string_option(TLO_FS_SQLITE3_LIBRARIES ${docstring} "")
 set(TLO_CPP_SQLITE3_LIBRARIES ${TLO_FS_SQLITE3_LIBRARIES}
   CACHE STRING ${docstring}
 )
