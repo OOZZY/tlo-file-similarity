@@ -1,23 +1,18 @@
 cmake_minimum_required(VERSION 3.14 FATAL_ERROR)
 project("tlo-file-similarity")
 
-set(docstring
-  "Tell the compiler to use colors in diagnostics (GNU/Clang only)."
+option(TLO_FS_COLORED_DIAGNOSTICS
+  "Tell the compiler to use colors in diagnostics (GNU/Clang only)." ON
 )
-option(TLO_FS_COLORED_DIAGNOSTICS ${docstring} ON)
-set(TLO_CPP_COLORED_DIAGNOSTICS ${TLO_FS_COLORED_DIAGNOSTICS}
-  CACHE BOOL ${docstring}
-)
+set(TLO_CPP_COLORED_DIAGNOSTICS ${TLO_FS_COLORED_DIAGNOSTICS})
 
-set(docstring "Use libc++ (Clang only).")
-option(TLO_FS_USE_LIBCPP ${docstring} OFF)
-set(TLO_CPP_USE_LIBCPP ${TLO_FS_USE_LIBCPP} CACHE BOOL ${docstring})
+option(TLO_FS_USE_LIBCPP "Use libc++ (Clang only)." OFF)
+set(TLO_CPP_USE_LIBCPP ${TLO_FS_USE_LIBCPP})
 
-set(docstring
-  "Link to filesystem library of older GNU and Clang (GNU/Clang only)."
+option(TLO_FS_LINK_FS
+  "Link to filesystem library of older GNU and Clang (GNU/Clang only)." OFF
 )
-option(TLO_FS_LINK_FS ${docstring} OFF)
-set(TLO_CPP_LINK_FS ${TLO_FS_LINK_FS} CACHE BOOL ${docstring})
+set(TLO_CPP_LINK_FS ${TLO_FS_LINK_FS})
 
 macro(string_option name docstring default_value)
   if (NOT DEFINED ${name} OR DEFINED CACHE{${name}})
@@ -25,17 +20,15 @@ macro(string_option name docstring default_value)
   endif()
 endmacro(string_option)
 
-set(docstring "Include directories containing SQLite 3 headers.")
-string_option(TLO_FS_SQLITE3_INCLUDE_DIRS ${docstring} "")
-set(TLO_CPP_SQLITE3_INCLUDE_DIRS ${TLO_FS_SQLITE3_INCLUDE_DIRS}
-  CACHE STRING ${docstring}
+string_option(TLO_FS_SQLITE3_INCLUDE_DIRS
+  "Include directories containing SQLite 3 headers." ""
 )
+set(TLO_CPP_SQLITE3_INCLUDE_DIRS ${TLO_FS_SQLITE3_INCLUDE_DIRS})
 
-set(docstring "Libraries to link against to use SQLite 3.")
-string_option(TLO_FS_SQLITE3_LIBRARIES ${docstring} "")
-set(TLO_CPP_SQLITE3_LIBRARIES ${TLO_FS_SQLITE3_LIBRARIES}
-  CACHE STRING ${docstring}
+string_option(TLO_FS_SQLITE3_LIBRARIES
+  "Libraries to link against to use SQLite 3." ""
 )
+set(TLO_CPP_SQLITE3_LIBRARIES ${TLO_FS_SQLITE3_LIBRARIES})
 
 add_subdirectory(tlo-cpp)
 
