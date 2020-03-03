@@ -297,10 +297,6 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
     }
 
     hashAndCollect(filePath, handler);
-
-    if (tlo::stopRequested.load()) {
-      break;
-    }
   }
 }
 
@@ -340,10 +336,6 @@ void hashFileAtIndex(SharedState &state, std::exception_ptr &exception) {
       indexUniqueLock.unlock();
 
       hashAndCollect(filePath, state.handler);
-
-      if (tlo::stopRequested.load()) {
-        break;
-      }
     }
   } catch (...) {
     std::lock_guard<std::mutex> indexLockGuard(state.indexMutex);
