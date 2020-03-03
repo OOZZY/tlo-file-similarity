@@ -124,3 +124,7 @@ target_compile_options(tlo-find-similar-hashes
   PRIVATE ${private_compile_options}
 )
 target_link_libraries(tlo-find-similar-hashes PRIVATE tlo-file-similarity)
+
+install(DIRECTORY include/tlo-file-similarity DESTINATION include)
+install(TARGETS tlo-file-similarity DESTINATION lib)
+install(TARGETS tlo-fuzzy-hash tlo-find-similar-hashes DESTINATION bin)
