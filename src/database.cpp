@@ -5,7 +5,7 @@
 
 namespace fs = std::filesystem;
 
-namespace tlo {
+namespace tfs {
 FuzzyHashRow::FuzzyHashRow(const FuzzyHash &hash) : FuzzyHash(hash) {}
 
 FuzzyHashRow::FuzzyHashRow(FuzzyHash &&hash) : FuzzyHash(std::move(hash)) {}
@@ -48,7 +48,7 @@ constexpr std::string_view DELETE_FUZZY_HASHES_IN =
 void FuzzyHashDatabase::open(const fs::path &dbFilePath) {
   connection.open(dbFilePath);
 
-  Sqlite3Statement(connection, CREATE_TABLE_FUZZY_HASH).step();
+  tlo::Sqlite3Statement(connection, CREATE_TABLE_FUZZY_HASH).step();
 
   insertFuzzyHash.prepare(connection, INSERT_FUZZY_HASH);
   selectFuzzyHashesGlob.prepare(connection, SELECT_FUZZY_HASHES_GLOB);
@@ -58,7 +58,7 @@ void FuzzyHashDatabase::open(const fs::path &dbFilePath) {
 bool FuzzyHashDatabase::isOpen() const { return connection.isOpen(); }
 
 namespace {
-void resetClearBindingsAndBindHash(Sqlite3Statement &statement,
+void resetClearBindingsAndBindHash(tlo::Sqlite3Statement &statement,
                                    const FuzzyHashRow &hash) {
   statement.reset();
   statement.clearBindings();
@@ -84,7 +84,7 @@ void FuzzyHashDatabase::insertHash(const FuzzyHashRow &newHash,
 void FuzzyHashDatabase::insertHashes(const FuzzyHashRowSet &newHashes,
                                      EventHandler *handler) {
   for (const auto &newHash : newHashes) {
-    if (stopRequested.load()) {
+    if (tlo::stopRequested.load()) {
       return;
     }
 
@@ -93,7 +93,7 @@ void FuzzyHashDatabase::insertHashes(const FuzzyHashRowSet &newHashes,
 }
 
 namespace {
-void bindPaths(Sqlite3Statement &statement,
+void bindPaths(tlo::Sqlite3Statement &statement,
                const std::vector<fs::path> &filePaths) {
   for (std::size_t i = 0; i < filePaths.size(); ++i) {
     std::string filePath = filePaths[i].u8string();
@@ -109,7 +109,8 @@ constexpr int FILE_PATH = 3;
 constexpr int FILE_SIZE = 4;
 constexpr int FILE_LAST_WRITE_TIME = 5;
 
-void getHashes(FuzzyHashRowSet &results, Sqlite3Statement &selectStatement) {
+void getHashes(FuzzyHashRowSet &results,
+               tlo::Sqlite3Statement &selectStatement) {
   while (selectStatement.step() != SQLITE_DONE) {
     FuzzyHashRow hash;
 
@@ -130,9 +131,9 @@ void getHashes(FuzzyHashRowSet &results, Sqlite3Statement &selectStatement) {
 
 void FuzzyHashDatabase::getHashesForFiles(
     FuzzyHashRowSet &results, const std::vector<fs::path> &filePaths) {
-  std::string sql =
-      SELECT_FUZZY_HASHES_IN.data() + join(filePaths.size(), "?", ", ") + ");";
-  Sqlite3Statement selectFuzzyHashesIn(connection, sql);
+  std::string sql = SELECT_FUZZY_HASHES_IN.data() +
+                    tlo::join(filePaths.size(), "?", ", ") + ");";
+  tlo::Sqlite3Statement selectFuzzyHashesIn(connection, sql);
 
   bindPaths(selectFuzzyHashesIn, filePaths);
   getHashes(results, selectFuzzyHashesIn);
@@ -180,7 +181,7 @@ void FuzzyHashDatabase::updateHash(const FuzzyHashRow &modifiedHash,
 void FuzzyHashDatabase::updateHashes(const FuzzyHashRowSet &modifiedHashes,
                                      EventHandler *handler) {
   for (const auto &modifiedHash : modifiedHashes) {
-    if (stopRequested.load()) {
+    if (tlo::stopRequested.load()) {
       return;
     }
 
@@ -190,11 +191,11 @@ void FuzzyHashDatabase::updateHashes(const FuzzyHashRowSet &modifiedHashes,
 
 void FuzzyHashDatabase::deleteHashesForFiles(
     const std::vector<fs::path> &filePaths) {
-  std::string sql =
-      DELETE_FUZZY_HASHES_IN.data() + join(filePaths.size(), "?", ", ") + ");";
-  Sqlite3Statement deleteFuzzyHashesIn(connection, sql);
+  std::string sql = DELETE_FUZZY_HASHES_IN.data() +
+                    tlo::join(filePaths.size(), "?", ", ") + ");";
+  tlo::Sqlite3Statement deleteFuzzyHashesIn(connection, sql);
 
   bindPaths(deleteFuzzyHashesIn, filePaths);
   deleteFuzzyHashesIn.step();
 }
-}  // namespace tlo
+}  // namespace tfs

@@ -20,7 +20,7 @@
 
 namespace fs = std::filesystem;
 
-namespace tlo {
+namespace tfs {
 std::ostream &operator<<(std::ostream &os, const FuzzyHash &hash) {
   return os << hash.blockSize << ':' << hash.part1 << ':' << hash.part2 << ','
             << hash.filePath;
@@ -32,7 +32,7 @@ bool operator==(const FuzzyHash &hash1, const FuzzyHash &hash2) {
 }
 
 std::size_t HashFuzzyHash::operator()(const FuzzyHash &hash) const {
-  BoostStyleHashCombiner combiner;
+  tlo::BoostStyleHashCombiner combiner;
 
   return combiner.combineWith(std::hash<std::size_t>()(hash.blockSize))
       .combineWith(std::hash<std::string>()(hash.part1))
@@ -162,7 +162,7 @@ std::pair<std::string, std::string> hashUsingBlockSize(
           handler->onBlockHash();
         }
 
-        if (stopRequested.load()) {
+        if (tlo::stopRequested.load()) {
           return std::pair(part1, part2);
         }
       }
@@ -176,7 +176,7 @@ std::pair<std::string, std::string> hashUsingBlockSize(
           handler->onBlockHash();
         }
 
-        if (stopRequested.load()) {
+        if (tlo::stopRequested.load()) {
           return std::pair(part1, part2);
         }
       }
@@ -232,7 +232,7 @@ FuzzyHash hashFile(const fs::path &filePath, FuzzyHashEventHandler *handler,
   for (;;) {
     std::tie(part1, part2) = hashUsingBlockSize(filePath, blockSize, handler);
 
-    if (stopRequested.load()) {
+    if (tlo::stopRequested.load()) {
       part1 += BAD_FUZZY_HASH_CHAR;
       part2 += BAD_FUZZY_HASH_CHAR;
       return {blockSize, part1, part2, filePath.u8string()};
@@ -261,19 +261,19 @@ FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
                              "\" is not a file.");
   }
 
-  return hashFile(filePath, handler, getFileSize(filePath));
+  return hashFile(filePath, handler, tlo::getFileSize(filePath));
 }
 
 namespace {
 void hashAndCollect(const fs::path &filePath, FuzzyHashEventHandler &handler) {
-  std::uintmax_t fileSize = getFileSize(filePath);
+  std::uintmax_t fileSize = tlo::getFileSize(filePath);
   std::string fileLastWriteTime =
-      timeToLocalTimestamp(getLastWriteTime(filePath));
+      tlo::timeToLocalTimestamp(tlo::getLastWriteTime(filePath));
 
   if (handler.shouldHashFile(filePath, fileSize, fileLastWriteTime)) {
     FuzzyHash hash = hashFile(filePath, &handler, fileSize);
 
-    if (stopRequested.load()) {
+    if (tlo::stopRequested.load()) {
       return;
     }
 
@@ -289,16 +289,16 @@ void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
                              "\" is not a file or directory.");
   }
 
-  const std::vector<fs::path> filePaths = buildFileList(paths);
+  const std::vector<fs::path> filePaths = tlo::buildFileList(paths);
 
   for (const auto &filePath : filePaths) {
-    if (stopRequested.load()) {
+    if (tlo::stopRequested.load()) {
       break;
     }
 
     hashAndCollect(filePath, handler);
 
-    if (stopRequested.load()) {
+    if (tlo::stopRequested.load()) {
       break;
     }
   }
@@ -330,7 +330,7 @@ void hashFileAtIndex(SharedState &state, std::exception_ptr &exception) {
         break;
       }
 
-      if (stopRequested.load()) {
+      if (tlo::stopRequested.load()) {
         break;
       }
 
@@ -341,7 +341,7 @@ void hashFileAtIndex(SharedState &state, std::exception_ptr &exception) {
 
       hashAndCollect(filePath, state.handler);
 
-      if (stopRequested.load()) {
+      if (tlo::stopRequested.load()) {
         break;
       }
     }
@@ -364,7 +364,7 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
                              "\" is not a file or directory.");
   }
 
-  const std::vector<fs::path> filePaths = buildFileList(paths);
+  const std::vector<fs::path> filePaths = tlo::buildFileList(paths);
   SharedState state(filePaths, handler);
   std::vector<std::exception_ptr> exceptions(numThreads);
   std::vector<std::thread> threads(numThreads - 1);
@@ -406,7 +406,7 @@ FuzzyHash parseHash(const std::string &hash) {
   }
 
   std::vector<std::string> colonSplit =
-      split(hash.substr(0, commaPosition), ':');
+      tlo::split(hash.substr(0, commaPosition), ':');
 
   if (colonSplit.size() != 3) {
     throw std::runtime_error(
@@ -426,4 +426,4 @@ FuzzyHash parseHash(const std::string &hash) {
   return {blockSize, std::move(colonSplit[1]), std::move(colonSplit[2]),
           hash.substr(commaPosition + 1)};
 }
-}  // namespace tlo
+}  // namespace tfs

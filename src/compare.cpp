@@ -17,11 +17,11 @@
 
 namespace fs = std::filesystem;
 
-namespace tlo {
+namespace tfs {
 double compareWithLcsDistance(const std::string &string1,
                               const std::string &string2) {
-  auto lcsDistance = lcsLength3(string1, string2).lcsDistance;
-  auto maxLcsDistance = ::tlo::maxLcsDistance(string1.size(), string2.size());
+  auto lcsDistance = tlo::lcsLength3(string1, string2).lcsDistance;
+  auto maxLcsDistance = tlo::maxLcsDistance(string1.size(), string2.size());
 
   if (maxLcsDistance == 0) {
     return 100.0;
@@ -33,9 +33,9 @@ double compareWithLcsDistance(const std::string &string1,
 
 double compareWithLevenshteinDistance(const std::string &string1,
                                       const std::string &string2) {
-  auto levenshteinDistance = levenshteinDistance3(string1, string2);
+  auto levenshteinDistance = tlo::levenshteinDistance3(string1, string2);
   auto maxLevenshteinDistance =
-      ::tlo::maxLevenshteinDistance(string1.size(), string2.size());
+      tlo::maxLevenshteinDistance(string1.size(), string2.size());
 
   if (maxLevenshteinDistance == 0) {
     return 100.0;
@@ -47,9 +47,9 @@ double compareWithLevenshteinDistance(const std::string &string1,
 
 double compareWithDamerLevenDistance(const std::string &string1,
                                      const std::string &string2) {
-  auto damerLevenDistance = damerLevenDistance2(string1, string2);
+  auto damerLevenDistance = tlo::damerLevenDistance2(string1, string2);
   auto maxDamerLevenDistance =
-      ::tlo::maxDamerLevenDistance(string1.size(), string2.size());
+      tlo::maxDamerLevenDistance(string1.size(), string2.size());
 
   if (maxDamerLevenDistance == 0) {
     return 100.0;
@@ -82,8 +82,8 @@ double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2) {
   } else if (2 * hash1.blockSize == hash2.blockSize) {
     return compareWithLcsDistance(hash1.part2, hash2.part1);
   } else {
-    throw std::runtime_error("Error: \"" + toString(hash1) + "\" and \"" +
-                             toString(hash2) + "\" are not comparable.");
+    throw std::runtime_error("Error: \"" + tlo::toString(hash1) + "\" and \"" +
+                             tlo::toString(hash2) + "\" are not comparable.");
   }
 }
 
@@ -171,7 +171,7 @@ void compareHashesWithSingleThread(
     }
 
     for (std::size_t i = 0; i < hashes.size(); ++i) {
-      if (stopRequested.load()) {
+      if (tlo::stopRequested.load()) {
         break;
       }
 
@@ -224,7 +224,7 @@ void compareHashAtIndexWithComparableHashes(SharedState &state,
         break;
       }
 
-      if (stopRequested.load()) {
+      if (tlo::stopRequested.load()) {
         break;
       }
 
@@ -316,4 +316,4 @@ void compareHashes(const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
                                      handler, numThreads);
   }
 }
-}  // namespace tlo
+}  // namespace tfs

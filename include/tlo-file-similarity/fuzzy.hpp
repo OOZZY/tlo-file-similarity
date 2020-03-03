@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace tlo {
+namespace tfs {
 struct FuzzyHash {
   std::size_t blockSize = 0;
 
@@ -81,6 +81,6 @@ void fuzzyHash(const std::vector<std::filesystem::path> &paths,
 // Given string should have the format <blockSize>:<part1>:<part2>,<path>.
 // Throws std::runtime_error on error.
 FuzzyHash parseHash(const std::string &hash);
-}  // namespace tlo
+}  // namespace tfs
 
 #endif  // TLOFS_FUZZY_HPP

@@ -5,7 +5,7 @@
 
 #include "tlo-file-similarity/fuzzy.hpp"
 
-namespace tlo {
+namespace tfs {
 // Returns score from 0 to 100 of how similar the given strings are. A score
 // closer to 100 means the hashes are more similar.
 double compareWithLcsDistance(const std::string &string1,
@@ -55,6 +55,6 @@ void compareHashes(const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
                        &blockSizesToHashes,
                    int similarityThreshold, HashComparisonEventHandler &handler,
                    std::size_t numThreads = 1);
-}  // namespace tlo
+}  // namespace tfs
 
 #endif  // TLOFS_COMPARE_HPP

@@ -6,7 +6,7 @@
 
 #include "tlo-file-similarity/fuzzy.hpp"
 
-namespace tlo {
+namespace tfs {
 struct FuzzyHashRow : public FuzzyHash {
   std::size_t fileSize = 0;
   std::string fileLastWriteTime;
@@ -22,10 +22,10 @@ using FuzzyHashRowSet =
 
 class FuzzyHashDatabase {
  private:
-  Sqlite3Connection connection;
-  Sqlite3Statement insertFuzzyHash;
-  Sqlite3Statement selectFuzzyHashesGlob;
-  Sqlite3Statement updateFuzzyHash;
+  tlo::Sqlite3Connection connection;
+  tlo::Sqlite3Statement insertFuzzyHash;
+  tlo::Sqlite3Statement selectFuzzyHashesGlob;
+  tlo::Sqlite3Statement updateFuzzyHash;
 
  public:
   class EventHandler {
@@ -70,6 +70,6 @@ class FuzzyHashDatabase {
   void deleteHashesForFiles(
       const std::vector<std::filesystem::path> &filePaths);
 };
-}  // namespace tlo
+}  // namespace tfs
 
 #endif  // TLOFS_DATABASE_HPP

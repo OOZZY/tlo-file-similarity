@@ -79,7 +79,7 @@ struct Config {
   }
 };
 
-void printSimilarPair(const tlo::FuzzyHash &hash1, const tlo::FuzzyHash &hash2,
+void printSimilarPair(const tfs::FuzzyHash &hash1, const tfs::FuzzyHash &hash2,
                       double similarityScore, OutputFormat outputFormat) {
   if (outputFormat == OutputFormat::REGULAR) {
     std::cout << '"' << hash1.filePath << "\" and \"" << hash2.filePath
@@ -94,7 +94,7 @@ void printSimilarPair(const tlo::FuzzyHash &hash1, const tlo::FuzzyHash &hash2,
   }
 }
 
-class AbstractEventHandler : public tlo::HashComparisonEventHandler {
+class AbstractEventHandler : public tfs::HashComparisonEventHandler {
  protected:
   const bool printStatus;
   const OutputFormat outputFormat;
@@ -106,8 +106,8 @@ class AbstractEventHandler : public tlo::HashComparisonEventHandler {
   AbstractEventHandler(const Config &config)
       : printStatus(config.printStatus), outputFormat(config.outputFormat) {}
 
-  void onSimilarPairFound(const tlo::FuzzyHash &hash1,
-                          const tlo::FuzzyHash &hash2,
+  void onSimilarPairFound(const tfs::FuzzyHash &hash1,
+                          const tfs::FuzzyHash &hash2,
                           double similarityScore) override {
     if (printStatus) {
       numSimilarPairs++;
@@ -143,8 +143,8 @@ class SynchronizingEventHandler : public AbstractEventHandler {
  public:
   using AbstractEventHandler::AbstractEventHandler;
 
-  void onSimilarPairFound(const tlo::FuzzyHash &hash1,
-                          const tlo::FuzzyHash &hash2,
+  void onSimilarPairFound(const tfs::FuzzyHash &hash1,
+                          const tfs::FuzzyHash &hash2,
                           double similarityScore) override {
     const std::lock_guard<std::mutex> outputLockGuard(outputMutex);
 
@@ -193,14 +193,14 @@ int main(int argc, char **argv) {
       std::cerr << "Reading hashes." << std::endl;
     }
 
-    auto blockSizesToHashes = tlo::readHashesForComparison(paths);
+    auto blockSizesToHashes = tfs::readHashesForComparison(paths);
     std::unique_ptr<AbstractEventHandler> handler = makeEventHandler(config);
 
     if (config.printStatus) {
       std::cerr << "Comparing hashes." << std::endl;
     }
 
-    tlo::compareHashes(blockSizesToHashes, config.similarityThreshold, *handler,
+    tfs::compareHashes(blockSizesToHashes, config.similarityThreshold, *handler,
                        config.numThreads);
   } catch (const std::exception &exception) {
     std::cerr << exception.what() << std::endl;
