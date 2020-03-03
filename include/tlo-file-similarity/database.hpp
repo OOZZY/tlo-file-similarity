@@ -4,7 +4,7 @@
 #include <tlo-cpp/sqlite3.hpp>
 #include <unordered_set>
 
-#include "fuzzy.hpp"
+#include "tlo-file-similarity/fuzzy.hpp"
 
 namespace tlo {
 struct FuzzyHashRow : public FuzzyHash {

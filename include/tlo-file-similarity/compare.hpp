@@ -3,7 +3,7 @@
 
 #include <unordered_map>
 
-#include "fuzzy.hpp"
+#include "tlo-file-similarity/fuzzy.hpp"
 
 namespace tlo {
 // Returns score from 0 to 100 of how similar the given strings are. A score
