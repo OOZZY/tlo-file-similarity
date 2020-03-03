@@ -33,7 +33,6 @@ set(TLO_CPP_SQLITE3_LIBRARIES ${TLO_FS_SQLITE3_LIBRARIES})
 add_subdirectory(tlo-cpp)
 
 set(private_compile_options "")
-set(public_link_libraries tlo-cpp)
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
     "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -94,8 +93,7 @@ set(tlo_file_similarity_headers
   fuzzy.hpp
 )
 prepend(tlo_file_similarity_headers
-  ${PROJECT_SOURCE_DIR}/include/tlo-file-similarity/
-  ${tlo_file_similarity_headers}
+  include/tlo-file-similarity/ ${tlo_file_similarity_headers}
 )
 
 set(tlo_file_similarity_sources
@@ -103,9 +101,7 @@ set(tlo_file_similarity_sources
   database.cpp
   fuzzy.cpp
 )
-prepend(tlo_file_similarity_sources
-  ${PROJECT_SOURCE_DIR}/src/ ${tlo_file_similarity_sources}
-)
+prepend(tlo_file_similarity_sources src/ ${tlo_file_similarity_sources})
 
 add_library(tlo-file-similarity STATIC
   ${tlo_file_similarity_headers}
@@ -114,19 +110,15 @@ add_library(tlo-file-similarity STATIC
 set_target_properties(tlo-file-similarity PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_features(tlo-file-similarity PUBLIC cxx_std_17)
 target_compile_options(tlo-file-similarity PRIVATE ${private_compile_options})
-target_include_directories(tlo-file-similarity
-  PUBLIC ${PROJECT_SOURCE_DIR}/include
-)
-target_link_libraries(tlo-file-similarity PUBLIC ${public_link_libraries})
+target_include_directories(tlo-file-similarity PUBLIC include)
+target_link_libraries(tlo-file-similarity PUBLIC tlo-cpp)
 
-add_executable(tlo-fuzzy-hash ${PROJECT_SOURCE_DIR}/src/tlo-fuzzy-hash.cpp)
+add_executable(tlo-fuzzy-hash src/tlo-fuzzy-hash.cpp)
 set_target_properties(tlo-fuzzy-hash PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(tlo-fuzzy-hash PRIVATE ${private_compile_options})
 target_link_libraries(tlo-fuzzy-hash PRIVATE tlo-file-similarity)
 
-add_executable(tlo-find-similar-hashes
-  ${PROJECT_SOURCE_DIR}/src/tlo-find-similar-hashes.cpp
-)
+add_executable(tlo-find-similar-hashes src/tlo-find-similar-hashes.cpp)
 set_target_properties(tlo-find-similar-hashes PROPERTIES CXX_EXTENSIONS OFF)
 target_compile_options(tlo-find-similar-hashes
   PRIVATE ${private_compile_options}
