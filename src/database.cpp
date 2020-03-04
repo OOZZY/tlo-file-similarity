@@ -57,6 +57,10 @@ void FuzzyHashDatabase::open(const fs::path &dbFilePath) {
 
 bool FuzzyHashDatabase::isOpen() const { return connection.isOpen(); }
 
+void FuzzyHashDatabase::setEventHandler(EventHandler *handler_) {
+  handler = handler_;
+}
+
 namespace {
 void resetClearBindingsAndBindHash(tlo::Sqlite3Statement &statement,
                                    const FuzzyHashRow &hash) {
@@ -71,8 +75,7 @@ void resetClearBindingsAndBindHash(tlo::Sqlite3Statement &statement,
 }
 }  // namespace
 
-void FuzzyHashDatabase::insertHash(const FuzzyHashRow &newHash,
-                                   EventHandler *handler) {
+void FuzzyHashDatabase::insertHash(const FuzzyHashRow &newHash) {
   resetClearBindingsAndBindHash(insertFuzzyHash, newHash);
   insertFuzzyHash.step();
 
@@ -81,14 +84,13 @@ void FuzzyHashDatabase::insertHash(const FuzzyHashRow &newHash,
   }
 }
 
-void FuzzyHashDatabase::insertHashes(const FuzzyHashRowSet &newHashes,
-                                     EventHandler *handler) {
+void FuzzyHashDatabase::insertHashes(const FuzzyHashRowSet &newHashes) {
   for (const auto &newHash : newHashes) {
     if (tlo::stopRequested.load()) {
       return;
     }
 
-    insertHash(newHash, handler);
+    insertHash(newHash);
   }
 }
 
@@ -168,8 +170,7 @@ void FuzzyHashDatabase::getHashesForPaths(FuzzyHashRowSet &results,
   }
 }
 
-void FuzzyHashDatabase::updateHash(const FuzzyHashRow &modifiedHash,
-                                   EventHandler *handler) {
+void FuzzyHashDatabase::updateHash(const FuzzyHashRow &modifiedHash) {
   resetClearBindingsAndBindHash(updateFuzzyHash, modifiedHash);
   updateFuzzyHash.step();
 
@@ -178,14 +179,13 @@ void FuzzyHashDatabase::updateHash(const FuzzyHashRow &modifiedHash,
   }
 }
 
-void FuzzyHashDatabase::updateHashes(const FuzzyHashRowSet &modifiedHashes,
-                                     EventHandler *handler) {
+void FuzzyHashDatabase::updateHashes(const FuzzyHashRowSet &modifiedHashes) {
   for (const auto &modifiedHash : modifiedHashes) {
     if (tlo::stopRequested.load()) {
       return;
     }
 
-    updateHash(modifiedHash, handler);
+    updateHash(modifiedHash);
   }
 }
 

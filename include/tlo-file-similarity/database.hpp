@@ -21,12 +21,6 @@ using FuzzyHashRowSet =
     std::unordered_set<FuzzyHashRow, HashFuzzyHashPath, EqualFuzzyHashPath>;
 
 class FuzzyHashDatabase {
- private:
-  tlo::Sqlite3Connection connection;
-  tlo::Sqlite3Statement insertFuzzyHash;
-  tlo::Sqlite3Statement selectFuzzyHashesGlob;
-  tlo::Sqlite3Statement updateFuzzyHash;
-
  public:
   class EventHandler {
    public:
@@ -35,15 +29,23 @@ class FuzzyHashDatabase {
     virtual ~EventHandler();
   };
 
+ private:
+  tlo::Sqlite3Connection connection;
+  tlo::Sqlite3Statement insertFuzzyHash;
+  tlo::Sqlite3Statement selectFuzzyHashesGlob;
+  tlo::Sqlite3Statement updateFuzzyHash;
+  EventHandler *handler = nullptr;
+
+ public:
   void open(const std::filesystem::path &dbFilePath);
   bool isOpen() const;
+  void setEventHandler(EventHandler *handler_);
 
   // If handler is not nullptr, calls handler->onRowInsert().
-  void insertHash(const FuzzyHashRow &newHash, EventHandler *handler = nullptr);
+  void insertHash(const FuzzyHashRow &newHash);
 
   // If handler is not nullptr, calls handler->onRowInsert().
-  void insertHashes(const FuzzyHashRowSet &newHashes,
-                    EventHandler *handler = nullptr);
+  void insertHashes(const FuzzyHashRowSet &newHashes);
 
   // Stores found hashes in results.
   void getHashesForFiles(FuzzyHashRowSet &results,
@@ -60,12 +62,10 @@ class FuzzyHashDatabase {
                          const std::vector<std::filesystem::path> &paths);
 
   // If handler is not nullptr, calls handler->onRowUpdate().
-  void updateHash(const FuzzyHashRow &modifiedHash,
-                  EventHandler *handler = nullptr);
+  void updateHash(const FuzzyHashRow &modifiedHash);
 
   // If handler is not nullptr, calls handler->onRowUpdate().
-  void updateHashes(const FuzzyHashRowSet &modifiedHashes,
-                    EventHandler *handler = nullptr);
+  void updateHashes(const FuzzyHashRowSet &modifiedHashes);
 
   void deleteHashesForFiles(
       const std::vector<std::filesystem::path> &filePaths);
