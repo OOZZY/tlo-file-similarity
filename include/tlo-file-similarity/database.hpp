@@ -1,5 +1,5 @@
-#ifndef TLOFS_DATABASE_HPP
-#define TLOFS_DATABASE_HPP
+#ifndef TLO_FS_DATABASE_HPP
+#define TLO_FS_DATABASE_HPP
 
 #include <tlo-cpp/sqlite3.hpp>
 #include <unordered_set>
@@ -72,4 +72,4 @@ class FuzzyHashDatabase {
 };
 }  // namespace tfs
 
-#endif  // TLOFS_DATABASE_HPP
+#endif  // TLO_FS_DATABASE_HPP

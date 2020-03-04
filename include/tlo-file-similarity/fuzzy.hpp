@@ -1,5 +1,5 @@
-#ifndef TLOFS_FUZZY_HPP
-#define TLOFS_FUZZY_HPP
+#ifndef TLO_FS_FUZZY_HPP
+#define TLO_FS_FUZZY_HPP
 
 #include <cstddef>
 #include <cstdint>
@@ -83,4 +83,4 @@ void fuzzyHash(const std::vector<std::filesystem::path> &paths,
 FuzzyHash parseHash(const std::string &hash);
 }  // namespace tfs
 
-#endif  // TLOFS_FUZZY_HPP
+#endif  // TLO_FS_FUZZY_HPP

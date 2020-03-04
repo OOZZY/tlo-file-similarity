@@ -1,5 +1,5 @@
-#ifndef TLOFS_COMPARE_HPP
-#define TLOFS_COMPARE_HPP
+#ifndef TLO_FS_COMPARE_HPP
+#define TLO_FS_COMPARE_HPP
 
 #include <unordered_map>
 
@@ -57,4 +57,4 @@ void compareHashes(const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
                    std::size_t numThreads = 1);
 }  // namespace tfs
 
-#endif  // TLOFS_COMPARE_HPP
+#endif  // TLO_FS_COMPARE_HPP
