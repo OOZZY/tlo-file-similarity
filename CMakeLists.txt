@@ -30,6 +30,7 @@ string_option(TLO_FS_SQLITE3_LIBRARIES
 )
 set(TLO_CPP_SQLITE3_LIBRARIES ${TLO_FS_SQLITE3_LIBRARIES})
 
+set(TLO_CPP_ENABLE_TESTS OFF)
 add_subdirectory(tlo-cpp)
 
 set(private_compile_options "")
@@ -128,6 +129,17 @@ target_compile_options(tlo-find-similar-hashes
   PRIVATE ${private_compile_options}
 )
 target_link_libraries(tlo-find-similar-hashes PRIVATE tlo-file-similarity)
+
+option(TLO_FS_ENABLE_TESTS "Enable tests." ON)
+if (TLO_FS_ENABLE_TESTS)
+  enable_testing()
+
+  add_test(NAME tlo-fuzzy-hash-runs COMMAND tlo-fuzzy-hash)
+  set_tests_properties(tlo-fuzzy-hash-runs PROPERTIES WILL_FAIL TRUE)
+
+  add_test(NAME tlo-find-similar-files-runs COMMAND tlo-find-similar-hashes)
+  set_tests_properties(tlo-find-similar-files-runs PROPERTIES WILL_FAIL TRUE)
+endif()
 
 install(DIRECTORY include/tlo-file-similarity DESTINATION include)
 install(TARGETS tlo-file-similarity DESTINATION lib)

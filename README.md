@@ -82,6 +82,9 @@ $ ./tlo-find-similar-hashes hashes.txt
       and will link to the libraries specified by TLO\_FS\_SQLITE3\_LIBRARIES
     * Otherwise, `find_package(SQLite3 REQUIRED)` will be used instead
     * Empty strings by default
+* TLO\_FS\_ENABLE\_TESTS
+    * Enable tests
+    * On by default
 
 ## Program Options
 
