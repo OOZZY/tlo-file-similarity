@@ -56,6 +56,9 @@ endif()
 
 if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
   list(APPEND private_compile_options
+    /experimental:external
+    /external:anglebrackets
+    /external:W0
     /Wall
     /wd4514
     /wd4571
