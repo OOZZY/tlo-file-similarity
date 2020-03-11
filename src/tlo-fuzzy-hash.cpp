@@ -55,30 +55,39 @@ constexpr int MAX_SECOND_DIFFERENCE = 1;
 
 class DatabaseEventHandler : public tfs::FuzzyHashDatabase::EventHandler {
  private:
+  const std::size_t numHashesToInsert;
+  const std::size_t numHashesToUpdate;
+
   std::size_t numHashesInserted = 0;
   std::size_t numHashesUpdated = 0;
 
  public:
+  DatabaseEventHandler(std::size_t numHashesToInsert_,
+                       std::size_t numHashesToUpdate_)
+      : numHashesToInsert(numHashesToInsert_),
+        numHashesToUpdate(numHashesToUpdate_) {}
+
   void onRowInsert() override {
     numHashesInserted++;
 
     std::cerr << "Inserted " << numHashesInserted << ' '
-              << (numHashesInserted == 1 ? "hash" : "hashes") << '.'
-              << std::endl;
+              << (numHashesInserted == 1 ? "hash" : "hashes") << " out of "
+              << numHashesToInsert << '.' << std::endl;
   }
 
   void onRowUpdate() override {
     numHashesUpdated++;
 
     std::cerr << "Updated " << numHashesUpdated << ' '
-              << (numHashesUpdated == 1 ? "hash" : "hashes") << '.'
-              << std::endl;
+              << (numHashesUpdated == 1 ? "hash" : "hashes") << " out of "
+              << numHashesToUpdate << '.' << std::endl;
   }
 };
 
 class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
  protected:
   const bool verbose;
+  const std::size_t numFilesToHash;
 
   tfs::FuzzyHashDatabase hashDatabase;
   tfs::FuzzyHashRowSet knownHashes;
@@ -91,13 +100,15 @@ class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
  private:
   void printStatus() {
     std::cerr << "Hashed " << numFilesHashed << ' '
-              << (numFilesHashed == 1 ? "file" : "files") << '.' << std::endl;
+              << (numFilesHashed == 1 ? "file" : "files") << " out of "
+              << numFilesToHash << '.' << std::endl;
   }
 
  public:
   AbstractHashEventHandler(const Config &config,
-                           const std::vector<fs::path> &paths)
-      : verbose(config.verbose) {
+                           const std::vector<fs::path> &paths,
+                           std::size_t numFilesToHash_)
+      : verbose(config.verbose), numFilesToHash(numFilesToHash_) {
     if (!config.database.empty()) {
       if (verbose) {
         std::cerr << "Opening database." << std::endl;
@@ -151,7 +162,8 @@ class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
 
   void updateDatabase() {
     if (hashDatabase.isOpen()) {
-      DatabaseEventHandler databaseEventHandler;
+      DatabaseEventHandler databaseEventHandler(newHashes.size(),
+                                                modifiedHashes.size());
 
       if (verbose) {
         hashDatabase.setEventHandler(databaseEventHandler);
@@ -253,11 +265,13 @@ class SynchronizingHashEventHandler : public AbstractHashEventHandler {
 };
 
 std::unique_ptr<AbstractHashEventHandler> makeHashEventHandler(
-    const Config &config, const std::vector<fs::path> &paths) {
+    const Config &config, const std::vector<fs::path> &paths,
+    std::size_t numFilesToHash) {
   if (config.numThreads <= 1) {
-    return std::make_unique<HashEventHandler>(config, paths);
+    return std::make_unique<HashEventHandler>(config, paths, numFilesToHash);
   } else {
-    return std::make_unique<SynchronizingHashEventHandler>(config, paths);
+    return std::make_unique<SynchronizingHashEventHandler>(config, paths,
+                                                           numFilesToHash);
   }
 }
 }  // namespace
@@ -282,7 +296,7 @@ int main(int argc, char **argv) {
         tlo::stringsToPaths(commandLine.arguments(), tlo::PathType::CANONICAL);
     const std::vector<fs::path> filePaths = tlo::buildFileList(paths);
     std::unique_ptr<AbstractHashEventHandler> hashEventHandler =
-        makeHashEventHandler(config, paths);
+        makeHashEventHandler(config, paths, filePaths.size());
 
     if (config.verbose) {
       std::cerr << "Hashing files." << std::endl;

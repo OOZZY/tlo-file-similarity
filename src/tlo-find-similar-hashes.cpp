@@ -83,13 +83,15 @@ class AbstractEventHandler : public tfs::HashComparisonEventHandler {
  protected:
   const bool verbose;
   const OutputFormat outputFormat;
+  const std::size_t numHashesToCompare;
 
   std::size_t numHashesDone = 0;
   std::size_t numSimilarPairs = 0;
 
   void printStatus() {
     std::cerr << "Done with " << numHashesDone << ' '
-              << (numHashesDone == 1 ? "hash" : "hashes") << ". ";
+              << (numHashesDone == 1 ? "hash" : "hashes") << " out of "
+              << numHashesToCompare << ". ";
     std::cerr << "Found " << numSimilarPairs << " similar "
               << (numSimilarPairs == 1 ? "pair" : "pairs") << '.' << std::endl;
   }
@@ -111,8 +113,10 @@ class AbstractEventHandler : public tfs::HashComparisonEventHandler {
   }
 
  public:
-  AbstractEventHandler(const Config &config)
-      : verbose(config.verbose), outputFormat(config.outputFormat) {}
+  AbstractEventHandler(const Config &config, std::size_t numHashesToCompare_)
+      : verbose(config.verbose),
+        outputFormat(config.outputFormat),
+        numHashesToCompare(numHashesToCompare_) {}
 
   void onSimilarPairFound(const tfs::FuzzyHash &hash1,
                           const tfs::FuzzyHash &hash2,
@@ -162,11 +166,13 @@ class SynchronizingEventHandler : public AbstractEventHandler {
   }
 };
 
-std::unique_ptr<AbstractEventHandler> makeEventHandler(const Config &config) {
+std::unique_ptr<AbstractEventHandler> makeEventHandler(
+    const Config &config, std::size_t numHashesToCompare) {
   if (config.numThreads <= 1) {
-    return std::make_unique<EventHandler>(config);
+    return std::make_unique<EventHandler>(config, numHashesToCompare);
   } else {
-    return std::make_unique<SynchronizingEventHandler>(config);
+    return std::make_unique<SynchronizingEventHandler>(config,
+                                                       numHashesToCompare);
   }
 }
 }  // namespace
@@ -196,7 +202,8 @@ int main(int argc, char **argv) {
 
     const auto [blockSizesToHashes, numHashes] =
         tfs::readHashesForComparison(paths);
-    std::unique_ptr<AbstractEventHandler> handler = makeEventHandler(config);
+    std::unique_ptr<AbstractEventHandler> handler =
+        makeEventHandler(config, numHashes);
 
     if (config.verbose) {
       std::cerr << "Comparing hashes." << std::endl;
