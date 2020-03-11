@@ -163,7 +163,7 @@ std::pair<std::string, std::string> hashUsingBlockSize(
         }
 
         if (tlo::stopRequested.load()) {
-          return std::pair(part1, part2);
+          return std::pair(std::move(part1), std::move(part2));
         }
       }
 
@@ -177,7 +177,7 @@ std::pair<std::string, std::string> hashUsingBlockSize(
         }
 
         if (tlo::stopRequested.load()) {
-          return std::pair(part1, part2);
+          return std::pair(std::move(part1), std::move(part2));
         }
       }
     }
@@ -201,7 +201,7 @@ std::pair<std::string, std::string> hashUsingBlockSize(
     }
   }
 
-  return std::pair(part1, part2);
+  return std::pair(std::move(part1), std::move(part2));
 }
 
 FuzzyHash hashFileWithKnownSize(const fs::path &filePath,
