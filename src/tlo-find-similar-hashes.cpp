@@ -31,7 +31,7 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
     {"--num-threads",
      {true, "Number of threads the program will use (default: " +
                 std::to_string(DEFAULT_NUM_THREADS) + ")."}},
-    {"--print-status",
+    {"--verbose",
      {false,
       "Allow program to print status updates to stderr (default: off)."}},
     {"--output-format",
@@ -43,7 +43,7 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
 struct Config {
   int similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD;
   std::size_t numThreads = DEFAULT_NUM_THREADS;
-  bool printStatus = false;
+  bool verbose = false;
   OutputFormat outputFormat = DEFAULT_OUTPUT_FORMAT;
 
   Config(const tlo::CommandLine &commandLine) {
@@ -58,8 +58,8 @@ struct Config {
           "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
 
-    if (commandLine.specifiedOption("--print-status")) {
-      printStatus = true;
+    if (commandLine.specifiedOption("--verbose")) {
+      verbose = true;
     }
 
     if (commandLine.specifiedOption("--output-format")) {
@@ -96,7 +96,7 @@ void printSimilarPair(const tfs::FuzzyHash &hash1, const tfs::FuzzyHash &hash2,
 
 class AbstractEventHandler : public tfs::HashComparisonEventHandler {
  protected:
-  const bool printStatus;
+  const bool verbose;
   const OutputFormat outputFormat;
 
   std::size_t numHashesDone = 0;
@@ -104,12 +104,12 @@ class AbstractEventHandler : public tfs::HashComparisonEventHandler {
 
  public:
   AbstractEventHandler(const Config &config)
-      : printStatus(config.printStatus), outputFormat(config.outputFormat) {}
+      : verbose(config.verbose), outputFormat(config.outputFormat) {}
 
   void onSimilarPairFound(const tfs::FuzzyHash &hash1,
                           const tfs::FuzzyHash &hash2,
                           double similarityScore) override {
-    if (printStatus) {
+    if (verbose) {
       numSimilarPairs++;
     }
 
@@ -129,9 +129,9 @@ class EventHandler : public AbstractEventHandler {
   using AbstractEventHandler::AbstractEventHandler;
 
   void onHashDone() override {
-    if (printStatus) {
+    if (verbose) {
       numHashesDone++;
-      ::printStatus(numHashesDone, numSimilarPairs);
+      printStatus(numHashesDone, numSimilarPairs);
     }
   }
 };
@@ -152,11 +152,11 @@ class SynchronizingEventHandler : public AbstractEventHandler {
   }
 
   void onHashDone() override {
-    if (printStatus) {
+    if (verbose) {
       const std::lock_guard<std::mutex> outputLockGuard(outputMutex);
 
       numHashesDone++;
-      ::printStatus(numHashesDone, numSimilarPairs);
+      printStatus(numHashesDone, numSimilarPairs);
     }
   }
 };
@@ -189,7 +189,7 @@ int main(int argc, char **argv) {
     const auto paths =
         tlo::stringsToPaths(commandLine.arguments(), tlo::PathType::CANONICAL);
 
-    if (config.printStatus) {
+    if (config.verbose) {
       std::cerr << "Reading hashes." << std::endl;
     }
 
@@ -197,7 +197,7 @@ int main(int argc, char **argv) {
         tfs::readHashesForComparison(paths);
     std::unique_ptr<AbstractEventHandler> handler = makeEventHandler(config);
 
-    if (config.printStatus) {
+    if (config.verbose) {
       std::cerr << "Comparing hashes." << std::endl;
     }
 

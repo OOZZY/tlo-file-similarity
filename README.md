@@ -101,7 +101,7 @@ Options:
   --num-threads=value
     Number of threads the program will use (default: 1).
 
-  --print-status
+  --verbose
     Allow program to print status updates to stderr (default: off).
 ```
 
@@ -118,11 +118,11 @@ Options:
   --output-format=value
     Output format can be regular, csv (comma-separated values), or tsv (tab-separated values) (default: regular).
 
-  --print-status
-    Allow program to print status updates to stderr (default: off).
-
   --similarity-threshold=value
     Display only the file pairs with a similarity score greater than or equal to this threshold (default: 50).
+
+  --verbose
+    Allow program to print status updates to stderr (default: off).
 ```
 
 ### Relevant Papers and Projects

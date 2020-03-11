@@ -22,7 +22,7 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
     {"--num-threads",
      {true, "Number of threads the program will use (default: " +
                 std::to_string(DEFAULT_NUM_THREADS) + ")."}},
-    {"--print-status",
+    {"--verbose",
      {false,
       "Allow program to print status updates to stderr (default: off)."}},
     {"--database",
@@ -32,7 +32,7 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
 
 struct Config {
   std::size_t numThreads = DEFAULT_NUM_THREADS;
-  bool printStatus = false;
+  bool verbose = false;
   std::string database;
 
   Config(const tlo::CommandLine &commandLine) {
@@ -41,8 +41,8 @@ struct Config {
           "--num-threads", MIN_NUM_THREADS, MAX_NUM_THREADS);
     }
 
-    if (commandLine.specifiedOption("--print-status")) {
-      printStatus = true;
+    if (commandLine.specifiedOption("--verbose")) {
+      verbose = true;
     }
 
     if (commandLine.specifiedOption("--database")) {
@@ -83,7 +83,7 @@ class DatabaseEventHandler : public tfs::FuzzyHashDatabase::EventHandler {
 
 class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
  protected:
-  const bool printStatus;
+  const bool verbose;
 
   tfs::FuzzyHashDatabase hashDatabase;
   tfs::FuzzyHashRowSet knownHashes;
@@ -96,15 +96,15 @@ class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
  public:
   AbstractHashEventHandler(const Config &config,
                            const std::vector<fs::path> &paths)
-      : printStatus(config.printStatus) {
+      : verbose(config.verbose) {
     if (!config.database.empty()) {
-      if (printStatus) {
+      if (verbose) {
         std::cerr << "Opening database." << std::endl;
       }
 
       hashDatabase.open(config.database);
 
-      if (printStatus) {
+      if (verbose) {
         std::cerr << "Getting known hashes from database." << std::endl;
       }
 
@@ -119,9 +119,9 @@ class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
 
     std::cout << hash << std::endl;
 
-    if (printStatus) {
+    if (verbose) {
       numFilesHashed++;
-      ::printStatus(numFilesHashed);
+      printStatus(numFilesHashed);
     }
 
     previousOutputEndsWithNewline = true;
@@ -152,17 +152,17 @@ class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
     if (hashDatabase.isOpen()) {
       DatabaseEventHandler databaseEventHandler;
 
-      if (printStatus) {
+      if (verbose) {
         hashDatabase.setEventHandler(databaseEventHandler);
       }
 
-      if (printStatus) {
+      if (verbose) {
         std::cerr << "Adding new hashes to database." << std::endl;
       }
 
       hashDatabase.insertHashes(newHashes);
 
-      if (printStatus) {
+      if (verbose) {
         std::cerr << "Updating existing hashes in database." << std::endl;
       }
 
@@ -176,7 +176,7 @@ class HashEventHandler : public AbstractHashEventHandler {
   using AbstractHashEventHandler::AbstractHashEventHandler;
 
   void onBlockHash() override {
-    if (printStatus) {
+    if (verbose) {
       std::cerr << '.';
       previousOutputEndsWithNewline = false;
     }
@@ -208,7 +208,7 @@ class SynchronizingHashEventHandler : public AbstractHashEventHandler {
   using AbstractHashEventHandler::AbstractHashEventHandler;
 
   void onBlockHash() override {
-    if (printStatus) {
+    if (verbose) {
       const std::lock_guard<std::mutex> outputLockGuard(outputMutex);
 
       if (previousOutputtingThread == std::this_thread::get_id() &&
@@ -283,7 +283,7 @@ int main(int argc, char **argv) {
     std::unique_ptr<AbstractHashEventHandler> hashEventHandler =
         makeHashEventHandler(config, paths);
 
-    if (config.printStatus) {
+    if (config.verbose) {
       std::cerr << "Hashing files." << std::endl;
     }
 
