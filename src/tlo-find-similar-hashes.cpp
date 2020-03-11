@@ -79,21 +79,6 @@ struct Config {
   }
 };
 
-void printSimilarPair(const tfs::FuzzyHash &hash1, const tfs::FuzzyHash &hash2,
-                      double similarityScore, OutputFormat outputFormat) {
-  if (outputFormat == OutputFormat::REGULAR) {
-    std::cout << '"' << hash1.filePath << "\" and \"" << hash2.filePath
-              << "\" are about " << similarityScore << "% similar."
-              << std::endl;
-  } else if (outputFormat == OutputFormat::CSV) {
-    std::cout << '"' << hash1.filePath << "\",\"" << hash2.filePath << "\",\""
-              << similarityScore << '"' << std::endl;
-  } else if (outputFormat == OutputFormat::TSV) {
-    std::cout << '"' << hash1.filePath << "\"\t\"" << hash2.filePath << "\"\t\""
-              << similarityScore << '"' << std::endl;
-  }
-}
-
 class AbstractEventHandler : public tfs::HashComparisonEventHandler {
  protected:
   const bool verbose;
@@ -101,6 +86,29 @@ class AbstractEventHandler : public tfs::HashComparisonEventHandler {
 
   std::size_t numHashesDone = 0;
   std::size_t numSimilarPairs = 0;
+
+  void printStatus() {
+    std::cerr << "Done with " << numHashesDone << ' '
+              << (numHashesDone == 1 ? "hash" : "hashes") << ". ";
+    std::cerr << "Found " << numSimilarPairs << " similar "
+              << (numSimilarPairs == 1 ? "pair" : "pairs") << '.' << std::endl;
+  }
+
+ private:
+  void printSimilarPair(const tfs::FuzzyHash &hash1,
+                        const tfs::FuzzyHash &hash2, double similarityScore) {
+    if (outputFormat == OutputFormat::REGULAR) {
+      std::cout << '"' << hash1.filePath << "\" and \"" << hash2.filePath
+                << "\" are about " << similarityScore << "% similar."
+                << std::endl;
+    } else if (outputFormat == OutputFormat::CSV) {
+      std::cout << '"' << hash1.filePath << "\",\"" << hash2.filePath << "\",\""
+                << similarityScore << '"' << std::endl;
+    } else if (outputFormat == OutputFormat::TSV) {
+      std::cout << '"' << hash1.filePath << "\"\t\"" << hash2.filePath
+                << "\"\t\"" << similarityScore << '"' << std::endl;
+    }
+  }
 
  public:
   AbstractEventHandler(const Config &config)
@@ -113,16 +121,9 @@ class AbstractEventHandler : public tfs::HashComparisonEventHandler {
       numSimilarPairs++;
     }
 
-    printSimilarPair(hash1, hash2, similarityScore, outputFormat);
+    printSimilarPair(hash1, hash2, similarityScore);
   }
 };
-
-void printStatus(std::size_t numHashesDone, std::size_t numSimilarPairs) {
-  std::cerr << "Done with " << numHashesDone << ' '
-            << (numHashesDone == 1 ? "hash" : "hashes") << ". ";
-  std::cerr << "Found " << numSimilarPairs << " similar "
-            << (numSimilarPairs == 1 ? "pair" : "pairs") << '.' << std::endl;
-}
 
 class EventHandler : public AbstractEventHandler {
  public:
@@ -131,7 +132,7 @@ class EventHandler : public AbstractEventHandler {
   void onHashDone() override {
     if (verbose) {
       numHashesDone++;
-      printStatus(numHashesDone, numSimilarPairs);
+      printStatus();
     }
   }
 };
@@ -156,7 +157,7 @@ class SynchronizingEventHandler : public AbstractEventHandler {
       const std::lock_guard<std::mutex> outputLockGuard(outputMutex);
 
       numHashesDone++;
-      printStatus(numHashesDone, numSimilarPairs);
+      printStatus();
     }
   }
 };

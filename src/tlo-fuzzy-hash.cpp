@@ -51,11 +51,6 @@ struct Config {
   }
 };
 
-void printStatus(std::size_t numFilesHashed) {
-  std::cerr << "Hashed " << numFilesHashed << ' '
-            << (numFilesHashed == 1 ? "file" : "files") << '.' << std::endl;
-}
-
 constexpr int MAX_SECOND_DIFFERENCE = 1;
 
 class DatabaseEventHandler : public tfs::FuzzyHashDatabase::EventHandler {
@@ -93,6 +88,12 @@ class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
   std::size_t numFilesHashed = 0;
   bool previousOutputEndsWithNewline = true;
 
+ private:
+  void printStatus() {
+    std::cerr << "Hashed " << numFilesHashed << ' '
+              << (numFilesHashed == 1 ? "file" : "files") << '.' << std::endl;
+  }
+
  public:
   AbstractHashEventHandler(const Config &config,
                            const std::vector<fs::path> &paths)
@@ -121,7 +122,7 @@ class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
 
     if (verbose) {
       numFilesHashed++;
-      printStatus(numFilesHashed);
+      printStatus();
     }
 
     previousOutputEndsWithNewline = true;
