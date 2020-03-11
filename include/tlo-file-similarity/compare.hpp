@@ -2,6 +2,7 @@
 #define TLO_FS_COMPARE_HPP
 
 #include <unordered_map>
+#include <utility>
 
 #include "tlo-file-similarity/fuzzy.hpp"
 
@@ -32,9 +33,10 @@ double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2);
 // a file, will throw std::runtime_error. For each file, expects each line of
 // the file to have the fuzzy hash format <blockSize>:<part1>:<part2>,<path>.
 // Collects the fuzzy hashes into a map where the keys are block sizes and the
-// corresponding value for a key is a vector of fuzzy hashes with that key
-// block size.
-std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashesForComparison(
+// corresponding value for a key is a vector of fuzzy hashes with that key block
+// size. Returns the map and also the number of hashes.
+std::pair<std::unordered_map<std::size_t, std::vector<FuzzyHash>>, std::size_t>
+readHashesForComparison(
     const std::vector<std::filesystem::path> &textFilePaths);
 
 class HashComparisonEventHandler {

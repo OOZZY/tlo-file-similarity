@@ -13,7 +13,6 @@
 #include <tlo-cpp/stop.hpp>
 #include <tlo-cpp/string.hpp>
 #include <unordered_set>
-#include <utility>
 
 namespace fs = std::filesystem;
 
@@ -112,8 +111,8 @@ void readHashesFromFile(
 }
 }  // namespace
 
-std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashesForComparison(
-    const std::vector<fs::path> &textFilePaths) {
+std::pair<std::unordered_map<std::size_t, std::vector<FuzzyHash>>, std::size_t>
+readHashesForComparison(const std::vector<fs::path> &textFilePaths) {
   const auto [allFiles, iterator] = tlo::allFiles(textFilePaths);
   if (!allFiles) {
     throw std::runtime_error("Error: \"" + iterator->string() +
@@ -127,7 +126,7 @@ std::unordered_map<std::size_t, std::vector<FuzzyHash>> readHashesForComparison(
     readHashesFromFile(blockSizesToHashes, hashesAdded, textFilePath);
   }
 
-  return blockSizesToHashes;
+  return std::pair(std::move(blockSizesToHashes), hashesAdded.size());
 }
 
 HashComparisonEventHandler::~HashComparisonEventHandler() = default;

@@ -193,7 +193,8 @@ int main(int argc, char **argv) {
       std::cerr << "Reading hashes." << std::endl;
     }
 
-    auto blockSizesToHashes = tfs::readHashesForComparison(paths);
+    const auto [blockSizesToHashes, numHashes] =
+        tfs::readHashesForComparison(paths);
     std::unique_ptr<AbstractEventHandler> handler = makeEventHandler(config);
 
     if (config.printStatus) {
