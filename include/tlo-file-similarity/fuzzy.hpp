@@ -56,23 +56,24 @@ class FuzzyHashEventHandler {
 
 constexpr char BAD_FUZZY_HASH_CHAR = '!';
 
-// Based on spamsum and ssdeep. Throws std::runtime_error on error. If handler
-// is not nullptr, will call handler->onBlockHash() whenever a file block has
-// just been hashed. Also, will call handler->onFileHash() whenever a file has
-// just been hashed. Expects path to be a path to a file. Regularly checks
-// tlo::stopRequested to see if fuzzy hashing should stop. If fuzzy hashing
-// stops before reaching the end of the file, BAD_FUZZY_HASH_CHAR will be
-// appended to the part1 and part2 fields of the returned FuzzyHash.
+// Based on spamsum and ssdeep. Throws std::runtime_error on error. Will call
+// handler.onBlockHash() whenever a file block has just been hashed. Also, will
+// call handler.onFileHash() whenever a file has just been hashed. Expects
+// filePath to be a path to a file. Regularly checks tlo::stopRequested to see
+// if fuzzy hashing should stop. If fuzzy hashing stops before reaching the end
+// of the file, BAD_FUZZY_HASH_CHAR will be appended to the part1 and part2
+// fields of the returned FuzzyHash.
 FuzzyHash fuzzyHash(const std::filesystem::path &filePath,
-                    FuzzyHashEventHandler *handler = nullptr);
+                    FuzzyHashEventHandler &handler);
+FuzzyHash fuzzyHash(const std::filesystem::path &filePath);
 
 // Expects paths to be paths to files or directories. If a path refers to a
 // file, will hash the file. If a path refers to a directory, will hash all
 // files in the directory and all its subdirectories. If a path is neither a
-// file or directory, will throw std::runtime_error. Each file is hashed by
-// calling fuzzyHash(path, &handler). The resulting hash is passed to
-// handler.collect(). Before hashing a file, calls handler.shouldHashFile() to
-// check if a file should be hashed. The handler can be used to process the
+// file or directory, will throw std::runtime_error. Each file is hashed as if
+// by calling fuzzyHash(path, &handler). Before hashing a file, calls
+// handler.shouldHashFile() to check if a file should be hashed. The resulting
+// hash is passed to handler.collect(). The handler can be used to process the
 // hashes. If numThreads > 1, make sure that the handler's member functions are
 // synchronized.
 void fuzzyHash(const std::vector<std::filesystem::path> &paths,

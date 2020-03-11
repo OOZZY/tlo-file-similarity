@@ -204,8 +204,9 @@ std::pair<std::string, std::string> hashUsingBlockSize(
   return std::pair(part1, part2);
 }
 
-FuzzyHash hashFile(const fs::path &filePath, FuzzyHashEventHandler *handler,
-                   std::uintmax_t fileSize) {
+FuzzyHash hashFileWithKnownSize(const fs::path &filePath,
+                                FuzzyHashEventHandler *handler,
+                                std::uintmax_t fileSize) {
   if (fileSize == 0) {
     FuzzyHash hash{MIN_BLOCK_SIZE, "", "", filePath.u8string()};
 
@@ -253,15 +254,23 @@ FuzzyHash hashFile(const fs::path &filePath, FuzzyHashEventHandler *handler,
 
   return hash;
 }
-}  // namespace
 
-FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler *handler) {
+FuzzyHash hashFile(const fs::path &filePath, FuzzyHashEventHandler *handler) {
   if (!fs::is_regular_file(filePath)) {
     throw std::runtime_error("Error: \"" + filePath.u8string() +
                              "\" is not a file.");
   }
 
-  return hashFile(filePath, handler, tlo::getFileSize(filePath));
+  return hashFileWithKnownSize(filePath, handler, tlo::getFileSize(filePath));
+}
+}  // namespace
+
+FuzzyHash fuzzyHash(const fs::path &filePath, FuzzyHashEventHandler &handler) {
+  return hashFile(filePath, &handler);
+}
+
+FuzzyHash fuzzyHash(const fs::path &filePath) {
+  return hashFile(filePath, nullptr);
 }
 
 namespace {
@@ -271,7 +280,7 @@ void hashAndCollect(const fs::path &filePath, FuzzyHashEventHandler &handler) {
       tlo::timeToLocalTimestamp(tlo::getLastWriteTime(filePath));
 
   if (handler.shouldHashFile(filePath, fileSize, fileLastWriteTime)) {
-    FuzzyHash hash = hashFile(filePath, &handler, fileSize);
+    FuzzyHash hash = hashFileWithKnownSize(filePath, &handler, fileSize);
 
     if (tlo::stopRequested.load()) {
       return;

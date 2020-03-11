@@ -39,7 +39,7 @@ class FuzzyHashDatabase {
  public:
   void open(const std::filesystem::path &dbFilePath);
   bool isOpen() const;
-  void setEventHandler(EventHandler *handler_);
+  void setEventHandler(EventHandler &handler_);
 
   // If handler is not nullptr, calls handler->onRowInsert().
   void insertHash(const FuzzyHashRow &newHash);

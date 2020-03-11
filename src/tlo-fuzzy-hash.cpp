@@ -152,8 +152,9 @@ class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
     if (hashDatabase.isOpen()) {
       DatabaseEventHandler databaseEventHandler;
 
-      hashDatabase.setEventHandler(printStatus ? &databaseEventHandler
-                                               : nullptr);
+      if (printStatus) {
+        hashDatabase.setEventHandler(databaseEventHandler);
+      }
 
       if (printStatus) {
         std::cerr << "Adding new hashes to database." << std::endl;

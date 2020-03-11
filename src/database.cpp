@@ -57,8 +57,8 @@ void FuzzyHashDatabase::open(const fs::path &dbFilePath) {
 
 bool FuzzyHashDatabase::isOpen() const { return connection.isOpen(); }
 
-void FuzzyHashDatabase::setEventHandler(EventHandler *handler_) {
-  handler = handler_;
+void FuzzyHashDatabase::setEventHandler(EventHandler &handler_) {
+  handler = &handler_;
 }
 
 namespace {
