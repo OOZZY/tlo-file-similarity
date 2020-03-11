@@ -279,6 +279,7 @@ int main(int argc, char **argv) {
     const Config config(commandLine);
     const auto paths =
         tlo::stringsToPaths(commandLine.arguments(), tlo::PathType::CANONICAL);
+    const std::vector<fs::path> filePaths = tlo::buildFileList(paths);
     std::unique_ptr<AbstractHashEventHandler> hashEventHandler =
         makeHashEventHandler(config, paths);
 
@@ -286,7 +287,7 @@ int main(int argc, char **argv) {
       std::cerr << "Hashing files." << std::endl;
     }
 
-    tfs::fuzzyHash(paths, *hashEventHandler, config.numThreads);
+    tfs::fuzzyHash(filePaths, *hashEventHandler, config.numThreads);
     hashEventHandler->finishOutput();
     hashEventHandler->updateDatabase();
   } catch (const std::exception &exception) {

@@ -67,16 +67,14 @@ FuzzyHash fuzzyHash(const std::filesystem::path &filePath,
                     FuzzyHashEventHandler &handler);
 FuzzyHash fuzzyHash(const std::filesystem::path &filePath);
 
-// Expects paths to be paths to files or directories. If a path refers to a
-// file, will hash the file. If a path refers to a directory, will hash all
-// files in the directory and all its subdirectories. If a path is neither a
-// file or directory, will throw std::runtime_error. Each file is hashed as if
-// by calling fuzzyHash(path, &handler). Before hashing a file, calls
-// handler.shouldHashFile() to check if a file should be hashed. The resulting
-// hash is passed to handler.collect(). The handler can be used to process the
-// hashes. If numThreads > 1, make sure that the handler's member functions are
-// synchronized.
-void fuzzyHash(const std::vector<std::filesystem::path> &paths,
+// Expects filePaths to be paths to files. If a path refers to a file, will hash
+// the file. If a path is not a file, will throw std::runtime_error. Each file
+// is hashed as if by calling fuzzyHash(path, &handler). Before hashing a file,
+// calls handler.shouldHashFile() to check if a file should be hashed. The
+// resulting hash is passed to handler.collect(). The handler can be used to
+// process the hashes. If numThreads > 1, make sure that the handler's member
+// functions are synchronized.
+void fuzzyHash(const std::vector<std::filesystem::path> &filePaths,
                FuzzyHashEventHandler &handler, std::size_t numThreads = 1);
 
 // Given string should have the format <blockSize>:<part1>:<part2>,<path>.

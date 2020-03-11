@@ -290,16 +290,8 @@ void hashAndCollect(const fs::path &filePath, FuzzyHashEventHandler &handler) {
   }
 }
 
-void hashFilesWithSingleThread(const std::vector<fs::path> &paths,
+void hashFilesWithSingleThread(const std::vector<fs::path> &filePaths,
                                FuzzyHashEventHandler &handler) {
-  const auto [allFilesOrDirs, iterator] = tlo::allFilesOrDirectories(paths);
-  if (!allFilesOrDirs) {
-    throw std::runtime_error("Error: \"" + iterator->string() +
-                             "\" is not a file or directory.");
-  }
-
-  const std::vector<fs::path> filePaths = tlo::buildFileList(paths);
-
   for (const auto &filePath : filePaths) {
     if (tlo::stopRequested.load()) {
       break;
@@ -354,18 +346,11 @@ void hashFileAtIndex(SharedState &state, std::exception_ptr &exception) {
   }
 }
 
-void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
+void hashFilesWithMultipleThreads(const std::vector<fs::path> &filePaths,
                                   FuzzyHashEventHandler &handler,
                                   std::size_t numThreads) {
   assert(numThreads > 1);
 
-  const auto [allFilesOrDirs, iterator] = tlo::allFilesOrDirectories(paths);
-  if (!allFilesOrDirs) {
-    throw std::runtime_error("Error: \"" + iterator->string() +
-                             "\" is not a file or directory.");
-  }
-
-  const std::vector<fs::path> filePaths = tlo::buildFileList(paths);
   SharedState state(filePaths, handler);
   std::vector<std::exception_ptr> exceptions(numThreads);
   std::vector<std::thread> threads(numThreads - 1);
@@ -389,12 +374,18 @@ void hashFilesWithMultipleThreads(const std::vector<fs::path> &paths,
 }
 }  // namespace
 
-void fuzzyHash(const std::vector<fs::path> &paths,
+void fuzzyHash(const std::vector<fs::path> &filePaths,
                FuzzyHashEventHandler &handler, std::size_t numThreads) {
+  const auto [allFiles, iterator] = tlo::allFiles(filePaths);
+  if (!allFiles) {
+    throw std::runtime_error("Error: \"" + iterator->string() +
+                             "\" is not a file.");
+  }
+
   if (numThreads <= 1) {
-    hashFilesWithSingleThread(paths, handler);
+    hashFilesWithSingleThread(filePaths, handler);
   } else {
-    hashFilesWithMultipleThreads(paths, handler, numThreads);
+    hashFilesWithMultipleThreads(filePaths, handler, numThreads);
   }
 }
 
