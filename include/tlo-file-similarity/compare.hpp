@@ -29,14 +29,16 @@ bool hashesAreComparable(const FuzzyHash &hash1, const FuzzyHash &hash2);
 // if hashes are not comparable.
 double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2);
 
+using HashComparisonMap =
+    std::unordered_map<std::size_t, std::vector<FuzzyHash>>;
+
 // Expects textFilePaths to be paths to text files. If a path does not refer to
 // a file, will throw std::runtime_error. For each file, expects each line of
 // the file to have the fuzzy hash format <blockSize>:<part1>:<part2>,<path>.
 // Collects the fuzzy hashes into a map where the keys are block sizes and the
 // corresponding value for a key is a vector of fuzzy hashes with that key block
 // size. Returns the map and also the number of hashes.
-std::pair<std::unordered_map<std::size_t, std::vector<FuzzyHash>>, std::size_t>
-readHashesForComparison(
+std::pair<HashComparisonMap, std::size_t> readHashesForComparison(
     const std::vector<std::filesystem::path> &textFilePaths);
 
 class HashComparisonEventHandler {
@@ -53,8 +55,7 @@ class HashComparisonEventHandler {
 // handler.onHashDone() whenever the function is done comparing a hash to
 // comparable hashes. If numThreads > 1, make sure that the handler's member
 // functions are synchronized.
-void compareHashes(const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
-                       &blockSizesToHashes,
+void compareHashes(const HashComparisonMap &blockSizesToHashes,
                    int similarityThreshold, HashComparisonEventHandler &handler,
                    std::size_t numThreads = 1);
 }  // namespace tfs

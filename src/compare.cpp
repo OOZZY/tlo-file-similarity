@@ -88,7 +88,7 @@ double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2) {
 
 namespace {
 void readHashesFromFile(
-    std::unordered_map<std::size_t, std::vector<FuzzyHash>> &blockSizesToHashes,
+    HashComparisonMap &blockSizesToHashes,
     std::unordered_set<FuzzyHash, HashFuzzyHash> &hashesAdded,
     const fs::path &textFilePath) {
   std::ifstream ifstream(textFilePath, std::ifstream::in);
@@ -111,15 +111,15 @@ void readHashesFromFile(
 }
 }  // namespace
 
-std::pair<std::unordered_map<std::size_t, std::vector<FuzzyHash>>, std::size_t>
-readHashesForComparison(const std::vector<fs::path> &textFilePaths) {
+std::pair<HashComparisonMap, std::size_t> readHashesForComparison(
+    const std::vector<fs::path> &textFilePaths) {
   const auto [allFiles, iterator] = tlo::allFiles(textFilePaths);
   if (!allFiles) {
     throw std::runtime_error("Error: \"" + iterator->string() +
                              "\" is not a file.");
   }
 
-  std::unordered_map<std::size_t, std::vector<FuzzyHash>> blockSizesToHashes;
+  HashComparisonMap blockSizesToHashes;
   std::unordered_set<FuzzyHash, HashFuzzyHash> hashesAdded;
 
   for (const auto &textFilePath : textFilePaths) {
@@ -148,10 +148,9 @@ void compareHashWithOthers(const FuzzyHash &hash,
   }
 }
 
-void compareHashesWithSingleThread(
-    const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
-        &blockSizesToHashes,
-    int similarityThreshold, HashComparisonEventHandler &handler) {
+void compareHashesWithSingleThread(const HashComparisonMap &blockSizesToHashes,
+                                   int similarityThreshold,
+                                   HashComparisonEventHandler &handler) {
   std::vector<std::size_t> blockSizes;
 
   for (const auto &pair : blockSizesToHashes) {
@@ -189,8 +188,7 @@ void compareHashesWithSingleThread(
 
 struct SharedState {
   const std::vector<std::size_t> &blockSizes;
-  const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
-      &blockSizesToHashes;
+  const HashComparisonMap &blockSizesToHashes;
   const int similarityThreshold;
   HashComparisonEventHandler &handler;
 
@@ -200,8 +198,7 @@ struct SharedState {
   std::size_t hashIndex = 0;
 
   SharedState(const std::vector<std::size_t> &blockSizes_,
-              const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
-                  &blockSizesToHashes_,
+              const HashComparisonMap &blockSizesToHashes_,
               int similarityThreshold_, HashComparisonEventHandler &handler_)
       : blockSizes(blockSizes_),
         blockSizesToHashes(blockSizesToHashes_),
@@ -267,10 +264,8 @@ void compareHashAtIndexWithComparableHashes(SharedState &state,
 }
 
 void compareHashesWithMultipleThreads(
-    const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
-        &blockSizesToHashes,
-    int similarityThreshold, HashComparisonEventHandler &handler,
-    std::size_t numThreads) {
+    const HashComparisonMap &blockSizesToHashes, int similarityThreshold,
+    HashComparisonEventHandler &handler, std::size_t numThreads) {
   std::vector<std::size_t> blockSizes;
 
   for (const auto &pair : blockSizesToHashes) {
@@ -303,8 +298,7 @@ void compareHashesWithMultipleThreads(
 }
 }  // namespace
 
-void compareHashes(const std::unordered_map<std::size_t, std::vector<FuzzyHash>>
-                       &blockSizesToHashes,
+void compareHashes(const HashComparisonMap &blockSizesToHashes,
                    int similarityThreshold, HashComparisonEventHandler &handler,
                    std::size_t numThreads) {
   if (numThreads <= 1) {
