@@ -141,7 +141,7 @@ class AbstractHashEventHandler : public tfs::FuzzyHashEventHandler {
 
   bool shouldHashFile(const fs::path &filePath, std::uintmax_t fileSize,
                       const std::string &fileLastWriteTime) override {
-    auto iterator = knownHashes.find(filePath.u8string());
+    auto iterator = knownHashes.find(tfs::FuzzyHashRow(filePath.u8string()));
 
     if (iterator != knownHashes.end() && iterator->fileSize == fileSize &&
         tlo::equalLocalTimestamps(iterator->fileLastWriteTime,
@@ -197,10 +197,8 @@ class HashEventHandler : public AbstractHashEventHandler {
 
   void collect(tfs::FuzzyHash &&hash, std::uintmax_t fileSize,
                std::string &&fileLastWriteTime) override {
-    tfs::FuzzyHashRow row(std::move(hash));
-
-    row.fileSize = fileSize;
-    row.fileLastWriteTime = std::move(fileLastWriteTime);
+    tfs::FuzzyHashRow row(std::move(hash), fileSize,
+                          std::move(fileLastWriteTime));
 
     if (knownHashes.find(row) == knownHashes.end()) {
       newHashes.insert(std::move(row));
@@ -249,10 +247,8 @@ class SynchronizingHashEventHandler : public AbstractHashEventHandler {
 
   void collect(tfs::FuzzyHash &&hash, std::uintmax_t fileSize,
                std::string &&fileLastWriteTime) override {
-    tfs::FuzzyHashRow row(std::move(hash));
-
-    row.fileSize = fileSize;
-    row.fileLastWriteTime = std::move(fileLastWriteTime);
+    tfs::FuzzyHashRow row(std::move(hash), fileSize,
+                          std::move(fileLastWriteTime));
 
     const std::lock_guard<std::mutex> newHashesLockGuard(newHashesMutex);
 

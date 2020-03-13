@@ -6,9 +6,11 @@
 namespace fs = std::filesystem;
 
 namespace tfs {
-FuzzyHashRow::FuzzyHashRow(const FuzzyHash &hash) : FuzzyHash(hash) {}
-
-FuzzyHashRow::FuzzyHashRow(FuzzyHash &&hash) : FuzzyHash(std::move(hash)) {}
+FuzzyHashRow::FuzzyHashRow(FuzzyHash &&hash, std::size_t fileSize_,
+                           std::string &&fileLastWriteTime_)
+    : FuzzyHash(std::move(hash)),
+      fileSize(fileSize_),
+      fileLastWriteTime(fileLastWriteTime_) {}
 
 FuzzyHashRow::FuzzyHashRow(std::string &&filePath_) {
   filePath = std::move(filePath_);
