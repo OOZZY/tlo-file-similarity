@@ -8,6 +8,7 @@
 #include <thread>
 #include <tlo-cpp/damerau-levenshtein.hpp>
 #include <tlo-cpp/filesystem.hpp>
+#include <tlo-cpp/hash.hpp>
 #include <tlo-cpp/lcs.hpp>
 #include <tlo-cpp/levenshtein.hpp>
 #include <tlo-cpp/stop.hpp>
@@ -86,11 +87,24 @@ double compareHashes(const FuzzyHash &hash1, const FuzzyHash &hash2) {
   }
 }
 
+FuzzyHashFromFile::FuzzyHashFromFile(FuzzyHash &&hash)
+    : FuzzyHash(std::move(hash)) {}
+
+std::size_t HashFuzzyHashFromFile::operator()(
+    const FuzzyHashFromFile &hash) const {
+  tlo::BoostStyleHashCombiner combiner;
+
+  return combiner.combineWith(HashFuzzyHash()(hash))
+      .combineWith(std::hash<std::size_t>()(hash.fileIndex))
+      .getHash();
+}
+
+using HashSet = std::unordered_set<FuzzyHashFromFile, HashFuzzyHashFromFile>;
+
 namespace {
-void readHashesFromFile(
-    HashComparisonMap &blockSizesToHashes,
-    std::unordered_set<FuzzyHash, HashFuzzyHash> &hashesAdded,
-    const fs::path &textFilePath) {
+void readHashesFromFile(HashComparisonMap &blockSizesToHashes,
+                        HashSet &hashesAdded, const fs::path &textFilePath,
+                        std::size_t fileIndex, bool recordingSources) {
   std::ifstream ifstream(textFilePath, std::ifstream::in);
 
   if (!ifstream.is_open()) {
@@ -101,7 +115,11 @@ void readHashesFromFile(
   std::string line;
 
   while (std::getline(ifstream, line)) {
-    FuzzyHash hash = parseHash(line);
+    FuzzyHashFromFile hash(parseHash(line));
+
+    if (recordingSources) {
+      hash.fileIndex = fileIndex;
+    }
 
     if (hashesAdded.find(hash) == hashesAdded.end()) {
       blockSizesToHashes[hash.blockSize].push_back(hash);
@@ -112,7 +130,7 @@ void readHashesFromFile(
 }  // namespace
 
 std::pair<HashComparisonMap, std::size_t> readHashesForComparison(
-    const std::vector<fs::path> &textFilePaths) {
+    const std::vector<fs::path> &textFilePaths, bool recordingSources) {
   const auto [allFiles, iterator] = tlo::allFiles(textFilePaths);
   if (!allFiles) {
     throw std::runtime_error("Error: \"" + iterator->string() +
@@ -120,10 +138,11 @@ std::pair<HashComparisonMap, std::size_t> readHashesForComparison(
   }
 
   HashComparisonMap blockSizesToHashes;
-  std::unordered_set<FuzzyHash, HashFuzzyHash> hashesAdded;
+  HashSet hashesAdded;
 
-  for (const auto &textFilePath : textFilePaths) {
-    readHashesFromFile(blockSizesToHashes, hashesAdded, textFilePath);
+  for (std::size_t i = 0; i < textFilePaths.size(); ++i) {
+    readHashesFromFile(blockSizesToHashes, hashesAdded, textFilePaths[i], i,
+                       recordingSources);
   }
 
   return std::pair(std::move(blockSizesToHashes), hashesAdded.size());
@@ -133,8 +152,8 @@ HashComparisonEventHandler::~HashComparisonEventHandler() = default;
 
 namespace {
 // Compare hash with hashes[startIndex .. end].
-void compareHashWithOthers(const FuzzyHash &hash,
-                           const std::vector<FuzzyHash> &hashes,
+void compareHashWithOthers(const FuzzyHashFromFile &hash,
+                           const std::vector<FuzzyHashFromFile> &hashes,
                            std::size_t startIndex, int similarityThreshold,
                            HashComparisonEventHandler &handler) {
   for (std::size_t j = startIndex; j < hashes.size(); ++j) {
@@ -160,8 +179,9 @@ void compareHashesWithSingleThread(const HashComparisonMap &blockSizesToHashes,
   std::sort(blockSizes.begin(), blockSizes.end());
 
   for (const auto blockSize : blockSizes) {
-    const std::vector<FuzzyHash> &hashes = blockSizesToHashes.at(blockSize);
-    const std::vector<FuzzyHash> *moreHashes = nullptr;
+    const std::vector<FuzzyHashFromFile> &hashes =
+        blockSizesToHashes.at(blockSize);
+    const std::vector<FuzzyHashFromFile> *moreHashes = nullptr;
     const auto iterator = blockSizesToHashes.find(2 * blockSize);
 
     if (iterator != blockSizesToHashes.end()) {
@@ -225,7 +245,7 @@ void compareHashAtIndexWithComparableHashes(SharedState &state,
       }
 
       const std::size_t blockSize = state.blockSizes[state.blockSizeIndex];
-      const std::vector<FuzzyHash> &hashes =
+      const std::vector<FuzzyHashFromFile> &hashes =
           state.blockSizesToHashes.at(blockSize);
       const std::size_t i = state.hashIndex;
 
@@ -238,7 +258,7 @@ void compareHashAtIndexWithComparableHashes(SharedState &state,
 
       indexUniqueLock.unlock();
 
-      const std::vector<FuzzyHash> *moreHashes = nullptr;
+      const std::vector<FuzzyHashFromFile> *moreHashes = nullptr;
       const auto iterator = state.blockSizesToHashes.find(2 * blockSize);
 
       if (iterator != state.blockSizesToHashes.end()) {

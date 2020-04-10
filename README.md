@@ -118,6 +118,9 @@ Options:
   --output-format=value
     Output format can be regular, csv (comma-separated values), or tsv (tab-separated values) (default: regular).
 
+  --record-sources
+    Record which input text file each hash came from (default: off).
+
   --similarity-threshold=value
     Display only the file pairs with a similarity score greater than or equal to this threshold (default: 50).
 

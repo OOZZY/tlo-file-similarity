@@ -8,6 +8,8 @@
 #include <tlo-cpp/stop.hpp>
 #include <tlo-file-similarity/compare.hpp>
 
+namespace fs = std::filesystem;
+
 namespace {
 enum class OutputFormat { REGULAR, CSV, TSV };
 
@@ -38,13 +40,17 @@ const std::map<std::string, tlo::OptionAttributes> VALID_OPTIONS{
      {true,
       "Output format can be regular, csv (comma-separated values), or tsv "
       "(tab-separated values) (default: " +
-          DEFAULT_OUTPUT_FORMAT_STRING + ")."}}};
+          DEFAULT_OUTPUT_FORMAT_STRING + ")."}},
+    {"--record-sources",
+     {false,
+      "Record which input text file each hash came from (default: off)."}}};
 
 struct Config {
   int similarityThreshold = DEFAULT_SIMILARITY_THRESHOLD;
   std::size_t numThreads = DEFAULT_NUM_THREADS;
   bool verbose = false;
   OutputFormat outputFormat = DEFAULT_OUTPUT_FORMAT;
+  bool recordingSources = false;
 
   Config(const tlo::CommandLine &commandLine) {
     if (commandLine.specifiedOption("--similarity-threshold")) {
@@ -76,6 +82,10 @@ struct Config {
                                  "\" is not a recognized output format.");
       }
     }
+
+    if (commandLine.specifiedOption("--record-sources")) {
+      recordingSources = true;
+    }
   }
 };
 
@@ -83,6 +93,8 @@ class AbstractEventHandler : public tfs::HashComparisonEventHandler {
  protected:
   const bool verbose;
   const OutputFormat outputFormat;
+  const bool recordingSources;
+  const std::vector<fs::path> &textFilePaths;
   const std::size_t numHashesToCompare;
 
   std::size_t numHashesDone = 0;
@@ -97,29 +109,64 @@ class AbstractEventHandler : public tfs::HashComparisonEventHandler {
   }
 
  private:
-  void printSimilarPair(const tfs::FuzzyHash &hash1,
-                        const tfs::FuzzyHash &hash2, double similarityScore) {
+  void printSeparatedValues(const tfs::FuzzyHashFromFile &hash1,
+                            const tfs::FuzzyHashFromFile &hash2,
+                            double similarityScore, char separator) {
+    std::cout << '"' << hash1.filePath << '"' << separator;
+
+    if (recordingSources) {
+      std::cout << '"' << textFilePaths[hash1.fileIndex].u8string() << '"'
+                << separator;
+    }
+
+    std::cout << '"' << hash2.filePath << '"' << separator;
+
+    if (recordingSources) {
+      std::cout << '"' << textFilePaths[hash2.fileIndex].u8string() << '"'
+                << separator;
+    }
+
+    std::cout << '"' << similarityScore << '"' << std::endl;
+  }
+
+  void printSimilarPair(const tfs::FuzzyHashFromFile &hash1,
+                        const tfs::FuzzyHashFromFile &hash2,
+                        double similarityScore) {
     if (outputFormat == OutputFormat::REGULAR) {
-      std::cout << '"' << hash1.filePath << "\" and \"" << hash2.filePath
-                << "\" are about " << similarityScore << "% similar."
-                << std::endl;
+      std::cout << '"' << hash1.filePath << "\" ";
+
+      if (recordingSources) {
+        std::cout << "(\"" << textFilePaths[hash1.fileIndex].u8string()
+                  << "\") ";
+      }
+
+      std::cout << "and \"" << hash2.filePath << "\" ";
+
+      if (recordingSources) {
+        std::cout << "(\"" << textFilePaths[hash2.fileIndex].u8string()
+                  << "\") ";
+      }
+
+      std::cout << "are about " << similarityScore << "% similar." << std::endl;
     } else if (outputFormat == OutputFormat::CSV) {
-      std::cout << '"' << hash1.filePath << "\",\"" << hash2.filePath << "\",\""
-                << similarityScore << '"' << std::endl;
+      printSeparatedValues(hash1, hash2, similarityScore, ',');
     } else if (outputFormat == OutputFormat::TSV) {
-      std::cout << '"' << hash1.filePath << "\"\t\"" << hash2.filePath
-                << "\"\t\"" << similarityScore << '"' << std::endl;
+      printSeparatedValues(hash1, hash2, similarityScore, '\t');
     }
   }
 
  public:
-  AbstractEventHandler(const Config &config, std::size_t numHashesToCompare_)
+  AbstractEventHandler(const Config &config,
+                       const std::vector<fs::path> &textFilePaths_,
+                       std::size_t numHashesToCompare_)
       : verbose(config.verbose),
         outputFormat(config.outputFormat),
+        recordingSources(config.recordingSources),
+        textFilePaths(textFilePaths_),
         numHashesToCompare(numHashesToCompare_) {}
 
-  void onSimilarPairFound(const tfs::FuzzyHash &hash1,
-                          const tfs::FuzzyHash &hash2,
+  void onSimilarPairFound(const tfs::FuzzyHashFromFile &hash1,
+                          const tfs::FuzzyHashFromFile &hash2,
                           double similarityScore) override {
     if (verbose) {
       numSimilarPairs++;
@@ -148,8 +195,8 @@ class SynchronizingEventHandler : public AbstractEventHandler {
  public:
   using AbstractEventHandler::AbstractEventHandler;
 
-  void onSimilarPairFound(const tfs::FuzzyHash &hash1,
-                          const tfs::FuzzyHash &hash2,
+  void onSimilarPairFound(const tfs::FuzzyHashFromFile &hash1,
+                          const tfs::FuzzyHashFromFile &hash2,
                           double similarityScore) override {
     const std::lock_guard<std::mutex> outputLockGuard(outputMutex);
 
@@ -167,11 +214,13 @@ class SynchronizingEventHandler : public AbstractEventHandler {
 };
 
 std::unique_ptr<AbstractEventHandler> makeEventHandler(
-    const Config &config, std::size_t numHashesToCompare) {
+    const Config &config, const std::vector<fs::path> &textFilePaths,
+    std::size_t numHashesToCompare) {
   if (config.numThreads <= 1) {
-    return std::make_unique<EventHandler>(config, numHashesToCompare);
+    return std::make_unique<EventHandler>(config, textFilePaths,
+                                          numHashesToCompare);
   } else {
-    return std::make_unique<SynchronizingEventHandler>(config,
+    return std::make_unique<SynchronizingEventHandler>(config, textFilePaths,
                                                        numHashesToCompare);
   }
 }
@@ -193,17 +242,16 @@ int main(int argc, char **argv) {
     tlo::registerInterruptSignalHandler(tloRequestStop);
 
     const Config config(commandLine);
-    const auto paths =
-        tlo::stringsToPaths(commandLine.arguments(), tlo::PathType::CANONICAL);
+    const auto paths = tlo::stringsToPaths(commandLine.arguments());
 
     if (config.verbose) {
       std::cerr << "Reading hashes." << std::endl;
     }
 
     const auto [blockSizesToHashes, numHashes] =
-        tfs::readHashesForComparison(paths);
+        tfs::readHashesForComparison(paths, config.recordingSources);
     std::unique_ptr<AbstractEventHandler> handler =
-        makeEventHandler(config, numHashes);
+        makeEventHandler(config, paths, numHashes);
 
     if (config.verbose) {
       std::cerr << "Comparing hashes." << std::endl;
